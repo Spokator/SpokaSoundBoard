@@ -110,8 +110,14 @@
                         <ProgressBar Style="{StaticResource Meter}" Value="{Binding MediaLevel, Mode=OneWay}" Margin="0,0,0,10"
                                      Foreground="{StaticResource BrandBrush}" />
 
-                        <TextBlock Text="Sortie micro virtuel" Style="{StaticResource Caption}" Margin="0,0,0,4" />
-                        <ProgressBar Style="{StaticResource Meter}" Value="{Binding OutputLevel, Mode=OneWay}" Margin="0,0,0,12" />
+                        <TextBlock Text="Sortie jeu" Style="{StaticResource Caption}" Margin="0,0,0,4" />
+                        <ProgressBar Style="{StaticResource Meter}" Value="{Binding OutputLevel, Mode=OneWay}" Margin="0,0,0,10" />
+
+                        <StackPanel Visibility="{Binding Devices.HasDiscordOutput, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="Sortie Discord" Style="{StaticResource Caption}" Margin="0,0,0,4" />
+                            <ProgressBar Style="{StaticResource Meter}" Value="{Binding DiscordLevel, Mode=OneWay}" Margin="0,0,0,10" />
+                        </StackPanel>
+                        <Border Height="2" />
 
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="8" Height="8" Margin="0,0,8,0" VerticalAlignment="Center">
@@ -252,8 +258,13 @@
                         <Slider Margin="26,0,0,0" Minimum="0" Maximum="1" Value="{Binding Mix.MusicVolume}" IsMoveToPointEnabled="True" ToolTip="Volume de la musique" />
                     </Grid>
                     <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Mix.MediaToMicEnabled}" FontSize="12"
-                              ToolTip="Désactivé : vous seul entendez la musique">
+                              ToolTip="Désactivé : vous seul entendez la musique et les sons">
                         <TextBlock Text="Diffuser dans le micro" Style="{StaticResource Caption}" Foreground="{StaticResource TextBrush}" />
+                    </CheckBox>
+                    <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShareMediaWithDiscord}" FontSize="12" Margin="0,4,0,0"
+                              ToolTip="Vos amis Discord entendent aussi la musique et les sons"
+                              Visibility="{Binding Devices.HasDiscordOutput, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="…aussi sur Discord" Style="{StaticResource Caption}" Foreground="{StaticResource TextBrush}" />
                     </CheckBox>
                 </StackPanel>
             </Grid>

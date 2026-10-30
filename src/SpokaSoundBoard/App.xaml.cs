@@ -29,6 +29,10 @@ public partial class App : Application
             args.SetObserved();
         };
 
+        // French number formatting in text boxes ("12,5").
+        FrameworkElement.LanguageProperty.OverrideMetadata(typeof(FrameworkElement),
+            new FrameworkPropertyMetadata(System.Windows.Markup.XmlLanguage.GetLanguage("fr-FR")));
+
         base.OnStartup(e);
         var window = new MainWindow();
         MainWindow = window;

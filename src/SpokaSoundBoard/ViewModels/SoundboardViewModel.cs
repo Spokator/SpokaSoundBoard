@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using SpokaSoundBoard.Core.Audio;
 using SpokaSoundBoard.Core.Models;
+using SpokaSoundBoard.Core.Online;
 
 namespace SpokaSoundBoard.ViewModels;
 
@@ -19,6 +20,8 @@ public partial class SoundboardViewModel : ObservableObject
     public SoundboardViewModel(MainViewModel main)
     {
         _main = main;
+        Link = new LinkImporter(main, "Sons", false,
+            "Collez un lien YouTube, MyInstants, TikTok… (Entrée pour importer)", AddFromLink);
         foreach (var pad in Pads) pad.PropertyChanged += OnPadChanged;
         Pads.CollectionChanged += (_, e) =>
         {
@@ -31,6 +34,8 @@ public partial class SoundboardViewModel : ObservableObject
     }
 
     public ObservableCollection<SoundPad> Pads => _main.Settings.Pads;
+
+    public LinkImporter Link { get; }
 
     public IReadOnlyList<string> Colors => Palette;
 
@@ -78,6 +83,19 @@ public partial class SoundboardViewModel : ObservableObject
         }
     }
 
+    private void AddFromLink(DownloadedMedia media)
+    {
+        var pad = new SoundPad
+        {
+            Name = media.Title.Length > 40 ? media.Title[..40].TrimEnd() + "…" : media.Title,
+            FilePath = media.FilePath,
+            SourceUrl = media.SourceUrl,
+            Color = Palette[Pads.Count % Palette.Length],
+        };
+        Pads.Add(pad);
+        SelectedPad = pad;
+    }
+
     [RelayCommand]
     private async Task PlayPad(SoundPad? pad)
     {
@@ -101,7 +119,7 @@ public partial class SoundboardViewModel : ObservableObject
         try
         {
             pad.IsPlaying = true;
-            await player.PlayAsync(pad.Id, pad.FilePath, pad.Volume, pad.Loop);
+            await player.PlayAsync(pad.Id, pad.FilePath, pad.Volume, pad.Loop, pad.StartSeconds, pad.EndSeconds);
         }
         catch (Exception ex)
         {

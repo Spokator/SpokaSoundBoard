@@ -60,6 +60,7 @@ public sealed class SettingsStore
         s.Voice ??= new VoiceEffectSettings();
         s.Mix ??= new MixSettings();
         s.Hotkeys ??= new HotkeySettings();
+        s.Hotkeys.ToggleDiscordShare ??= new HotkeyBinding();
         s.Pads ??= [];
         s.Playlist ??= [];
         s.CustomPresets ??= [];

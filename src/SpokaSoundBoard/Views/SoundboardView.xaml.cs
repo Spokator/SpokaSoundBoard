@@ -10,13 +10,16 @@ public partial class SoundboardView : UserControl
 
     private void OnDragOver(object sender, DragEventArgs e)
     {
-        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) || LinkBar.GetDroppedUrl(e.Data) != null
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
         e.Handled = true;
     }
 
     private void OnDrop(object sender, DragEventArgs e)
     {
-        if (e.Data.GetData(DataFormats.FileDrop) is string[] files && DataContext is SoundboardViewModel vm)
-            vm.AddFiles(files);
+        if (DataContext is not SoundboardViewModel vm) return;
+        if (e.Data.GetData(DataFormats.FileDrop) is string[] files) vm.AddFiles(files);
+        else if (LinkBar.GetDroppedUrl(e.Data) is { } url) _ = vm.Link.ImportAsync(url);
     }
 }

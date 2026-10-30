@@ -27,6 +27,7 @@ public partial class DevicesViewModel : ObservableObject
             new("Couper / activer le micro", "Votre voix uniquement, la musique continue", h.ToggleMic),
             new("Activer / désactiver les effets", "Bascule rapide entre voix normale et effet", h.ToggleEffects),
             new("Musique dans le micro on/off", "Écouter la musique seul ou la partager", h.ToggleMediaToMic),
+            new("Discord : partager musique & sons", "Vos amis Discord entendent (ou non) la musique et les sons", h.ToggleDiscordShare),
         ];
     }
 
@@ -42,7 +43,15 @@ public partial class DevicesViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(VirtualOutputWarning))]
     private AudioDevice? _selectedVirtualOutput;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DiscordSameCableWarning), nameof(HasDiscordOutput), nameof(DiscordMicName))]
+    private AudioDevice? _selectedDiscordOutput;
+
     [ObservableProperty] private AudioDevice? _selectedMonitor;
+
+    [ObservableProperty] private bool _hasSecondCable;
+    [ObservableProperty] private bool _isInstallingSecond;
+    [ObservableProperty] private string? _secondInstallStatus;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(VirtualOutputWarning))]
@@ -55,6 +64,15 @@ public partial class DevicesViewModel : ObservableObject
 
     public bool VirtualOutputWarning => HasVirtualCable && SelectedVirtualOutput is { IsVirtualCable: false };
 
+    public bool HasDiscordOutput => SelectedDiscordOutput != null;
+
+    /// <summary>Discord and the game share the same cable: they would hear exactly the same thing.</summary>
+    public bool DiscordSameCableWarning => DeviceService.SameCable(SelectedDiscordOutput, SelectedVirtualOutput);
+
+    public string DiscordMicName => SelectedDiscordOutput == null
+        ? "votre vrai micro"
+        : SelectedDiscordOutput.Name.Replace("Input", "Output", StringComparison.OrdinalIgnoreCase);
+
     /// <summary>Name to select in Discord / games.</summary>
     public string VirtualMicName => SelectedVirtualOutput?.Name.Replace("Input", "Output", StringComparison.OrdinalIgnoreCase) ?? "CABLE Output";
 
@@ -66,6 +84,7 @@ public partial class DevicesViewModel : ObservableObject
 
         SelectedMic = Inputs.FirstOrDefault(d => d.Id == s.MicDeviceId) ?? DeviceService.FindDefaultMicrophone(Inputs);
         SelectedVirtualOutput = Outputs.FirstOrDefault(d => d.Id == s.VirtualOutputDeviceId) ?? DeviceService.FindVirtualCableOutput(Outputs);
+        SelectedDiscordOutput = Outputs.FirstOrDefault(d => d.Id == s.DiscordOutputDeviceId);
         SelectedMonitor = Outputs.FirstOrDefault(d => d.Id == s.MonitorDeviceId) ?? DeviceService.FindDefaultMonitor(Outputs);
         StoreSelection();
         _suppressApply = false;
@@ -75,17 +94,24 @@ public partial class DevicesViewModel : ObservableObject
     public void Refresh()
     {
         var hadCable = HasVirtualCable;
+        var hadSecond = HasSecondCable;
         _suppressApply = true;
         var mic = SelectedMic?.Id;
         var virt = SelectedVirtualOutput?.Id;
+        var discord = SelectedDiscordOutput?.Id;
         var mon = SelectedMonitor?.Id;
         LoadDevices();
         SelectedMic = Inputs.FirstOrDefault(d => d.Id == mic) ?? DeviceService.FindDefaultMicrophone(Inputs);
         SelectedVirtualOutput = Outputs.FirstOrDefault(d => d.Id == virt) ?? DeviceService.FindVirtualCableOutput(Outputs);
+        SelectedDiscordOutput = Outputs.FirstOrDefault(d => d.Id == discord);
+        // A second cable just appeared: use it for Discord automatically.
+        if (SelectedDiscordOutput == null && !hadSecond && HasSecondCable)
+            SelectedDiscordOutput = DeviceService.FindSecondCableOutput(Outputs, SelectedVirtualOutput);
         SelectedMonitor = Outputs.FirstOrDefault(d => d.Id == mon) ?? DeviceService.FindDefaultMonitor(Outputs);
         _suppressApply = false;
         Apply();
         if (!hadCable && HasVirtualCable) _main.ShowToast("Micro virtuel détecté !");
+        else if (!hadSecond && HasSecondCable) _main.ShowToast("Deuxième micro virtuel détecté : sortie Discord configurée !");
     }
 
     [RelayCommand]
@@ -101,6 +127,37 @@ public partial class DevicesViewModel : ObservableObject
 
     [RelayCommand]
     private void ClearMonitor() => SelectedMonitor = null;
+
+    [RelayCommand]
+    private void ClearDiscordOutput() => SelectedDiscordOutput = null;
+
+    [RelayCommand]
+    private async Task InstallSecondCable()
+    {
+        if (IsInstallingSecond) return;
+        IsInstallingSecond = true;
+        try
+        {
+            await VbCableInstaller.DownloadAndRunVacLiteAsync(new Progress<string>(s => SecondInstallStatus = s));
+            SecondInstallStatus = "Installation terminée ? Redémarrez le PC si demandé, puis cliquez sur « Actualiser ».";
+            Refresh();
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            SecondInstallStatus = "Installation annulée (autorisation administrateur refusée).";
+        }
+        catch (Exception ex)
+        {
+            SecondInstallStatus = "Échec : " + ex.Message + " — utilisez le lien vers le site officiel.";
+        }
+        finally
+        {
+            IsInstallingSecond = false;
+        }
+    }
+
+    [RelayCommand]
+    private void OpenVacSite() => VbCableInstaller.OpenUrl(VbCableInstaller.VacHomePage);
 
     [RelayCommand]
     private async Task InstallVbCable()
@@ -147,6 +204,7 @@ public partial class DevicesViewModel : ObservableObject
             _main.ShowToast("Impossible de lister les périphériques audio : " + ex.Message);
         }
         HasVirtualCable = Outputs.Any(o => o.IsVirtualCable);
+        HasSecondCable = DeviceService.CountDistinctCables(Outputs) >= 2;
     }
 
     private void StoreSelection()
@@ -154,13 +212,16 @@ public partial class DevicesViewModel : ObservableObject
         var s = _main.Settings;
         s.MicDeviceId = SelectedMic?.Id;
         s.VirtualOutputDeviceId = SelectedVirtualOutput?.Id;
+        s.DiscordOutputDeviceId = SelectedDiscordOutput?.Id;
         s.MonitorDeviceId = SelectedMonitor?.Id;
         OnPropertyChanged(nameof(VirtualMicName));
+        OnPropertyChanged(nameof(DiscordSameCableWarning));
     }
 
     partial void OnSelectedMicChanged(AudioDevice? value) => AutoApply();
     partial void OnSelectedVirtualOutputChanged(AudioDevice? value) => AutoApply();
     partial void OnSelectedMonitorChanged(AudioDevice? value) => AutoApply();
+    partial void OnSelectedDiscordOutputChanged(AudioDevice? value) => AutoApply();
 
     private void AutoApply()
     {

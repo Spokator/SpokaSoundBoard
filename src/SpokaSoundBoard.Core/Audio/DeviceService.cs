@@ -15,6 +15,33 @@ public static class DeviceService
         VirtualMarkers.Any(m => name.Contains(m, StringComparison.OrdinalIgnoreCase))
         && !name.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Identifies the physical cable behind an endpoint: "CABLE Input" and "CABLE In 16ch" are the same
+    /// VB-CABLE, while "CABLE-A Input" or "Line 1 (Virtual Audio Cable)" are different cables.
+    /// </summary>
+    public static string CableFamily(string name)
+    {
+        var open = name.LastIndexOf('(');
+        var close = name.LastIndexOf(')');
+        var driver = open >= 0 && close > open ? name[(open + 1)..close].Trim() : name;
+        var head = (open > 0 ? name[..open] : name).Trim();
+        // Virtual Audio Cable numbers its cables in the endpoint name ("Line 1", "Line 2"…).
+        if (head.StartsWith("Line ", StringComparison.OrdinalIgnoreCase)) return driver + " / " + head;
+        return driver;
+    }
+
+    public static bool SameCable(AudioDevice? a, AudioDevice? b) =>
+        a != null && b != null && string.Equals(CableFamily(a.Name), CableFamily(b.Name), StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>A virtual cable different from the game one, to be used as Discord's microphone.</summary>
+    public static AudioDevice? FindSecondCableOutput(IEnumerable<AudioDevice> outputs, AudioDevice? gameOutput) =>
+        outputs.Where(o => o.IsVirtualCable && !SameCable(o, gameOutput))
+            .OrderByDescending(o => o.Name.Contains("Input", StringComparison.OrdinalIgnoreCase) || o.Name.StartsWith("Line", StringComparison.OrdinalIgnoreCase))
+            .FirstOrDefault();
+
+    public static int CountDistinctCables(IEnumerable<AudioDevice> outputs) =>
+        outputs.Where(o => o.IsVirtualCable).Select(o => CableFamily(o.Name)).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+
     public static List<AudioDevice> GetInputs() => List(DataFlow.Capture);
 
     public static List<AudioDevice> GetOutputs() => List(DataFlow.Render);

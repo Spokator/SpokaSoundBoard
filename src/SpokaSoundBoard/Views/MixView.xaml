@@ -9,6 +9,112 @@
             <TextBlock Style="{StaticResource PageSubtitle}" Margin="0,4,0,20"
                        Text="Réglez l'équilibre entre votre voix, la musique et les sons. Le ducking baisse automatiquement la musique quand vous parlez pour que votre voix passe par-dessus." />
 
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE716;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                        <TextBlock Text="Qui entend quoi ?" Style="{StaticResource SectionTitle}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,10"
+                               Text="Choisissez ce que les joueurs en jeu et vos amis Discord entendent. Exemple : la musique et l'effet pilote pour les passagers de l'hélico, mais seulement votre voix normale sur Discord." />
+                    <Grid Margin="0,0,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="150" />
+                            <ColumnDefinition Width="150" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE7FC;" FontSize="14" Margin="0,0,6,0" />
+                                <TextBlock Text="Jeu" FontWeight="SemiBold" />
+                            </StackPanel>
+                            <ProgressBar Style="{StaticResource Meter}" Height="4" Width="90" Margin="0,6,0,0" Value="{Binding OutputLevel, Mode=OneWay}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE8BD;" FontSize="14" Margin="0,0,6,0" />
+                                <TextBlock Text="Discord" FontWeight="SemiBold" />
+                            </StackPanel>
+                            <ProgressBar Style="{StaticResource Meter}" Height="4" Width="90" Margin="0,6,0,0" Value="{Binding DiscordLevel, Mode=OneWay}" />
+                        </StackPanel>
+                    </Grid>
+                    <Border BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,1,0,0" Padding="0,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="150" />
+                                <ColumnDefinition Width="150" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Ma voix" Style="{StaticResource Label}" />
+                                <TextBlock Text="Votre micro" Style="{StaticResource Caption}" />
+                            </StackPanel>
+                            <CheckBox Grid.Column="1" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Center" IsChecked="{Binding Mix.GameVoice}" />
+                            <CheckBox Grid.Column="2" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Center" IsChecked="{Binding Mix.DiscordVoice}"
+                                      IsEnabled="{Binding Devices.HasDiscordOutput}" />
+                        </Grid>
+                    </Border>
+                    <Border BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,1,0,0" Padding="0,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="150" />
+                                <ColumnDefinition Width="150" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Effets sur ma voix" Style="{StaticResource Label}" />
+                                <TextBlock Text="Désactivé : voix naturelle (le mode radio ne s'applique pas)" Style="{StaticResource Caption}" />
+                            </StackPanel>
+                            <CheckBox Grid.Column="1" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Center" IsChecked="{Binding Mix.GameVoiceEffects}" />
+                            <CheckBox Grid.Column="2" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Center" IsChecked="{Binding Mix.DiscordVoiceEffects}"
+                                      IsEnabled="{Binding Devices.HasDiscordOutput}" />
+                        </Grid>
+                    </Border>
+                    <Border BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,1,0,0" Padding="0,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="150" />
+                                <ColumnDefinition Width="150" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Musique" Style="{StaticResource Label}" />
+                                <TextBlock Text="Le lecteur de musique" Style="{StaticResource Caption}" />
+                            </StackPanel>
+                            <CheckBox Grid.Column="1" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Center" IsChecked="{Binding Mix.GameMusic}" />
+                            <CheckBox Grid.Column="2" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Center" IsChecked="{Binding Mix.DiscordMusic}"
+                                      IsEnabled="{Binding Devices.HasDiscordOutput}" />
+                        </Grid>
+                    </Border>
+                    <Border BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,1,0,0" Padding="0,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="150" />
+                                <ColumnDefinition Width="150" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Sons de la soundboard" Style="{StaticResource Label}" />
+                                <TextBlock Text="Les sons des tuiles" Style="{StaticResource Caption}" />
+                            </StackPanel>
+                            <CheckBox Grid.Column="1" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Center" IsChecked="{Binding Mix.GameSounds}" />
+                            <CheckBox Grid.Column="2" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Center" IsChecked="{Binding Mix.DiscordSounds}"
+                                      IsEnabled="{Binding Devices.HasDiscordOutput}" />
+                        </Grid>
+                    </Border>
+
+                    <Border Background="{StaticResource WarningSoftBrush}" CornerRadius="6" Padding="12,8" Margin="0,6,0,0"
+                            Visibility="{Binding Devices.HasDiscordOutput, Converter={StaticResource InverseBoolToVis}}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Content="Configurer" Padding="10,4" Margin="10,0,0,0"
+                                    Command="{Binding NavigateCommand}" CommandParameter="settings" />
+                            <TextBlock Style="{StaticResource Caption}" Foreground="{StaticResource WarningBrush}" VerticalAlignment="Center"
+                                       Text="La colonne Discord nécessite un 2e micro virtuel (gratuit). Sans lui, choisissez votre vrai micro dans Discord : vos amis n'entendront que votre voix naturelle." />
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using SpokaSoundBoard.Core.Audio;
 using SpokaSoundBoard.Core.Models;
+using SpokaSoundBoard.Core.Online;
 
 namespace SpokaSoundBoard.ViewModels;
 
@@ -18,6 +19,8 @@ public partial class MusicViewModel : ObservableObject
         _main = main;
         _repeat = main.Settings.Repeat;
         _shuffle = main.Settings.Shuffle;
+        Link = new LinkImporter(main, "Musique", true,
+            "Collez un lien YouTube, SoundCloud… (vidéo ou playlist, Entrée pour importer)", AddFromLink);
         Player.TrackEnded += () => System.Windows.Application.Current?.Dispatcher.BeginInvoke(OnTrackEnded);
         Playlist.CollectionChanged += (_, _) => OnPropertyChanged(nameof(IsEmpty));
     }
@@ -27,6 +30,17 @@ public partial class MusicViewModel : ObservableObject
     public ObservableCollection<TrackItem> Playlist => _main.Settings.Playlist;
 
     public bool IsEmpty => Playlist.Count == 0;
+
+    public LinkImporter Link { get; }
+
+    private void AddFromLink(DownloadedMedia media)
+    {
+        if (Playlist.Any(t => string.Equals(t.FilePath, media.FilePath, StringComparison.OrdinalIgnoreCase))) return;
+        var track = new TrackItem { FilePath = media.FilePath, DisplayTitle = media.Title, SourceUrl = media.SourceUrl };
+        Playlist.Add(track);
+        // Start right away when nothing is playing, so a pasted link "just plays".
+        if (!_main.Engine.Music.HasTrack) PlayTrack(track);
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CurrentTitle), nameof(HasTrack))]

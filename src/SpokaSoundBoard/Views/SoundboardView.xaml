@@ -18,6 +18,13 @@
                             <TextBlock Text="Tout arrêter" />
                         </StackPanel>
                     </Button>
+                    <Button Style="{StaticResource FlatButton}" Command="{Binding Link.ToggleCommand}" Margin="0,0,10,0"
+                            ToolTip="Ajouter depuis YouTube, MyInstants, TikTok… (ou glissez un lien depuis votre navigateur)">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE71B;" FontSize="13" Margin="0,0,8,0" />
+                            <TextBlock Text="Ajouter un lien" />
+                        </StackPanel>
+                    </Button>
                     <Button Style="{StaticResource AccentButton}" Command="{Binding AddSoundsCommand}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" FontSize="13" Margin="0,0,8,0" />
@@ -32,6 +39,8 @@
                 </StackPanel>
             </DockPanel>
 
+            <local:LinkBar DockPanel.Dock="Top" DataContext="{Binding Link}" />
+
             <Grid>
                 <!-- Empty state -->
                 <Border BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="2" CornerRadius="14" Margin="0,0,0,24"
@@ -40,7 +49,7 @@
                         <TextBlock Style="{StaticResource Icon}" Text="&#xE8A9;" FontSize="54" Foreground="{StaticResource AccentBrush}" />
                         <TextBlock Text="Votre soundboard est vide" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,16,0,6" />
                         <TextBlock Style="{StaticResource Caption}" TextAlignment="Center" FontSize="13"
-                                   Text="Glissez-déposez vos fichiers audio ici (MP3, WAV, OGG, FLAC, M4A…) ou cliquez sur « Ajouter des sons »." />
+                                   Text="Glissez-déposez vos fichiers audio ici (MP3, WAV, OGG, FLAC, M4A…), un lien depuis votre navigateur, ou utilisez les boutons en haut à droite." />
                         <Button Style="{StaticResource AccentButton}" Content="Ajouter des sons" HorizontalAlignment="Center" Margin="0,18,0,0"
                                 Command="{Binding AddSoundsCommand}" />
                     </StackPanel>
@@ -64,6 +73,9 @@
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                             <MenuItem Header="Modifier…" Command="{Binding EditPadCommand}"
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            <MenuItem Header="Ouvrir la source" Command="{Binding Link.OpenSourceCommand}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext.SourceUrl, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      Visibility="{Binding PlacementTarget.DataContext.HasSource, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVis}}" />
                                             <Separator />
                                             <MenuItem Header="Supprimer" Command="{Binding DeletePadCommand}"
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
@@ -94,6 +106,9 @@
                                                         <TextBlock DockPanel.Dock="Right" Style="{StaticResource Icon}" Text="&#xE8EE;" FontSize="11"
                                                                    Foreground="{StaticResource SubtleTextBrush}" ToolTip="En boucle"
                                                                    Visibility="{Binding Loop, Converter={StaticResource BoolToVis}}" />
+                                                        <TextBlock DockPanel.Dock="Right" Style="{StaticResource Icon}" Text="&#xE71B;" FontSize="11" Margin="0,0,6,0"
+                                                                   Foreground="{StaticResource SubtleTextBrush}" ToolTip="{Binding SourceUrl}"
+                                                                   Visibility="{Binding HasSource, Converter={StaticResource BoolToVis}}" />
                                                         <Border CornerRadius="4" Background="#33000000" Padding="6,2" HorizontalAlignment="Left"
                                                                 Visibility="{Binding Hotkey.IsSet, Converter={StaticResource BoolToVis}}">
                                                             <TextBlock Text="{Binding Hotkey.Display}" FontSize="11" Foreground="{StaticResource SubtleTextBrush}" />
@@ -147,7 +162,31 @@
                                    VerticalAlignment="Center" ToolTip="{Binding FilePath}" />
                     </DockPanel>
 
+                    <DockPanel Margin="0,-8,0,14" Visibility="{Binding HasSource, Converter={StaticResource BoolToVis}}">
+                        <Button DockPanel.Dock="Right" Content="Ouvrir" Style="{StaticResource FlatButton}" Padding="10,5" Margin="8,0,0,0"
+                                Command="{Binding DataContext.Link.OpenSourceCommand, RelativeSource={RelativeSource AncestorType=local:SoundboardView}}"
+                                CommandParameter="{Binding SourceUrl}" />
+                        <TextBlock Text="{Binding SourceUrl}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
+                                   VerticalAlignment="Center" Foreground="{StaticResource Accent2Brush}" ToolTip="{Binding SourceUrl}" />
+                    </DockPanel>
+
                     <local:SliderRow Label="Volume" Minimum="0" Maximum="2" Step="0.05" Format="%" Value="{Binding Volume}" />
+
+                    <TextBlock Text="Extrait à jouer (en secondes)" Style="{StaticResource Caption}" Margin="0,10,0,4" />
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Début" Style="{StaticResource Label}" Margin="0,0,8,0" />
+                        <TextBox Grid.Column="1" Text="{Binding StartSeconds, StringFormat={}{0:0.#}}" VerticalContentAlignment="Center" />
+                        <TextBlock Grid.Column="3" Text="Fin" Style="{StaticResource Label}" Margin="0,0,8,0" />
+                        <TextBox Grid.Column="4" Text="{Binding EndSeconds, StringFormat={}{0:0.#}}" VerticalContentAlignment="Center" />
+                    </Grid>
+                    <TextBlock Text="Fin = 0 : jusqu'au bout. Pratique pour ne garder qu'un passage d'une vidéo." Style="{StaticResource Caption}" Margin="0,0,0,4" />
 
                     <TextBlock Text="Couleur" Style="{StaticResource Caption}" Margin="0,10,0,6" />
                     <ItemsControl ItemsSource="{Binding DataContext.Colors, RelativeSource={RelativeSource AncestorType=local:SoundboardView}}" Margin="0,0,0,14">

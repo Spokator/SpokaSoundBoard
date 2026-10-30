@@ -50,6 +50,18 @@ public partial class SoundPad : ObservableObject
     [ObservableProperty] private bool _loop;
     [ObservableProperty] private HotkeyBinding _hotkey = new();
 
+    /// <summary>Web page the sound was imported from (YouTube, MyInstants…), if any.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSource))]
+    private string? _sourceUrl;
+
+    /// <summary>Playback window inside the file, in seconds (EndSeconds 0 = until the end).</summary>
+    [ObservableProperty] private double _startSeconds;
+    [ObservableProperty] private double _endSeconds;
+
+    [JsonIgnore]
+    public bool HasSource => !string.IsNullOrEmpty(SourceUrl);
+
     [JsonIgnore]
     [ObservableProperty] private bool _isPlaying;
 }
@@ -58,14 +70,24 @@ public partial class TrackItem : ObservableObject
 {
     [ObservableProperty] private string _filePath = "";
 
+    /// <summary>Title given by the web source; local files use their file name.</summary>
+    public string? DisplayTitle { get; set; }
+
+    public string? SourceUrl { get; set; }
+
     [JsonIgnore]
     [ObservableProperty] private bool _isCurrent;
 
     [JsonIgnore]
-    public string Title => Path.GetFileNameWithoutExtension(FilePath);
+    public bool HasSource => !string.IsNullOrEmpty(SourceUrl);
 
     [JsonIgnore]
-    public string Folder => Path.GetFileName(Path.GetDirectoryName(FilePath)) ?? "";
+    public string Title => string.IsNullOrWhiteSpace(DisplayTitle) ? Path.GetFileNameWithoutExtension(FilePath) : DisplayTitle;
+
+    [JsonIgnore]
+    public string Folder => HasSource && Uri.TryCreate(SourceUrl, UriKind.Absolute, out var uri)
+        ? uri.Host.Replace("www.", "", StringComparison.OrdinalIgnoreCase)
+        : Path.GetFileName(Path.GetDirectoryName(FilePath)) ?? "";
 }
 
 public enum RepeatMode
@@ -84,12 +106,16 @@ public class HotkeySettings
     public HotkeyBinding ToggleMic { get; set; } = new();
     public HotkeyBinding ToggleEffects { get; set; } = new();
     public HotkeyBinding ToggleMediaToMic { get; set; } = new();
+    public HotkeyBinding ToggleDiscordShare { get; set; } = new();
 }
 
 public class AppSettings
 {
     public string? MicDeviceId { get; set; }
     public string? VirtualOutputDeviceId { get; set; }
+
+    /// <summary>Second virtual cable used as Discord's microphone (optional).</summary>
+    public string? DiscordOutputDeviceId { get; set; }
     public string? MonitorDeviceId { get; set; }
 
     public VoiceEffectSettings Voice { get; set; } = new();

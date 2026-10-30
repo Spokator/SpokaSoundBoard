@@ -106,6 +106,17 @@ public partial class MixSettings : ObservableObject
 
     /// <summary>Radio mode: the voice only goes through while the push-to-talk key is held.</summary>
     [ObservableProperty] private bool _pushToTalkEnabled;
+
+    // Routing matrix "who hears what". The game bus is the main virtual mic, the Discord bus a second one.
+    [ObservableProperty] private bool _gameVoice = true;
+    [ObservableProperty] private bool _gameVoiceEffects = true;
+    [ObservableProperty] private bool _gameMusic = true;
+    [ObservableProperty] private bool _gameSounds = true;
+
+    [ObservableProperty] private bool _discordVoice = true;
+    [ObservableProperty] private bool _discordVoiceEffects;
+    [ObservableProperty] private bool _discordMusic;
+    [ObservableProperty] private bool _discordSounds;
 }
 
 public class EffectPreset

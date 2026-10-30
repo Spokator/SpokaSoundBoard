@@ -19,8 +19,7 @@ public sealed class AudioEngine : IDisposable
 {
     private readonly object _lock = new();
     private MicInput? _mic;
-    private WasapiOut? _mainOut;
-    private WasapiOut? _monitorOut;
+    private readonly WasapiOut?[] _outputs = new WasapiOut?[3];
     private bool _stopping;
 
     public AudioEngine(VoiceEffectSettings voice, MixSettings mix)
@@ -38,12 +37,19 @@ public sealed class AudioEngine : IDisposable
     public string StatusMessage { get; private set; } = "Arrêté";
     public string? MicName { get; private set; }
     public string? MainOutputName { get; private set; }
+    public string? DiscordOutputName { get; private set; }
     public string? MonitorName { get; private set; }
 
     /// <summary>Raised (from any thread) when the state changes or a device fails.</summary>
     public event Action? StateChanged;
 
-    public void Start(string? micId, string? virtualOutputId, string? monitorId)
+    public void Start(string? micId, string? virtualOutputId, string? monitorId) =>
+        Start(micId, virtualOutputId, null, monitorId);
+
+    /// <param name="gameOutputId">Main virtual cable (game microphone).</param>
+    /// <param name="discordOutputId">Optional second virtual cable (Discord microphone).</param>
+    /// <param name="monitorId">Headphones.</param>
+    public void Start(string? micId, string? gameOutputId, string? discordOutputId, string? monitorId)
     {
         lock (_lock)
         {
@@ -53,7 +59,8 @@ public sealed class AudioEngine : IDisposable
 
             try
             {
-                if (monitorId != null && monitorId == virtualOutputId) monitorId = null;
+                if (discordOutputId == gameOutputId) discordOutputId = null;
+                if (monitorId == gameOutputId || monitorId == discordOutputId) monitorId = null;
 
                 var micDevice = DeviceService.Open(micId);
                 if (micDevice != null)
@@ -79,35 +86,33 @@ public sealed class AudioEngine : IDisposable
                     warnings.Add("Aucun micro sélectionné");
                 }
 
-                var mainDevice = DeviceService.Open(virtualOutputId);
-                var monitorDevice = DeviceService.Open(monitorId);
+                // Bus order: game, Discord, headphones. The first available device is the master clock;
+                // the others are fed through jitter buffers.
+                var devices = new[] { DeviceService.Open(gameOutputId), DeviceService.Open(discordOutputId), DeviceService.Open(monitorId) };
+                var master = Array.FindIndex(devices, d => d != null);
+                if (master < 0) throw new InvalidOperationException("Aucune sortie audio disponible.");
+                if (devices[0] == null) warnings.Add("Pas de micro virtuel pour le jeu : seul vous entendez le son");
 
-                if (mainDevice != null)
-                {
-                    FloatRingBuffer? monitorRing = monitorDevice != null ? new FloatRingBuffer(MixerCore.SampleRate * 2) : null;
-                    _mainOut = CreateOutput(mainDevice, new MainBusProvider(Core, monitorRing));
-                    MainOutputName = mainDevice.FriendlyName;
+                var rings = new FloatRingBuffer?[3];
+                for (var i = 0; i < 3; i++)
+                    if (i != master && devices[i] != null)
+                        rings[i] = new FloatRingBuffer(MixerCore.SampleRate * 2);
 
-                    if (monitorDevice != null)
-                    {
-                        _monitorOut = CreateOutput(monitorDevice,
-                            new JitterBufferProvider(monitorRing!, MixerCore.SampleRate, 2, 30f, 120f));
-                        MonitorName = monitorDevice.FriendlyName;
-                    }
-                }
-                else if (monitorDevice != null)
+                for (var i = 0; i < 3; i++)
                 {
-                    _monitorOut = CreateOutput(monitorDevice, new MonitorBusProvider(Core));
-                    MonitorName = monitorDevice.FriendlyName;
-                    warnings.Add("Pas de micro virtuel : seul vous entendez le son");
-                }
-                else
-                {
-                    throw new InvalidOperationException("Aucune sortie audio disponible.");
+                    var device = devices[i];
+                    if (device == null) continue;
+                    ISampleProvider provider = i == master
+                        ? new MasterBusProvider(Core, master, rings)
+                        : new JitterBufferProvider(rings[i]!, MixerCore.SampleRate, 2, 30f, 120f);
+                    _outputs[i] = CreateOutput(device, provider);
                 }
 
-                _mainOut?.Play();
-                _monitorOut?.Play();
+                MainOutputName = devices[0]?.FriendlyName;
+                DiscordOutputName = devices[1]?.FriendlyName;
+                MonitorName = devices[2]?.FriendlyName;
+
+                foreach (var output in _outputs) output?.Play();
 
                 State = EngineState.Running;
                 StatusMessage = warnings.Count == 0 ? "En marche" : string.Join(" · ", warnings);
@@ -157,13 +162,14 @@ public sealed class AudioEngine : IDisposable
     {
         _stopping = true;
         Core.SetMicSource(null);
-        DisposeQuietly(_mainOut);
-        DisposeQuietly(_monitorOut);
+        for (var i = 0; i < _outputs.Length; i++)
+        {
+            DisposeQuietly(_outputs[i]);
+            _outputs[i] = null;
+        }
         DisposeQuietly(_mic);
-        _mainOut = null;
-        _monitorOut = null;
         _mic = null;
-        MicName = MainOutputName = MonitorName = null;
+        MicName = MainOutputName = DiscordOutputName = MonitorName = null;
     }
 
     private static void DisposeQuietly(IDisposable? d)
@@ -186,10 +192,13 @@ public sealed class AudioEngine : IDisposable
         Pads.Dispose();
     }
 
-    /// <summary>Pulled by the virtual cable; also produces the monitor bus into a ring buffer.</summary>
-    private sealed class MainBusProvider(MixerCore core, FloatRingBuffer? monitorRing) : ISampleProvider
+    /// <summary>
+    /// Pulled by the master device. Renders all buses in one pass, writes its own bus to the device
+    /// and the other buses into their ring buffers.
+    /// </summary>
+    private sealed class MasterBusProvider(MixerCore core, int master, FloatRingBuffer?[] rings) : ISampleProvider
     {
-        private float[] _monitor = new float[4096];
+        private readonly float[][] _temp = [new float[4096], new float[4096], new float[4096]];
 
         public WaveFormat WaveFormat { get; } = WaveFormat.CreateIeeeFloatWaveFormat(MixerCore.SampleRate, 2);
 
@@ -198,39 +207,23 @@ public sealed class AudioEngine : IDisposable
             var frames = count / 2;
             try
             {
-                if (monitorRing == null)
-                {
-                    core.Render(buffer.AsSpan(offset, frames * 2), Span<float>.Empty, frames);
-                    return count;
-                }
+                for (var i = 0; i < 3; i++)
+                    if (_temp[i].Length < frames * 2)
+                        _temp[i] = new float[frames * 2];
 
-                if (_monitor.Length < frames * 2) _monitor = new float[frames * 2];
-                core.Render(buffer.AsSpan(offset, frames * 2), _monitor.AsSpan(0, frames * 2), frames);
-                monitorRing.Write(_monitor.AsSpan(0, frames * 2));
+                Span<float> Bus(int i) => i == master
+                    ? buffer.AsSpan(offset, frames * 2)
+                    : rings[i] != null ? _temp[i].AsSpan(0, frames * 2) : Span<float>.Empty;
+
+                core.Render(Bus(0), Bus(1), Bus(2), frames);
+
+                for (var i = 0; i < 3; i++)
+                    if (i != master && rings[i] != null)
+                        rings[i]!.Write(_temp[i].AsSpan(0, frames * 2));
             }
             catch
             {
                 // Never let a processing error stop the audio stream: output silence for this block.
-                Array.Clear(buffer, offset, count);
-            }
-            return count;
-        }
-    }
-
-    /// <summary>Used when no virtual cable exists: the headphones drive the mixer.</summary>
-    private sealed class MonitorBusProvider(MixerCore core) : ISampleProvider
-    {
-        public WaveFormat WaveFormat { get; } = WaveFormat.CreateIeeeFloatWaveFormat(MixerCore.SampleRate, 2);
-
-        public int Read(float[] buffer, int offset, int count)
-        {
-            var frames = count / 2;
-            try
-            {
-                core.Render(Span<float>.Empty, buffer.AsSpan(offset, frames * 2), frames);
-            }
-            catch
-            {
                 Array.Clear(buffer, offset, count);
             }
             return count;

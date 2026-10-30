@@ -5,6 +5,7 @@ using SpokaSoundBoard.Core;
 using SpokaSoundBoard.Core.Audio;
 using SpokaSoundBoard.Core.Dsp;
 using SpokaSoundBoard.Core.Models;
+using SpokaSoundBoard.Core.Online;
 using SpokaSoundBoard.Services;
 
 namespace SpokaSoundBoard.ViewModels;
@@ -24,6 +25,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Settings = _store.Load();
         Engine = new AudioEngine(Settings.Voice, Settings.Mix);
         Engine.StateChanged += () => _dispatcher.BeginInvoke(UpdateEngineStatus);
+        Downloader = new MediaDownloader(_store.Directory);
+        Mix.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(MixSettings.DiscordMusic) or nameof(MixSettings.DiscordSounds))
+                OnPropertyChanged(nameof(ShareMediaWithDiscord));
+        };
         Hotkeys = new HotkeyService(_dispatcher);
 
         Soundboard = new SoundboardViewModel(this);
@@ -57,6 +64,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public HotkeySettings HotkeySettings => Settings.Hotkeys;
     public AudioEngine Engine { get; }
     public HotkeyService Hotkeys { get; }
+    public MediaDownloader Downloader { get; }
+
+    /// <summary>Quick switch: do Discord friends also hear the music and the sounds?</summary>
+    public bool ShareMediaWithDiscord
+    {
+        get => Mix.DiscordMusic || Mix.DiscordSounds;
+        set
+        {
+            Mix.DiscordMusic = value;
+            Mix.DiscordSounds = value;
+            OnPropertyChanged();
+        }
+    }
 
     public SoundboardViewModel Soundboard { get; }
     public MusicViewModel Music { get; }
@@ -70,6 +90,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private double _voiceLevel;
     [ObservableProperty] private double _mediaLevel;
     [ObservableProperty] private double _outputLevel;
+    [ObservableProperty] private double _discordLevel;
     [ObservableProperty] private double _duckReductionDb;
     [ObservableProperty] private bool _voiceActive;
     [ObservableProperty] private bool _transmitting;
@@ -109,7 +130,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     public void RestartEngine() =>
-        Engine.Start(Settings.MicDeviceId, Settings.VirtualOutputDeviceId, Settings.MonitorDeviceId);
+        Engine.Start(Settings.MicDeviceId, Settings.VirtualOutputDeviceId, Settings.DiscordOutputDeviceId, Settings.MonitorDeviceId);
 
     [RelayCommand]
     private void ToggleMic()
@@ -123,6 +144,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         Mix.MediaToMicEnabled = !Mix.MediaToMicEnabled;
         ShowToast(Mix.MediaToMicEnabled ? "Musique envoyée dans le micro" : "Musique uniquement pour vous");
+    }
+
+    [RelayCommand]
+    private void ToggleDiscordShare()
+    {
+        ShareMediaWithDiscord = !ShareMediaWithDiscord;
+        ShowToast(ShareMediaWithDiscord ? "Discord entend la musique et les sons" : "Musique et sons uniquement en jeu (pas sur Discord)");
     }
 
     [RelayCommand]
@@ -174,6 +202,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         yield return (h.ToggleMic, ToggleMic);
         yield return (h.ToggleEffects, ToggleEffects);
         yield return (h.ToggleMediaToMic, ToggleMediaToMic);
+        yield return (h.ToggleDiscordShare, ToggleDiscordShare);
         foreach (var pad in Settings.Pads.ToList())
             yield return (pad.Hotkey, () => Soundboard.PlayPadCommand.Execute(pad));
     }
@@ -187,7 +216,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         MicLevel = Normalize((float)MicLevelDb, true);
         VoiceLevel = Smooth(VoiceLevel, Normalize(m.VoicePeak));
         MediaLevel = Smooth(MediaLevel, Normalize(m.MediaPeak));
-        OutputLevel = Smooth(OutputLevel, Normalize(Math.Max(m.OutputPeak, m.MonitorPeak)));
+        OutputLevel = Smooth(OutputLevel, Normalize(m.OutputPeak));
+        DiscordLevel = Smooth(DiscordLevel, Normalize(m.DiscordPeak));
         var duckDb = Math.Round(DspUtil.LinearToDb(m.DuckGain));
         DuckReductionDb = duckDb > -0.5 ? 0 : duckDb;
         VoiceActive = m.VoiceActive;

@@ -14,10 +14,20 @@ public sealed class SoundPadPlayer : ISampleProvider, IDisposable
     public WaveFormat WaveFormat { get; }
 
     /// <summary>Starts a sound. Opening the file happens on a worker thread.</summary>
-    public Task PlayAsync(Guid id, string path, float volume, bool loop) => Task.Run(() =>
+    /// <param name="startSeconds">Start position inside the file.</param>
+    /// <param name="endSeconds">End position inside the file (0 or less = until the end).</param>
+    public Task PlayAsync(Guid id, string path, float volume, bool loop, double startSeconds = 0, double endSeconds = 0) => Task.Run(() =>
     {
         var (reader, provider) = AudioFileLoader.Open(path, WaveFormat.SampleRate);
-        lock (_lock) _voices.Add(new Voice(id, path, reader, provider, volume, loop));
+        var start = TimeSpan.FromSeconds(Math.Max(0, startSeconds));
+        if (start > TimeSpan.Zero && start < reader.TotalTime) reader.CurrentTime = start;
+        else start = TimeSpan.Zero;
+
+        long budget = -1;
+        if (endSeconds > startSeconds && endSeconds > 0)
+            budget = (long)((endSeconds - start.TotalSeconds) * WaveFormat.SampleRate) * 2;
+
+        lock (_lock) _voices.Add(new Voice(id, path, reader, provider, volume, loop, start, budget));
     });
 
     public void Stop(Guid id)
@@ -70,15 +80,19 @@ public sealed class SoundPadPlayer : ISampleProvider, IDisposable
                 {
                     while (total < count)
                     {
-                        var n = v.Provider.Read(_scratch, total, count - total);
+                        var want = count - total;
+                        if (v.Remaining >= 0) want = (int)Math.Min(want, v.Remaining);
+                        var n = want > 0 ? v.Provider.Read(_scratch, total, want) : 0;
                         if (n <= 0)
                         {
                             if (!v.Loop || total == 0 && v.LoopedEmpty) break;
                             v.LoopedEmpty = total == 0;
-                            v.Reader.Position = 0;
+                            v.Reader.CurrentTime = v.Start;
+                            v.Remaining = v.Budget;
                             continue;
                         }
                         v.LoopedEmpty = false;
+                        if (v.Remaining >= 0) v.Remaining -= n;
                         total += n;
                     }
                 }
@@ -102,8 +116,15 @@ public sealed class SoundPadPlayer : ISampleProvider, IDisposable
 
     public void Dispose() => StopAll();
 
-    private sealed class Voice(Guid id, string path, WaveStream reader, ISampleProvider provider, float volume, bool loop)
+    private sealed class Voice(Guid id, string path, WaveStream reader, ISampleProvider provider, float volume, bool loop, TimeSpan start, long budget)
     {
+        public TimeSpan Start { get; } = start;
+
+        /// <summary>Samples to play per pass (-1 = until the end of the file).</summary>
+        public long Budget { get; } = budget;
+
+        public long Remaining { get; set; } = budget;
+
         public Guid Id { get; } = id;
         public string Path { get; } = path;
         public WaveStream Reader { get; } = reader;

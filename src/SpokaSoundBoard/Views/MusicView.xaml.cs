@@ -13,13 +13,16 @@ public partial class MusicView : UserControl
 
     private void OnDragOver(object sender, DragEventArgs e)
     {
-        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) || LinkBar.GetDroppedUrl(e.Data) != null
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
         e.Handled = true;
     }
 
     private void OnDrop(object sender, DragEventArgs e)
     {
         if (e.Data.GetData(DataFormats.FileDrop) is string[] files) Vm?.AddPaths(files);
+        else if (Vm != null && LinkBar.GetDroppedUrl(e.Data) is { } url) _ = Vm.Link.ImportAsync(url);
     }
 
     private void OnTrackDoubleClick(object sender, MouseButtonEventArgs e)

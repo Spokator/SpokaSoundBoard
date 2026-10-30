@@ -30,6 +30,7 @@ public sealed class VoiceProcessor
     private bool _vadActive;
 
     private float _gateGain;
+    private float _dryGateGain;
     private readonly float _gateAttack, _gateRelease;
 
     private bool _wasTransmitting;
@@ -70,13 +71,21 @@ public sealed class VoiceProcessor
     /// <summary>True while the voice is actually sent (detected and, in radio mode, key held).</summary>
     public bool Transmitting { get; private set; }
 
+    public void Process(ReadOnlySpan<float> input, Span<float> output, bool micEnabled, bool pushToTalk, bool pushToTalkHeld) =>
+        Process(input, output, Span<float>.Empty, micEnabled, pushToTalk, pushToTalkHeld);
+
     /// <param name="input">Mono microphone samples.</param>
     /// <param name="output">Processed mono voice.</param>
+    /// <param name="dryOutput">
+    /// Optional natural voice (gain + noise gate only). It ignores the radio key, so friends on Discord can
+    /// hear you normally while the game radio stays push-to-talk.
+    /// </param>
     /// <param name="micEnabled">When false the voice is muted (no ducking, no squelch).</param>
     /// <param name="pushToTalk">Radio mode enabled.</param>
     /// <param name="pushToTalkHeld">Radio key currently held.</param>
-    public void Process(ReadOnlySpan<float> input, Span<float> output, bool micEnabled, bool pushToTalk, bool pushToTalkHeld)
+    public void Process(ReadOnlySpan<float> input, Span<float> output, Span<float> dryOutput, bool micEnabled, bool pushToTalk, bool pushToTalkHeld)
     {
+        var writeDry = !dryOutput.IsEmpty;
         var s = _settings;
         UpdateParameters(s);
 
@@ -134,6 +143,14 @@ public sealed class VoiceProcessor
                 : 0f;
             var gc = gateTarget > _gateGain ? _gateAttack : _gateRelease;
             _gateGain = gc * _gateGain + (1 - gc) * gateTarget;
+            if (writeDry)
+            {
+                var dryTarget = micEnabled && (!s.GateEnabled || _vadActive) ? 1f : 0f;
+                var dc = dryTarget > _dryGateGain ? _gateAttack : _gateRelease;
+                _dryGateGain = dc * _dryGateGain + (1 - dc) * dryTarget;
+                dryOutput[i] = x * _dryGateGain * volume;
+            }
+
             x *= _gateGain;
 
             if (pitch) x = _pitch.Process(x);
