@@ -280,6 +280,10 @@
             </StackPanel>
         </Border>
 
+        <!-- ============ Setup assistant ============ -->
+        <views:SetupWizardView Grid.RowSpan="2" Grid.ColumnSpan="2" DataContext="{Binding Setup}"
+                               Visibility="{Binding IsOpen, Converter={StaticResource BoolToVis}}" />
+
         <!-- ============ Hotkey recording overlay ============ -->
         <Grid Grid.RowSpan="2" Grid.ColumnSpan="2" Background="#CC07080C"
               Visibility="{Binding IsRecordingHotkey, Converter={StaticResource BoolToVis}}">

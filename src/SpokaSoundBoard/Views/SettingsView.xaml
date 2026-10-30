@@ -251,8 +251,29 @@
 
             <Border Style="{StaticResource Card}">
                 <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE770;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                        <TextBlock Text="Application" Style="{StaticResource SectionTitle}" />
+                    </StackPanel>
+                    <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Autostart}" Margin="0,0,0,14">
+                        <StackPanel>
+                            <TextBlock Text="Lancer au démarrage de Windows" Style="{StaticResource Label}" />
+                            <TextBlock Text="S'ouvre réduit dans la barre des tâches" Style="{StaticResource Caption}" />
+                        </StackPanel>
+                    </CheckBox>
+                    <Button Style="{StaticResource FlatButton}" HorizontalAlignment="Left" Command="{Binding OpenSetupCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE82F;" FontSize="13" Margin="0,0,8,0" />
+                            <TextBlock Text="Relancer l'assistant de configuration" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
                     <TextBlock Text="À propos" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
-                    <TextBlock Style="{StaticResource Caption}" FontSize="13" Text="SpokaSoundBoard 1.1 — soundboard, lecteur de musique, liens YouTube et effets de voix en temps réel." />
+                    <TextBlock Style="{StaticResource Caption}" FontSize="13" Text="SpokaSoundBoard 1.2 — soundboard, lecteur de musique, liens YouTube et effets de voix en temps réel." />
                     <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0"
                                Text="Vos réglages sont enregistrés automatiquement dans %AppData%\SpokaSoundBoard." />
                 </StackPanel>

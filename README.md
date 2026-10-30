@@ -28,9 +28,17 @@ Windows ne permet pas à une application de créer un micro sans pilote : SpokaS
 
 ## Installation
 
-1. Lancez `dist\SpokaSoundBoard.exe` (aucune installation de .NET nécessaire).
-2. Page **Configuration** → **Installer VB-CABLE automatiquement** → cliquez sur « Install Driver » → redémarrez le PC.
-3. Relancez SpokaSoundBoard : le micro virtuel est détecté automatiquement.
+1. Lancez **`SpokaSoundBoard-Setup-<version>.exe`** et cliquez sur Suivant → Installer. Aucun droit administrateur ni .NET n'est nécessaire. Windows peut afficher « Windows a protégé votre ordinateur » (logiciel non signé) : *Informations complémentaires* → *Exécuter quand même*.
+2. L'**assistant de configuration** s'ouvre automatiquement :
+   - vérifie votre micro (et l'autorisation micro de Windows) ;
+   - installe le micro virtuel **VB-CABLE** et, si vous le souhaitez, le 2e micro pour Discord (**Virtual Audio Cable Lite**) avec leurs installateurs officiels ;
+   - redémarre le PC si besoin et **se rouvre tout seul** ensuite ;
+   - indique (avec un bouton Copier) quel micro choisir dans Discord et dans vos jeux, et ouvre directement les réglages voix de Discord.
+3. C'est tout. L'assistant peut être relancé depuis **Configuration**.
+
+L'installeur crée les raccourcis Bureau / menu Démarrer, propose le lancement au démarrage de Windows, inclut yt-dlp, se met à jour par-dessus une version existante (même ouverte) et se désinstalle proprement depuis *Paramètres Windows → Applications* (vos réglages peuvent être conservés).
+
+> Les micros virtuels ne sont pas intégrés silencieusement à l'installeur : la licence de VB-CABLE l'interdit sans accord de son auteur. Ils sont téléchargés depuis les sites officiels et installés avec leurs propres installateurs, en un clic depuis l'assistant.
 
 ### Discord
 
@@ -51,6 +59,7 @@ dotnet build                                # compile
 dotnet test tests\SpokaSoundBoard.Tests     # tests (DSP, mixage, ducking, réglages)
 dotnet run --project src\SpokaSoundBoard    # lance l'application
 .\scripts\publish.ps1                       # exe autonome dans .\dist
+.\scripts\build-installer.ps1               # installeur complet dans .\dist (Inno Setup 6)
 ```
 
 | Dossier | Contenu |
@@ -58,6 +67,7 @@ dotnet run --project src\SpokaSoundBoard    # lance l'application
 | `src/SpokaSoundBoard.Core` | Moteur audio (NAudio/WASAPI), DSP (effets, ducking, limiteur), modèles et sauvegarde |
 | `src/SpokaSoundBoard` | Application WPF (.NET 9, thème Fluent sombre), MVVM (CommunityToolkit.Mvvm), raccourcis globaux |
 | `tests/SpokaSoundBoard.Tests` | Tests xUnit |
-| `tools/make_icon.py` | Génère l'icône et le logo (Pillow) |
+| `installer/` | Script Inno Setup et images de l'installeur |
+| `tools/make_icon.py`, `tools/make_installer_images.py` | Génèrent l'icône, le logo et les images de l'installeur (Pillow) |
 
 Architecture audio : la sortie vers le câble virtuel sert d'horloge maître et appelle `MixerCore.Render`, qui produit en un seul passage le bus « micro virtuel » et le bus « casque ». Le micro et le casque sont reliés par des tampons anti-gigue à latence bornée. Sans câble virtuel, c'est le casque qui pilote le mixage.

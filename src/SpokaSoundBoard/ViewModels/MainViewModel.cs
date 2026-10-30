@@ -25,7 +25,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Settings = _store.Load();
         Engine = new AudioEngine(Settings.Voice, Settings.Mix);
         Engine.StateChanged += () => _dispatcher.BeginInvoke(UpdateEngineStatus);
-        Downloader = new MediaDownloader(_store.Directory);
+        Downloader = new MediaDownloader(_store.Directory, System.IO.Path.Combine(AppContext.BaseDirectory, "tools"));
         Mix.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(MixSettings.DiscordMusic) or nameof(MixSettings.DiscordSounds))
@@ -37,6 +37,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Music = new MusicViewModel(this);
         Voice = new VoiceViewModel(this);
         Devices = new DevicesViewModel(this);
+        Setup = new SetupWizardViewModel(this);
 
         Hotkeys.BindingsProvider = GetHotkeyBindings;
         Hotkeys.RegisterPushToTalk(() => Settings.Hotkeys.PushToTalk, held =>
@@ -82,6 +83,24 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public MusicViewModel Music { get; }
     public VoiceViewModel Voice { get; }
     public DevicesViewModel Devices { get; }
+    public SetupWizardViewModel Setup { get; }
+
+    public bool Autostart
+    {
+        get => WindowsIntegration.IsAutostartEnabled();
+        set
+        {
+            try
+            {
+                WindowsIntegration.SetAutostart(value);
+            }
+            catch (Exception ex)
+            {
+                ShowToast("Impossible de modifier le démarrage automatique : " + ex.Message);
+            }
+            OnPropertyChanged();
+        }
+    }
 
     [ObservableProperty] private string _currentPage = "soundboard";
 
@@ -106,7 +125,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     public double MeterFloor => MeterFloorDb;
 
-    public void Initialize()
+    /// <param name="setupRequested">Started with --setup (e.g. after the restart requested by the assistant).</param>
+    public void Initialize(bool setupRequested = false)
     {
         try
         {
@@ -122,7 +142,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Music.RestoreState();
         _meterTimer.Start();
         _saveTimer.Start();
-        if (!Devices.HasVirtualCable) CurrentPage = "settings";
+        if (setupRequested || !Settings.FirstRunDone || Settings.SetupResumeStep != null)
+            Setup.Open(Settings.SetupResumeStep ?? SetupWizardViewModel.StepWelcome);
+        else if (!Devices.HasVirtualCable)
+            CurrentPage = "settings";
     }
 
     [RelayCommand]
@@ -131,6 +154,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     public void RestartEngine() =>
         Engine.Start(Settings.MicDeviceId, Settings.VirtualOutputDeviceId, Settings.DiscordOutputDeviceId, Settings.MonitorDeviceId);
+
+    [RelayCommand]
+    private void OpenSetup() => Setup.Open();
 
     [RelayCommand]
     private void ToggleMic()

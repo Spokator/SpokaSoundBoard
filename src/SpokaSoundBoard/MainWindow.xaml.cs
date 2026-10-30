@@ -10,12 +10,12 @@ public partial class MainWindow : Window
     private readonly MainViewModel _vm;
     private bool _dragging;
 
-    public MainWindow()
+    public MainWindow(bool openSetup = false)
     {
         InitializeComponent();
         _vm = new MainViewModel();
         DataContext = _vm;
-        Loaded += (_, _) => _vm.Initialize();
+        Loaded += (_, _) => _vm.Initialize(openSetup);
         Closed += (_, _) => _vm.Dispose();
     }
 

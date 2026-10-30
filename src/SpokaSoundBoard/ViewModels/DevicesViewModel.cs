@@ -69,12 +69,14 @@ public partial class DevicesViewModel : ObservableObject
     /// <summary>Discord and the game share the same cable: they would hear exactly the same thing.</summary>
     public bool DiscordSameCableWarning => DeviceService.SameCable(SelectedDiscordOutput, SelectedVirtualOutput);
 
-    public string DiscordMicName => SelectedDiscordOutput == null
+    public string DiscordMicName => SelectedDiscordOutput is not { IsVirtualCable: true }
         ? "votre vrai micro"
         : SelectedDiscordOutput.Name.Replace("Input", "Output", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Name to select in Discord / games.</summary>
-    public string VirtualMicName => SelectedVirtualOutput?.Name.Replace("Input", "Output", StringComparison.OrdinalIgnoreCase) ?? "CABLE Output";
+    public string VirtualMicName => SelectedVirtualOutput is { IsVirtualCable: true } output
+        ? output.Name.Replace("Input", "Output", StringComparison.OrdinalIgnoreCase)
+        : HasVirtualCable ? "CABLE Output" : "CABLE Output (après installation du micro virtuel)";
 
     public void InitializeSelection()
     {
@@ -84,7 +86,8 @@ public partial class DevicesViewModel : ObservableObject
 
         SelectedMic = Inputs.FirstOrDefault(d => d.Id == s.MicDeviceId) ?? DeviceService.FindDefaultMicrophone(Inputs);
         SelectedVirtualOutput = Outputs.FirstOrDefault(d => d.Id == s.VirtualOutputDeviceId) ?? DeviceService.FindVirtualCableOutput(Outputs);
-        SelectedDiscordOutput = Outputs.FirstOrDefault(d => d.Id == s.DiscordOutputDeviceId);
+        SelectedDiscordOutput = Outputs.FirstOrDefault(d => d.Id == s.DiscordOutputDeviceId)
+                                ?? (s.DiscordOutputDisabled ? null : DeviceService.FindSecondCableOutput(Outputs, SelectedVirtualOutput));
         SelectedMonitor = Outputs.FirstOrDefault(d => d.Id == s.MonitorDeviceId) ?? DeviceService.FindDefaultMonitor(Outputs);
         StoreSelection();
         _suppressApply = false;
@@ -105,7 +108,7 @@ public partial class DevicesViewModel : ObservableObject
         SelectedVirtualOutput = Outputs.FirstOrDefault(d => d.Id == virt) ?? DeviceService.FindVirtualCableOutput(Outputs);
         SelectedDiscordOutput = Outputs.FirstOrDefault(d => d.Id == discord);
         // A second cable just appeared: use it for Discord automatically.
-        if (SelectedDiscordOutput == null && !hadSecond && HasSecondCable)
+        if (SelectedDiscordOutput == null && !_main.Settings.DiscordOutputDisabled && HasSecondCable)
             SelectedDiscordOutput = DeviceService.FindSecondCableOutput(Outputs, SelectedVirtualOutput);
         SelectedMonitor = Outputs.FirstOrDefault(d => d.Id == mon) ?? DeviceService.FindDefaultMonitor(Outputs);
         _suppressApply = false;
@@ -129,7 +132,11 @@ public partial class DevicesViewModel : ObservableObject
     private void ClearMonitor() => SelectedMonitor = null;
 
     [RelayCommand]
-    private void ClearDiscordOutput() => SelectedDiscordOutput = null;
+    private void ClearDiscordOutput()
+    {
+        _main.Settings.DiscordOutputDisabled = true;
+        SelectedDiscordOutput = null;
+    }
 
     [RelayCommand]
     private async Task InstallSecondCable()
@@ -221,7 +228,11 @@ public partial class DevicesViewModel : ObservableObject
     partial void OnSelectedMicChanged(AudioDevice? value) => AutoApply();
     partial void OnSelectedVirtualOutputChanged(AudioDevice? value) => AutoApply();
     partial void OnSelectedMonitorChanged(AudioDevice? value) => AutoApply();
-    partial void OnSelectedDiscordOutputChanged(AudioDevice? value) => AutoApply();
+    partial void OnSelectedDiscordOutputChanged(AudioDevice? value)
+    {
+        if (value != null) _main.Settings.DiscordOutputDisabled = false;
+        AutoApply();
+    }
 
     private void AutoApply()
     {

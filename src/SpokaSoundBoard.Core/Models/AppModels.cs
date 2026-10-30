@@ -130,4 +130,10 @@ public class AppSettings
     public RepeatMode Repeat { get; set; } = RepeatMode.All;
     public bool Shuffle { get; set; }
     public bool FirstRunDone { get; set; }
+
+    /// <summary>Assistant step to reopen after a restart (null = nothing pending).</summary>
+    public int? SetupResumeStep { get; set; }
+
+    /// <summary>The user explicitly removed the Discord output: do not auto-select a second cable.</summary>
+    public bool DiscordOutputDisabled { get; set; }
 }

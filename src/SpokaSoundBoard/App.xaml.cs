@@ -22,6 +22,8 @@ public partial class App : Application
         }
 
         DispatcherUnhandledException += OnDispatcherUnhandledException;
+        // Windows shutdown / installer update (Restart Manager): close the window so settings are saved.
+        SessionEnding += (_, _) => MainWindow?.Close();
         AppDomain.CurrentDomain.UnhandledException += (_, args) => Log(args.ExceptionObject as Exception);
         TaskScheduler.UnobservedTaskException += (_, args) =>
         {
@@ -34,7 +36,9 @@ public partial class App : Application
             new FrameworkPropertyMetadata(System.Windows.Markup.XmlLanguage.GetLanguage("fr-FR")));
 
         base.OnStartup(e);
-        var window = new MainWindow();
+        var args = e.Args.Select(a => a.ToLowerInvariant()).ToHashSet();
+        var window = new MainWindow(args.Contains("--setup"));
+        if (args.Contains("--minimized")) window.WindowState = WindowState.Minimized;
         MainWindow = window;
         window.Show();
     }

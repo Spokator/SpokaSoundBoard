@@ -28,11 +28,16 @@ public sealed partial class MediaDownloader
     private readonly SemaphoreSlim _toolsLock = new(1, 1);
     private bool _updatedThisSession;
 
-    public MediaDownloader(string baseDirectory)
+    /// <param name="baseDirectory">Writable data folder (tools are kept up to date there).</param>
+    /// <param name="bundledToolsDirectory">Optional read-only folder shipped by the installer, used as a seed.</param>
+    public MediaDownloader(string baseDirectory, string? bundledToolsDirectory = null)
     {
         ToolsDirectory = Path.Combine(baseDirectory, "tools");
         CacheDirectory = Path.Combine(baseDirectory, "Downloads");
+        BundledToolsDirectory = bundledToolsDirectory;
     }
+
+    public string? BundledToolsDirectory { get; }
 
     /// <summary>Test hook: forces a yt-dlp format selector.</summary>
     internal string? FormatOverride { get; set; }
@@ -189,6 +194,15 @@ public sealed partial class MediaDownloader
         try
         {
             if (File.Exists(YtDlpPath)) return;
+
+            var bundled = BundledToolsDirectory != null ? Path.Combine(BundledToolsDirectory, "yt-dlp.exe") : null;
+            if (bundled != null && File.Exists(bundled))
+            {
+                Directory.CreateDirectory(ToolsDirectory);
+                File.Copy(bundled, YtDlpPath, true);
+                return;
+            }
+
             progress?.Report(new DownloadProgress(0, "Première utilisation : installation de yt-dlp…"));
             await DownloadFileAsync(YtDlpUrl, YtDlpPath, progress, "Installation de yt-dlp", ct);
             _updatedThisSession = true;

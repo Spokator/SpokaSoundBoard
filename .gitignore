@@ -5,3 +5,4 @@ dist/
 *.user
 TestResults/
 __pycache__/
+installer/deps/
