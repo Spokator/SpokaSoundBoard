@@ -8,6 +8,16 @@ public partial class SoundboardView : UserControl
 {
     public SoundboardView() => InitializeComponent();
 
+    private void OnPackMenuClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { ContextMenu: { } menu } element)
+        {
+            menu.PlacementTarget = element;
+            menu.DataContext = DataContext;
+            menu.IsOpen = true;
+        }
+    }
+
     private void OnDragOver(object sender, DragEventArgs e)
     {
         e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) || LinkBar.GetDroppedUrl(e.Data) != null

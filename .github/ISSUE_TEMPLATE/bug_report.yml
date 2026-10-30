@@ -1,0 +1,43 @@
+name: Signaler un problème
+description: Quelque chose ne fonctionne pas comme prévu
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Merci de prendre le temps de signaler un problème ! Plus vous donnez de détails, plus il sera corrigé vite.
+  - type: textarea
+    id: what
+    attributes:
+      label: Que se passe-t-il ?
+      description: Décrivez le problème et comment le reproduire.
+      placeholder: "Ex. : la musique se coupe sur Discord toutes les 30 secondes quand…"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Qu'attendiez-vous ?
+  - type: input
+    id: version
+    attributes:
+      label: Version de SpokaSoundBoard
+      description: Visible dans Configuration → Mises à jour.
+      placeholder: "1.4.0"
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostic audio
+      description: Copiez les compteurs de Configuration → Diagnostic audio (utile pour les coupures de son).
+  - type: textarea
+    id: setup
+    attributes:
+      label: Configuration
+      description: Micros virtuels installés (VB-CABLE, Virtual Audio Cable…), jeu / Discord utilisés, version de Windows.
+  - type: textarea
+    id: log
+    attributes:
+      label: Journal d'erreurs
+      description: Contenu de %AppData%\SpokaSoundBoard\error.log s'il existe.
+      render: text

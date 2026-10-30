@@ -24,13 +24,15 @@ public class RoutingTests
         }
     }
 
-    internal static string WriteTone(float seconds, float freq = 440)
+    internal static string WriteToneScaled(float seconds, float amplitude) => WriteTone(seconds, 440, amplitude);
+
+    internal static string WriteTone(float seconds, float freq = 440, float amplitude = 0.5f)
     {
         var path = Path.Combine(Path.GetTempPath(), $"spoka_route_{Guid.NewGuid():N}.wav");
         using var writer = new WaveFileWriter(path, WaveFormat.CreateIeeeFloatWaveFormat(48000, 2));
         for (var i = 0; i < (int)(48000 * seconds); i++)
         {
-            var s = 0.5f * MathF.Sin(2 * MathF.PI * freq * i / 48000f);
+            var s = amplitude * MathF.Sin(2 * MathF.PI * freq * i / 48000f);
             writer.WriteSample(s);
             writer.WriteSample(s);
         }

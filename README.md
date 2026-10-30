@@ -1,79 +1,117 @@
+<div align="center">
+
+<img src="src/SpokaSoundBoard/Assets/logo.png" width="96" alt="Logo SpokaSoundBoard" />
+
 # SpokaSoundBoard
 
-Soundboard moderne pour Windows : diffusez de la musique et des sons **dans votre micro** (Discord, jeux, TeamSpeak…), avec **ducking automatique** (la musique baisse quand vous parlez), des **effets de voix en temps réel** (radio pilote d'hélico, tour de contrôle, talkie-walkie, robot, voix grave/aiguë, écho, réverbération…), l'**import par lien** (YouTube, SoundCloud, MyInstants…) et des **sorties séparées Jeu / Discord**.
+**Soundboard, musique et effets de voix en temps réel pour Discord et vos jeux.**
+
+Diffusez votre playlist et vos sons **dans votre micro**, parlez par-dessus (la musique baisse toute seule) et transformez votre voix : radio de pilote d'hélico, tour de contrôle, astronaute, robot, démon…
+
+[![CI](https://github.com/Spokator/SpokaSoundBoard/actions/workflows/ci.yml/badge.svg)](https://github.com/Spokator/SpokaSoundBoard/actions/workflows/ci.yml)
+[![Dernière version](https://img.shields.io/github/v/release/Spokator/SpokaSoundBoard?label=t%C3%A9l%C3%A9charger)](https://github.com/Spokator/SpokaSoundBoard/releases/latest)
+![Windows 10/11](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6)
+![.NET 9](https://img.shields.io/badge/.NET-9-512BD4)
+[![Licence MIT](https://img.shields.io/badge/licence-MIT-green)](LICENSE)
+
+**[⬇️ Télécharger l'installeur](https://github.com/Spokator/SpokaSoundBoard/releases/latest)**
+
+<img src="docs/screenshots/soundboard.png" alt="Soundboard" width="860" />
+
+</div>
 
 ## Fonctionnalités
 
-- **Soundboard** : tuiles colorées, glisser-déposer, volume / couleur / boucle / extrait (début-fin) par son, raccourci global par son (clavier ou boutons souris 4/5/molette).
-- **Lecteur de musique** : playlist (fichiers ou dossiers entiers), aléatoire, répétition, barre de progression.
-- **Recherche intégrée** : tapez « booba mona lisa » (Musique, via YouTube) ou « vine boom » (Soundboard, via MyInstants ou YouTube). Les résultats s'affichent avec miniature et durée, ▶ pour écouter dans votre casque seulement, « Ajouter » pour l'ajouter.
-- **Import par lien** : collez (ou glissez depuis le navigateur) un lien YouTube, SoundCloud, MyInstants, TikTok, Twitch, MP3 direct… Pour la musique, une playlist entière peut être importée. L'audio est mis en cache sur le PC (`%AppData%\SpokaSoundBoard\Downloads`) grâce à [yt-dlp](https://github.com/yt-dlp/yt-dlp), téléchargé et mis à jour automatiquement ; ffmpeg n'est récupéré que si un site fournit un format à convertir. Respectez les droits des contenus que vous diffusez.
-- **Jeu / Discord séparés** : tableau « Qui entend quoi ? » (voix, effets, musique, sons) pour chaque sortie. Exemple : les passagers de l'hélico entendent la playlist et l'effet pilote, vos amis Discord seulement votre voix naturelle (même en mode radio).
-- **Ducking** : votre voix passe par-dessus la musique ; seuil, intensité, vitesses de baisse et de remontée réglables.
-- **Effets de voix** : 10 presets intégrés + presets personnels ; radio (filtre, saturation, souffle, squelch « pschht », roger beep), hauteur ±12 demi-tons, robot, écho, réverbération, compresseur, porte de bruit.
-- **Mode radio (appuyer pour parler)** : votre voix ne passe que quand vous maintenez la touche, avec le grésillement de radio ; la musique continue.
-- **Raccourcis globaux** utilisables en jeu (la touche n'est pas bloquée pour le jeu).
-- **Retour casque** : vous entendez la musique, et vous pouvez vous écouter pour tester vos effets.
-- **Zone de notification** : la croix réduit l'application près de l'horloge (musique et raccourcis continuent) ; clic droit sur l'icône pour couper le micro, les effets, la musique… ou quitter.
-- **Anti-coupures** : SpokaSoundBoard refuse l'atténuation automatique de Windows et rétablit le volume si Discord (option « Atténuation ») le baisse.
-- Formats : MP3, WAV, OGG, FLAC, M4A/AAC, WMA, AIFF.
-- Réglages enregistrés automatiquement dans `%AppData%\SpokaSoundBoard`.
+| | |
+| --- | --- |
+| 🎛️ **Soundboard** | Tuiles colorées, glisser-déposer, volume, boucle et extrait (début / fin) par son, raccourci clavier ou souris (boutons 4 / 5, molette) utilisable en pleine partie, filtre pour retrouver un son. |
+| 🔎 **Recherche intégrée** | Tapez « booba mona lisa » ou « vine boom » : résultats YouTube et MyInstants, ▶ pour écouter dans votre casque seulement, « Ajouter » en un clic. Les liens (YouTube, SoundCloud, TikTok, Twitch, MP3…) et les playlists fonctionnent aussi. |
+| 🎵 **Lecteur de musique** | Playlist (fichiers, dossiers, liens), aléatoire, répétition, volume égalisé automatiquement. |
+| 🗣️ **Ducking** | Quand vous parlez, la musique baisse pour que votre voix passe par-dessus, puis remonte doucement. |
+| 🎙️ **23 effets de voix** | Pilote d'hélico, tour de contrôle, talkie-walkie, astronaute NASA, pilote de chasse, téléphone, vieille radio, mégaphone, robot, Dark Vador, démon, fantôme, alien, sous l'eau, lo-fi 8 bits… Chaque réglage est modifiable et vous pouvez enregistrer vos propres presets. |
+| 📻 **Mode radio** | Votre voix ne passe que quand vous maintenez la touche, avec le grésillement et le bip de fin (roger, NASA « Quindar »…). |
+| 🔀 **Jeu et Discord séparés** | Tableau « Qui entend quoi ? » : par exemple, la musique et l'effet pilote pour les passagers de l'hélico, et seulement votre voix naturelle sur Discord. |
+| 📦 **Packs de soundboard** | Exportez votre soundboard (sons inclus) en `.spokapack` et envoyez-la à vos amis. |
+| 🎨 **Personnalisation** | Thèmes Sombre / Noir OLED / Clair, couleur d'accent, zoom, taille des tuiles. |
+| 🛡️ **Son stable** | Compensation de la dérive d'horloge entre cartes son, protection contre l'atténuation de Windows et de Discord, diagnostic audio intégré. |
+| 🧩 **Pratique** | Installeur sans droits administrateur, assistant de configuration, zone de notification, lancement au démarrage de Windows, mises à jour automatiques. |
+
+<div align="center">
+<img src="docs/screenshots/voice.png" alt="Voix et effets" width="420" /> <img src="docs/screenshots/mix.png" alt="Mixage et ducking" width="420" />
+<img src="docs/screenshots/search.png" alt="Recherche" width="420" /> <img src="docs/screenshots/music.png" alt="Musique" width="420" />
+</div>
+
+## Installation
+
+1. Téléchargez **`SpokaSoundBoard-Setup-x.y.z.exe`** depuis les [releases](https://github.com/Spokator/SpokaSoundBoard/releases/latest) et lancez-le. Aucun droit administrateur ni .NET n'est nécessaire.
+   > Windows peut afficher « Windows a protégé votre ordinateur », car le logiciel n'est pas signé : *Informations complémentaires* → *Exécuter quand même*.
+2. L'**assistant de configuration** s'ouvre :
+   - vérifie votre micro (et l'autorisation micro de Windows) ;
+   - installe le micro virtuel [VB-CABLE](https://vb-audio.com/Cable/) et, en option, [Virtual Audio Cable Lite](https://vac.muzychenko.net/en/download.htm) pour séparer Discord du jeu, avec leurs installateurs officiels ;
+   - redémarre le PC si besoin et se rouvre tout seul ensuite ;
+   - indique quel micro choisir dans Discord et dans vos jeux.
+
+Les mises à jour suivantes se font depuis l'application (bannière « Nouvelle version disponible »).
+
+### Discord : réglages importants
+
+Paramètres → Voix et vidéo :
+
+- **Périphérique d'entrée** : `CABLE Output` (ou `Line 1` si vous avez séparé Discord du jeu) ;
+- **Suppression du bruit** : *Aucune*. Désactivez aussi l'annulation de l'écho, l'activité vocale avancée et le contrôle automatique du gain : ces filtres prennent la musique pour du bruit et la coupent ;
+- **Sensibilité d'entrée** : désactivez « Déterminer automatiquement » et mettez le curseur tout à gauche ;
+- **Atténuation** : 0 %.
+
+### Jeux
+
+Choisissez `CABLE Output` comme micro dans le jeu, ou mettez-le par défaut dans les paramètres son de Windows. Gardez la touche « parler » du jeu habituelle. Pour l'ambiance cockpit : preset **Pilote d'hélico** et **mode radio** sur la même touche.
 
 ## Comment ça marche
 
 ```
 Votre micro ──► Voix naturelle / avec effets ──┐                 ┌─► CABLE Input ══► « CABLE Output » = micro du jeu
                                                ├─► Mixage ───────┼─► Line 1      ══► « Line 1 »       = micro Discord (optionnel)
-Musique + sons (fichiers ou liens) ────────────┘   + ducking     └─► Votre casque (retour)
+Musique + sons (fichiers, liens, recherche) ───┘   + ducking     └─► Votre casque (retour)
 ```
 
-Windows ne permet pas à une application de créer un micro sans pilote : SpokaSoundBoard utilise **VB-CABLE** (gratuit, [vb-audio.com/Cable](https://vb-audio.com/Cable/)). Pour séparer Discord du jeu, il faut un 2e câble : **Virtual Audio Cable Lite** (gratuit pour un usage personnel, [vac.muzychenko.net](https://vac.muzychenko.net/en/download.htm)). Le logiciel peut télécharger et lancer les deux installations en un clic (page **Configuration**).
-
-## Installation
-
-1. Lancez **`SpokaSoundBoard-Setup-<version>.exe`** et cliquez sur Suivant → Installer. Aucun droit administrateur ni .NET n'est nécessaire. Windows peut afficher « Windows a protégé votre ordinateur » (logiciel non signé) : *Informations complémentaires* → *Exécuter quand même*.
-2. L'**assistant de configuration** s'ouvre automatiquement :
-   - vérifie votre micro (et l'autorisation micro de Windows) ;
-   - installe le micro virtuel **VB-CABLE** et, si vous le souhaitez, le 2e micro pour Discord (**Virtual Audio Cable Lite**) avec leurs installateurs officiels ;
-   - redémarre le PC si besoin et **se rouvre tout seul** ensuite ;
-   - indique (avec un bouton Copier) quel micro choisir dans Discord et dans vos jeux, et ouvre directement les réglages voix de Discord.
-3. C'est tout. L'assistant peut être relancé depuis **Configuration**.
-
-L'installeur crée les raccourcis Bureau / menu Démarrer, propose le lancement au démarrage de Windows, inclut yt-dlp, se met à jour par-dessus une version existante (même ouverte) et se désinstalle proprement depuis *Paramètres Windows → Applications* (vos réglages peuvent être conservés).
-
-> Les micros virtuels ne sont pas intégrés silencieusement à l'installeur : la licence de VB-CABLE l'interdit sans accord de son auteur. Ils sont téléchargés depuis les sites officiels et installés avec leurs propres installateurs, en un clic depuis l'assistant.
-
-### Discord
-
-1. Paramètres → Voix et vidéo → Périphérique d'entrée : **CABLE Output** (ou **Line 1** si vous avez séparé Discord du jeu).
-2. Suppression du bruit : **Aucune** ; désactivez l'annulation d'écho, l'activité vocale avancée et le contrôle automatique du gain (ils prennent la musique pour du bruit et la coupent).
-3. Sensibilité d'entrée : désactivez « Déterminer automatiquement » et mettez le curseur tout à gauche (ou utilisez le push-to-talk de Discord).
-4. Atténuation : **0 %**.
-
-Si la musique se coupe par moments sur Discord alors qu'elle est continue dans l'application, c'est presque toujours l'un de ces réglages de Discord.
-
-### Jeux
-
-Choisissez **CABLE Output** comme micro dans le jeu, ou définissez-le comme micro par défaut dans Windows (Paramètres → Son). Pour l'ambiance pilote : preset **Pilote d'hélico** et **mode radio** sur la même touche que le push-to-talk du jeu.
+Windows ne permet pas à une application de créer un micro sans pilote : SpokaSoundBoard s'appuie sur un câble audio virtuel gratuit. La sortie vers le câble principal sert d'horloge maître. Les autres sorties et le micro sont reliés par des tampons à rééchantillonnage adaptatif (±0,5 % maximum) qui absorbent la dérive d'horloge entre cartes son, sans coupure et avec une latence bornée.
 
 ## Développement
 
-Prérequis : SDK .NET 9 (Windows).
+Prérequis : Windows 10/11, [SDK .NET 9](https://dotnet.microsoft.com/download), et en option [Inno Setup 6](https://jrsoftware.org/isinfo.php) pour l'installeur.
 
 ```powershell
 dotnet build                                # compile
-dotnet test tests\SpokaSoundBoard.Tests     # tests (DSP, mixage, ducking, réglages)
+dotnet test tests\SpokaSoundBoard.Tests     # 53 tests (DSP, mixage, dérive d'horloge, packs, mises à jour…)
 dotnet run --project src\SpokaSoundBoard    # lance l'application
 .\scripts\publish.ps1                       # exe autonome dans .\dist
-.\scripts\build-installer.ps1               # installeur complet dans .\dist (Inno Setup 6)
+.\scripts\build-installer.ps1               # installeur complet dans .\dist
 ```
+
+Les tests en ligne (téléchargements et recherches réels) s'activent avec `$env:SPOKA_ONLINE_TESTS = "1"`.
 
 | Dossier | Contenu |
 | --- | --- |
-| `src/SpokaSoundBoard.Core` | Moteur audio (NAudio/WASAPI), DSP (effets, ducking, limiteur), modèles et sauvegarde |
-| `src/SpokaSoundBoard` | Application WPF (.NET 9, thème Fluent sombre), MVVM (CommunityToolkit.Mvvm), raccourcis globaux |
+| `src/SpokaSoundBoard.Core` | Moteur audio (NAudio / WASAPI), DSP (effets, ducking, limiteur, égalisation du volume), recherche et import en ligne (yt-dlp, MyInstants), packs, mises à jour |
+| `src/SpokaSoundBoard` | Application WPF (.NET 9), MVVM (CommunityToolkit.Mvvm), thèmes, raccourcis globaux, zone de notification, assistant |
 | `tests/SpokaSoundBoard.Tests` | Tests xUnit |
 | `installer/` | Script Inno Setup et images de l'installeur |
-| `tools/make_icon.py`, `tools/make_installer_images.py` | Génèrent l'icône, le logo et les images de l'installeur (Pillow) |
+| `tools/` | Génération de l'icône et des images (Pillow) |
 
-Architecture audio : la sortie vers le câble virtuel sert d'horloge maître et appelle `MixerCore.Render`, qui produit en un seul passage le bus « micro virtuel » et le bus « casque ». Le micro et le casque sont reliés par des tampons anti-gigue à latence bornée. Sans câble virtuel, c'est le casque qui pilote le mixage.
+### Publier une version
+
+1. Mettez à jour `<Version>` dans `src/SpokaSoundBoard/SpokaSoundBoard.csproj` et le [journal des versions](CHANGELOG.md).
+2. `.\scripts\build-installer.ps1`
+3. `gh release create vX.Y.Z dist\SpokaSoundBoard-Setup-X.Y.Z.exe --title "SpokaSoundBoard X.Y.Z" --notes-file <notes>` : les applications installées proposent alors la mise à jour automatiquement.
+
+## Crédits
+
+- [NAudio](https://github.com/naudio/NAudio) pour l'audio, [NVorbis](https://github.com/NVorbis/NVorbis) pour l'OGG, et [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet).
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) (Unlicense) pour la recherche et l'import par lien, et [FFmpeg](https://ffmpeg.org) pour les conversions (téléchargé si nécessaire).
+- Micros virtuels : [VB-CABLE](https://vb-audio.com/Cable/) de VB-Audio (donationware) et [Virtual Audio Cable](https://vac.muzychenko.net/) d'Eugene Muzychenko. Ils ne sont pas redistribués : ils sont téléchargés depuis leurs sites officiels.
+
+Respectez les droits des contenus que vous diffusez.
+
+## Licence
+
+[MIT](LICENSE) © 2026 Spokator

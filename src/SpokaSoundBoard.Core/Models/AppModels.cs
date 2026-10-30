@@ -56,6 +56,9 @@ public partial class SoundPad : ObservableObject
     private string? _sourceUrl;
 
     /// <summary>Playback window inside the file, in seconds (EndSeconds 0 = until the end).</summary>
+    /// <summary>Automatic loudness correction in dB (null = not analysed yet).</summary>
+    [ObservableProperty] private double? _normalizationDb;
+
     [ObservableProperty] private double _startSeconds;
     [ObservableProperty] private double _endSeconds;
 
@@ -74,6 +77,9 @@ public partial class TrackItem : ObservableObject
     public string? DisplayTitle { get; set; }
 
     public string? SourceUrl { get; set; }
+
+    /// <summary>Automatic loudness correction in dB (null = not analysed yet).</summary>
+    public double? NormalizationDb { get; set; }
 
     [JsonIgnore]
     [ObservableProperty] private bool _isCurrent;
@@ -107,10 +113,46 @@ public class HotkeySettings
     public HotkeyBinding ToggleEffects { get; set; } = new();
     public HotkeyBinding ToggleMediaToMic { get; set; } = new();
     public HotkeyBinding ToggleDiscordShare { get; set; } = new();
+    public HotkeyBinding NextPreset { get; set; } = new();
+    public HotkeyBinding PreviousPreset { get; set; } = new();
+}
+
+public enum AppTheme
+{
+    Dark,
+    Oled,
+    Light,
+}
+
+public enum PadSize
+{
+    Small,
+    Medium,
+    Large,
+}
+
+public partial class AppearanceSettings : ObservableObject
+{
+    [ObservableProperty] private AppTheme _theme = AppTheme.Dark;
+
+    /// <summary>Main accent color (#RRGGBB).</summary>
+    [ObservableProperty] private string _accentColor = "#7C5CFF";
+
+    /// <summary>Secondary accent used for values and icons (#RRGGBB).</summary>
+    [ObservableProperty] private string _secondaryColor = "#22D3EE";
+
+    /// <summary>Interface zoom (0.8 – 1.4).</summary>
+    [ObservableProperty] private double _uiScale = 1.0;
+
+    [ObservableProperty] private PadSize _padSize = PadSize.Medium;
+    [ObservableProperty] private bool _showSidebarMeters = true;
+    [ObservableProperty] private bool _showPadHotkeys = true;
 }
 
 public class AppSettings
 {
+    public AppearanceSettings Appearance { get; set; } = new();
+
     public string? MicDeviceId { get; set; }
     public string? VirtualOutputDeviceId { get; set; }
 
@@ -135,6 +177,11 @@ public class AppSettings
     public bool CloseToTray { get; set; } = true;
 
     public bool TrayHintShown { get; set; }
+
+    public bool CheckForUpdates { get; set; } = true;
+
+    /// <summary>Release tag the user chose to skip.</summary>
+    public string? SkippedUpdate { get; set; }
 
     /// <summary>Assistant step to reopen after a restart (null = nothing pending).</summary>
     public int? SetupResumeStep { get; set; }

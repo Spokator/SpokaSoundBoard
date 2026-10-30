@@ -23,7 +23,7 @@
                 </DockPanel>
 
                 <!-- Footer -->
-                <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,1,0,0" Padding="28,14">
+                <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,1,0,0" Padding="28,14">
                     <DockPanel>
                         <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" MinWidth="120" Command="{Binding NextCommand}">
                             <StackPanel Orientation="Horizontal">
@@ -34,7 +34,7 @@
                         <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Content="Retour" Margin="0,0,10,0" Command="{Binding BackCommand}"
                                 Visibility="{Binding CanGoBack, Converter={StaticResource BoolToVis}}" />
                         <ProgressBar Style="{StaticResource Meter}" Height="4" Maximum="5" Width="160" HorizontalAlignment="Left"
-                                     Value="{Binding StepNumber, Mode=OneWay}" Foreground="{StaticResource BrandBrush}" />
+                                     Value="{Binding StepNumber, Mode=OneWay}" Foreground="{DynamicResource BrandBrush}" />
                     </DockPanel>
                 </Border>
 
@@ -49,15 +49,15 @@
                             </TextBlock>
                             <StackPanel Margin="0,16,0,0">
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE720;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,12,0" />
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE720;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,12,0" />
                                     <TextBlock Text="Vérifier votre micro" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE7F5;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,12,0" />
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE7F5;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,12,0" />
                                     <TextBlock Text="Installer le micro virtuel (gratuit, en un clic)" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE8BD;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,12,0" />
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE8BD;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,12,0" />
                                     <TextBlock Text="Configurer Discord et vos jeux" VerticalAlignment="Center" />
                                 </StackPanel>
                             </StackPanel>
@@ -71,7 +71,7 @@
 
                         <!-- 1. Microphone -->
                         <StackPanel Visibility="{Binding Step, Converter={StaticResource EqualsToVis}, ConverterParameter=1}">
-                            <Border Background="{StaticResource WarningSoftBrush}" CornerRadius="8" Padding="14,10" Margin="0,0,0,16"
+                            <Border Background="{DynamicResource WarningSoftBrush}" CornerRadius="8" Padding="14,10" Margin="0,0,0,16"
                                     Visibility="{Binding MicrophoneBlocked, Converter={StaticResource BoolToVis}}">
                                 <StackPanel>
                                     <TextBlock Foreground="{StaticResource WarningBrush}" FontWeight="SemiBold" TextWrapping="Wrap"
@@ -98,7 +98,7 @@
                             <TextBlock TextWrapping="Wrap" Margin="0,0,0,16" LineHeight="20"
                                        Text="Pour que les autres vous entendent avec la musique et les effets, Windows a besoin d'un « micro virtuel ». Cliquez sur Installer : la fenêtre officielle s'ouvre, acceptez l'autorisation administrateur puis cliquez sur « Install Driver » (ou « Install »)." />
 
-                            <Border Style="{StaticResource Card}" Background="#20263A" Padding="16" Margin="0,0,0,12">
+                            <Border Style="{StaticResource Card}" Background="{DynamicResource SubCardBrush}" Padding="16" Margin="0,0,0,12">
                                 <DockPanel>
                                     <Grid DockPanel.Dock="Right" VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal" Visibility="{Binding Devices.HasVirtualCable, Converter={StaticResource BoolToVis}}">
@@ -112,13 +112,13 @@
                                     <StackPanel Margin="0,0,16,0">
                                         <TextBlock Text="Micro virtuel principal (VB-CABLE)" FontWeight="SemiBold" />
                                         <TextBlock Style="{StaticResource Caption}" Text="Indispensable. Gratuit (donationware), par VB-Audio." />
-                                        <TextBlock Style="{StaticResource Caption}" Text="{Binding Devices.InstallStatus}" Foreground="{StaticResource Accent2Brush}" Margin="0,4,0,0"
+                                        <TextBlock Style="{StaticResource Caption}" Text="{Binding Devices.InstallStatus}" Foreground="{DynamicResource Accent2Brush}" Margin="0,4,0,0"
                                                    Visibility="{Binding Devices.InstallStatus, Converter={StaticResource NullToVis}}" />
                                     </StackPanel>
                                 </DockPanel>
                             </Border>
 
-                            <Border Style="{StaticResource Card}" Background="#20263A" Padding="16" Margin="0,0,0,12">
+                            <Border Style="{StaticResource Card}" Background="{DynamicResource SubCardBrush}" Padding="16" Margin="0,0,0,12">
                                 <DockPanel>
                                     <Grid DockPanel.Dock="Right" VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal" Visibility="{Binding Devices.HasSecondCable, Converter={StaticResource BoolToVis}}">
@@ -133,13 +133,13 @@
                                         <TextBlock Text="Deuxième micro pour Discord (optionnel)" FontWeight="SemiBold" />
                                         <TextBlock Style="{StaticResource Caption}"
                                                    Text="Pour que Discord n'entende pas la même chose que le jeu (ex. la musique seulement en jeu). Virtual Audio Cable Lite, gratuit pour un usage personnel." />
-                                        <TextBlock Style="{StaticResource Caption}" Text="{Binding Devices.SecondInstallStatus}" Foreground="{StaticResource Accent2Brush}" Margin="0,4,0,0"
+                                        <TextBlock Style="{StaticResource Caption}" Text="{Binding Devices.SecondInstallStatus}" Foreground="{DynamicResource Accent2Brush}" Margin="0,4,0,0"
                                                    Visibility="{Binding Devices.SecondInstallStatus, Converter={StaticResource NullToVis}}" />
                                     </StackPanel>
                                 </DockPanel>
                             </Border>
 
-                            <Border Background="{StaticResource AccentSoftBrush}" CornerRadius="8" Padding="14,12"
+                            <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="8" Padding="14,12"
                                     Visibility="{Binding NeedsReboot, Converter={StaticResource BoolToVis}}">
                                 <DockPanel>
                                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
@@ -157,16 +157,16 @@
 
                         <!-- 3. Discord & games -->
                         <StackPanel Visibility="{Binding Step, Converter={StaticResource EqualsToVis}, ConverterParameter=3}">
-                            <Border Background="{StaticResource WarningSoftBrush}" CornerRadius="8" Padding="14,10" Margin="0,0,0,14"
+                            <Border Background="{DynamicResource WarningSoftBrush}" CornerRadius="8" Padding="14,10" Margin="0,0,0,14"
                                     Visibility="{Binding Devices.HasVirtualCable, Converter={StaticResource InverseBoolToVis}}">
                                 <TextBlock Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap"
                                            Text="Le micro virtuel n'est pas encore détecté. Revenez à l'étape précédente (ou redémarrez le PC) pour que les autres entendent la musique et vos effets." />
                             </Border>
 
-                            <Border Style="{StaticResource Card}" Background="#20263A" Padding="16" Margin="0,0,0,12">
+                            <Border Style="{StaticResource Card}" Background="{DynamicResource SubCardBrush}" Padding="16" Margin="0,0,0,12">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8BD;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8BD;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
                                         <TextBlock Text="Dans Discord" FontWeight="SemiBold" FontSize="15" />
                                     </StackPanel>
                                     <TextBlock Style="{StaticResource Caption}" FontSize="13" TextWrapping="Wrap">
@@ -175,8 +175,8 @@
                                     <DockPanel Margin="0,8,0,8">
                                         <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Content="Copier" Margin="8,0,0,0"
                                                 Command="{Binding CopyCommand}" CommandParameter="{Binding DiscordInputName}" />
-                                        <Border Background="#33000000" CornerRadius="6" Padding="12,8">
-                                            <TextBlock Text="{Binding DiscordInputName}" Foreground="{StaticResource Accent2Brush}" FontWeight="SemiBold" />
+                                        <Border Background="{DynamicResource InsetBrush}" CornerRadius="6" Padding="12,8">
+                                            <TextBlock Text="{Binding DiscordInputName}" Foreground="{DynamicResource Accent2Brush}" FontWeight="SemiBold" />
                                         </Border>
                                     </DockPanel>
                                     <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" LineHeight="19">
@@ -194,18 +194,18 @@
                                 </StackPanel>
                             </Border>
 
-                            <Border Style="{StaticResource Card}" Background="#20263A" Padding="16" Margin="0">
+                            <Border Style="{StaticResource Card}" Background="{DynamicResource SubCardBrush}" Padding="16" Margin="0">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE7FC;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE7FC;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
                                         <TextBlock Text="Dans vos jeux" FontWeight="SemiBold" FontSize="15" />
                                     </StackPanel>
                                     <TextBlock Style="{StaticResource Caption}" FontSize="13" Text="Options audio du jeu → Microphone :" />
                                     <DockPanel Margin="0,8,0,8">
                                         <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Content="Copier" Margin="8,0,0,0"
                                                 Command="{Binding CopyCommand}" CommandParameter="{Binding Devices.VirtualMicName}" />
-                                        <Border Background="#33000000" CornerRadius="6" Padding="12,8">
-                                            <TextBlock Text="{Binding Devices.VirtualMicName}" Foreground="{StaticResource Accent2Brush}" FontWeight="SemiBold" />
+                                        <Border Background="{DynamicResource InsetBrush}" CornerRadius="6" Padding="12,8">
+                                            <TextBlock Text="{Binding Devices.VirtualMicName}" Foreground="{DynamicResource Accent2Brush}" FontWeight="SemiBold" />
                                         </Border>
                                     </DockPanel>
                                     <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"

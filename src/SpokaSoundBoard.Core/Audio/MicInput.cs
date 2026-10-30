@@ -39,9 +39,12 @@ public sealed class MicInput : IDisposable
     public void Start() => _capture.StartRecording();
 
     /// <summary>Mono, 48 kHz provider reading the captured audio with bounded latency.</summary>
-    public ISampleProvider CreateProvider(int sampleRate)
+    public ISampleProvider CreateProvider(int sampleRate) => CreateProvider(sampleRate, out _);
+
+    public ISampleProvider CreateProvider(int sampleRate, out JitterBufferProvider buffer)
     {
-        ISampleProvider provider = new JitterBufferProvider(_ring, _format.SampleRate, 1, 20f, 80f);
+        buffer = new JitterBufferProvider(_ring, _format.SampleRate, 1, 20f, 80f);
+        ISampleProvider provider = buffer;
         if (_format.SampleRate != sampleRate)
             provider = new WdlResamplingSampleProvider(provider, sampleRate);
         return provider;

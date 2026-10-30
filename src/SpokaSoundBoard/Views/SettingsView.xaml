@@ -1,6 +1,8 @@
 <UserControl x:Class="SpokaSoundBoard.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:SpokaSoundBoard.Views"
+             xmlns:models="clr-namespace:SpokaSoundBoard.Core.Models;assembly=SpokaSoundBoard.Core">
     <!-- DataContext: MainViewModel -->
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="28,24,28,24">
@@ -12,7 +14,7 @@
             <Border Style="{StaticResource Card}" DataContext="{Binding Devices}">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                        <TextBlock Style="{StaticResource Icon}" Text="&#xE7F5;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE7F5;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
                         <TextBlock Text="Micro virtuel (VB-CABLE)" Style="{StaticResource SectionTitle}" />
                     </StackPanel>
 
@@ -23,7 +25,7 @@
                         </StackPanel>
                         <TextBlock Style="{StaticResource Caption}" FontSize="13">
                             <Run Text="Dans Discord et dans vos jeux, choisissez comme micro :" />
-                            <Run Text="{Binding VirtualMicName, Mode=OneWay}" Foreground="{StaticResource Accent2Brush}" FontWeight="SemiBold" />
+                            <Run Text="{Binding VirtualMicName, Mode=OneWay}" Foreground="{DynamicResource Accent2Brush}" FontWeight="SemiBold" />
                         </TextBlock>
                     </StackPanel>
 
@@ -46,7 +48,7 @@
                                 </StackPanel>
                             </Button>
                         </StackPanel>
-                        <TextBlock Text="{Binding InstallStatus}" Style="{StaticResource Caption}" Foreground="{StaticResource Accent2Brush}" Margin="0,10,0,0"
+                        <TextBlock Text="{Binding InstallStatus}" Style="{StaticResource Caption}" Foreground="{DynamicResource Accent2Brush}" Margin="0,10,0,0"
                                    Visibility="{Binding InstallStatus, Converter={StaticResource NullToVis}}" />
                     </StackPanel>
                 </StackPanel>
@@ -56,7 +58,7 @@
             <Border Style="{StaticResource Card}" DataContext="{Binding Devices}">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8BD;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8BD;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
                         <TextBlock Text="Séparer Discord du jeu (optionnel)" Style="{StaticResource SectionTitle}" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource Caption}" FontSize="13" Margin="0,0,0,12"
@@ -69,7 +71,7 @@
                         </StackPanel>
                         <TextBlock Style="{StaticResource Caption}" FontSize="13">
                             <Run Text="Dans Discord, choisissez comme micro :" />
-                            <Run Text="{Binding DiscordMicName, Mode=OneWay}" Foreground="{StaticResource Accent2Brush}" FontWeight="SemiBold" />
+                            <Run Text="{Binding DiscordMicName, Mode=OneWay}" Foreground="{DynamicResource Accent2Brush}" FontWeight="SemiBold" />
                         </TextBlock>
                     </StackPanel>
 
@@ -90,7 +92,7 @@
                                 </StackPanel>
                             </Button>
                         </StackPanel>
-                        <TextBlock Text="{Binding SecondInstallStatus}" Style="{StaticResource Caption}" Foreground="{StaticResource Accent2Brush}" Margin="0,10,0,0"
+                        <TextBlock Text="{Binding SecondInstallStatus}" Style="{StaticResource Caption}" Foreground="{DynamicResource Accent2Brush}" Margin="0,10,0,0"
                                    Visibility="{Binding SecondInstallStatus, Converter={StaticResource NullToVis}}" />
                         <TextBlock Style="{StaticResource Caption}" Margin="0,10,0,0"
                                    Text="Sans 2e câble : choisissez simplement votre vrai micro dans Discord. Vos amis entendront votre voix naturelle, sans musique ni effets." />
@@ -109,7 +111,7 @@
                             </StackPanel>
                         </Button>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Style="{StaticResource Icon}" Text="&#xE7F6;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE7F6;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
                             <TextBlock Text="Périphériques audio" Style="{StaticResource SectionTitle}" />
                         </StackPanel>
                     </DockPanel>
@@ -136,7 +138,7 @@
                             <TextBlock Text="Le micro dans lequel vous parlez" Style="{StaticResource Caption}" />
                         </StackPanel>
                         <ComboBox Grid.Column="1" ItemsSource="{Binding Inputs}" SelectedItem="{Binding SelectedMic}" DisplayMemberPath="Name" Margin="0,4" />
-                        <Border Grid.Row="1" Grid.ColumnSpan="3" Background="{StaticResource WarningSoftBrush}" CornerRadius="6" Padding="10,6" Margin="0,4,0,4"
+                        <Border Grid.Row="1" Grid.ColumnSpan="3" Background="{DynamicResource WarningSoftBrush}" CornerRadius="6" Padding="10,6" Margin="0,4,0,4"
                                 Visibility="{Binding MicIsVirtualWarning, Converter={StaticResource BoolToVis}}">
                             <TextBlock Style="{StaticResource Caption}" Foreground="{StaticResource WarningBrush}"
                                        Text="Attention : vous avez choisi un micro virtuel comme source. Choisissez votre vrai micro (casque, micro USB…), sinon le son va boucler." />
@@ -150,7 +152,7 @@
                                   DisplayMemberPath="Name" Margin="0,14,0,4" />
                         <Button Grid.Row="2" Grid.Column="2" Style="{StaticResource IconButton}" Content="&#xE711;" Margin="6,10,0,0"
                                 ToolTip="Aucune" Command="{Binding ClearVirtualOutputCommand}" />
-                        <Border Grid.Row="3" Grid.ColumnSpan="3" Background="{StaticResource WarningSoftBrush}" CornerRadius="6" Padding="10,6" Margin="0,4,0,4"
+                        <Border Grid.Row="3" Grid.ColumnSpan="3" Background="{DynamicResource WarningSoftBrush}" CornerRadius="6" Padding="10,6" Margin="0,4,0,4"
                                 Visibility="{Binding VirtualOutputWarning, Converter={StaticResource BoolToVis}}">
                             <TextBlock Style="{StaticResource Caption}" Foreground="{StaticResource WarningBrush}"
                                        Text="Cette sortie n'est pas un câble virtuel : votre voix et la musique sortiront dans ces haut-parleurs au lieu d'aller dans le micro virtuel." />
@@ -164,7 +166,7 @@
                                   DisplayMemberPath="Name" Margin="0,14,0,4" />
                         <Button Grid.Row="4" Grid.Column="2" Style="{StaticResource IconButton}" Content="&#xE711;" Margin="6,10,0,0"
                                 ToolTip="Aucune" Command="{Binding ClearDiscordOutputCommand}" />
-                        <Border Grid.Row="5" Grid.ColumnSpan="3" Background="{StaticResource WarningSoftBrush}" CornerRadius="6" Padding="10,6" Margin="0,4,0,4"
+                        <Border Grid.Row="5" Grid.ColumnSpan="3" Background="{DynamicResource WarningSoftBrush}" CornerRadius="6" Padding="10,6" Margin="0,4,0,4"
                                 Visibility="{Binding DiscordSameCableWarning, Converter={StaticResource BoolToVis}}">
                             <TextBlock Style="{StaticResource Caption}" Foreground="{StaticResource WarningBrush}"
                                        Text="Discord et le jeu utilisent le même câble : ils entendront exactement la même chose. Choisissez un autre câble virtuel pour Discord." />
@@ -190,7 +192,7 @@
             <Border Style="{StaticResource Card}">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                        <TextBlock Style="{StaticResource Icon}" Text="&#xE765;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE765;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
                         <TextBlock Text="Raccourcis globaux" Style="{StaticResource SectionTitle}" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,12"
@@ -228,13 +230,13 @@
             <Border Style="{StaticResource Card}">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                        <TextBlock Style="{StaticResource Icon}" Text="&#xE897;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE897;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
                         <TextBlock Text="Guide de configuration" Style="{StaticResource SectionTitle}" />
                     </StackPanel>
                     <TextBlock Text="Discord" FontWeight="SemiBold" Margin="0,0,0,4" />
                     <TextBlock Style="{StaticResource Caption}" FontSize="13" Margin="0,0,0,12" LineHeight="21">
-                        1. Paramètres utilisateur → Voix et vidéo → Périphérique d'entrée : <Run Text="CABLE Output" Foreground="{StaticResource Accent2Brush}" />
-                        (ou <Run Text="Line 1" Foreground="{StaticResource Accent2Brush}" /> si vous avez séparé Discord du jeu)<LineBreak />
+                        1. Paramètres utilisateur → Voix et vidéo → Périphérique d'entrée : <Run Text="CABLE Output" Foreground="{DynamicResource Accent2Brush}" />
+                        (ou <Run Text="Line 1" Foreground="{DynamicResource Accent2Brush}" /> si vous avez séparé Discord du jeu)<LineBreak />
                         2. Traitement de la voix : Suppression du bruit = <Bold>Aucune</Bold>, et désactivez Annulation de l'écho, Activité vocale avancée et Contrôle automatique du gain. Ces filtres prennent la musique pour du bruit et la coupent.<LineBreak />
                         3. Sensibilité d'entrée : désactivez « Déterminer automatiquement » et mettez le curseur <Bold>tout à gauche</Bold>, sinon Discord coupe le micro dans les passages calmes.<LineBreak />
                         4. Atténuation (en bas de la page) : mettez-la à <Bold>0 %</Bold>. SpokaSoundBoard rétablit aussi automatiquement le volume si Discord ou Windows le baissent.<LineBreak />
@@ -242,7 +244,7 @@
                     </TextBlock>
                     <TextBlock Text="Jeux (hélico, simulateurs, FiveM, Arma, DCS…)" FontWeight="SemiBold" Margin="0,0,0,4" />
                     <TextBlock Style="{StaticResource Caption}" FontSize="13" LineHeight="21">
-                        1. Dans les options audio du jeu, choisissez <Run Text="CABLE Output" Foreground="{StaticResource Accent2Brush}" /> comme micro.<LineBreak />
+                        1. Dans les options audio du jeu, choisissez <Run Text="CABLE Output" Foreground="{DynamicResource Accent2Brush}" /> comme micro.<LineBreak />
                         2. Si le jeu ne propose pas de choix, définissez « CABLE Output » comme micro par défaut dans les paramètres son de Windows.<LineBreak />
                         3. Gardez la touche « parler » du jeu : SpokaSoundBoard envoie la musique en continu, le jeu décide quand transmettre.<LineBreak />
                         4. Pour un effet pilote : preset « Pilote d'hélico » + mode radio avec la même touche que le push-to-talk du jeu.
@@ -250,10 +252,115 @@
                 </StackPanel>
             </Border>
 
+            <!-- Appearance -->
+            <Border Style="{StaticResource Card}" DataContext="{Binding Appearance}">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,14">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Content="Par défaut" Padding="10,5" FontSize="12"
+                                Command="{Binding ResetCommand}" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE790;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
+                            <TextBlock Text="Apparence" Style="{StaticResource SectionTitle}" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="220" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Thème" Style="{StaticResource Label}" />
+                        <ComboBox Grid.Column="1" SelectedValuePath="Tag" SelectedValue="{Binding Settings.Theme}" Margin="0,4">
+                            <ComboBoxItem Content="Sombre" Tag="{x:Static models:AppTheme.Dark}" />
+                            <ComboBoxItem Content="Noir profond (écrans OLED)" Tag="{x:Static models:AppTheme.Oled}" />
+                            <ComboBoxItem Content="Clair" Tag="{x:Static models:AppTheme.Light}" />
+                        </ComboBox>
+
+                        <StackPanel Grid.Row="1" VerticalAlignment="Top" Margin="0,16,0,0">
+                            <TextBlock Text="Couleur principale" Style="{StaticResource Label}" />
+                            <TextBlock Text="Boutons, sélection, dégradés" Style="{StaticResource Caption}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,14,0,0">
+                            <ItemsControl ItemsSource="{Binding Accents}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Width="34" Height="34" Margin="0,0,8,8" Cursor="Hand" ToolTip="{Binding Name}"
+                                                Command="{Binding DataContext.SetAccentCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid>
+                                                        <Ellipse x:Name="Ring" Stroke="Transparent" StrokeThickness="2" />
+                                                        <Ellipse Margin="4">
+                                                            <Ellipse.Fill>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                                    <GradientStop Offset="0" Color="{Binding Accent}" />
+                                                                    <GradientStop Offset="1" Color="{Binding Secondary}" />
+                                                                </LinearGradientBrush>
+                                                            </Ellipse.Fill>
+                                                        </Ellipse>
+                                                    </Grid>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource TextBrush}" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <DockPanel Margin="0,2,0,0">
+                                <Border DockPanel.Dock="Left" Width="30" Height="30" CornerRadius="15" Margin="0,0,10,0"
+                                        Background="{DynamicResource AccentBrush}" />
+                                <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Content="Appliquer" Margin="8,0,0,0"
+                                        Command="{Binding ApplyCustomColorCommand}" />
+                                <TextBox Text="{Binding CustomColor, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center"
+                                         ToolTip="Couleur personnalisée au format #RRGGBB" />
+                            </DockPanel>
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="2" Text="Taille de l'interface" Style="{StaticResource Label}" Margin="0,16,0,0" VerticalAlignment="Top" />
+                        <local:SliderRow Grid.Row="2" Grid.Column="1" Label="Zoom" Minimum="0.8" Maximum="1.4" Step="0.05" Format="%"
+                                         Value="{Binding Settings.UiScale}" Margin="0,10,0,0" />
+
+                        <TextBlock Grid.Row="3" Text="Taille des tuiles de sons" Style="{StaticResource Label}" Margin="0,16,0,0" />
+                        <ComboBox Grid.Row="3" Grid.Column="1" SelectedValuePath="Tag" SelectedValue="{Binding Settings.PadSize}" Margin="0,14,0,4">
+                            <ComboBoxItem Content="Petites (plus de sons à l'écran)" Tag="{x:Static models:PadSize.Small}" />
+                            <ComboBoxItem Content="Normales" Tag="{x:Static models:PadSize.Medium}" />
+                            <ComboBoxItem Content="Grandes" Tag="{x:Static models:PadSize.Large}" />
+                        </ComboBox>
+
+                        <StackPanel Grid.Row="4" Grid.ColumnSpan="2" Margin="0,16,0,0">
+                            <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowSidebarMeters}" Margin="0,0,0,10">
+                                <TextBlock Text="Afficher les vumètres dans la barre latérale" Style="{StaticResource Label}" />
+                            </CheckBox>
+                            <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowPadHotkeys}">
+                                <TextBlock Text="Afficher les raccourcis sur les tuiles de sons" Style="{StaticResource Label}" />
+                            </CheckBox>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
             <Border Style="{StaticResource Card}">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                        <TextBlock Style="{StaticResource Icon}" Text="&#xE770;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE770;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
                         <TextBlock Text="Application" Style="{StaticResource SectionTitle}" />
                     </StackPanel>
                     <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding CloseToTray}" Margin="0,0,0,14">
@@ -279,8 +386,42 @@
 
             <Border Style="{StaticResource Card}">
                 <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE895;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
+                        <TextBlock Text="Mises à jour" Style="{StaticResource SectionTitle}" />
+                    </StackPanel>
+                    <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding CheckForUpdates}" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="Vérifier les mises à jour au démarrage" Style="{StaticResource Label}" />
+                            <TextBlock Text="Les nouvelles versions sont publiées sur GitHub et s'installent en un clic." Style="{StaticResource Caption}" />
+                        </StackPanel>
+                    </CheckBox>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource FlatButton}" Content="Vérifier maintenant" Command="{Binding CheckForUpdateNowCommand}" Margin="0,0,12,0" />
+                        <TextBlock Style="{StaticResource Caption}" VerticalAlignment="Center">
+                            <Run Text="Version installée :" />
+                            <Run Text="{Binding CurrentVersion, Mode=OneWay}" Foreground="{DynamicResource Accent2Brush}" />
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE9D9;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
+                        <TextBlock Text="Diagnostic audio" Style="{StaticResource SectionTitle}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,8"
+                               Text="Si le son coupe chez vos amis, regardez ces compteurs (remis à zéro à chaque redémarrage de l'audio). Ils restent à 0 si tout va bien côté SpokaSoundBoard : une coupure vient alors des réglages de Discord." />
+                    <TextBlock Text="{Binding DiagnosticsText}" FontFamily="Cascadia Mono, Consolas" FontSize="12" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
                     <TextBlock Text="À propos" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
-                    <TextBlock Style="{StaticResource Caption}" FontSize="13" Text="SpokaSoundBoard 1.3 — soundboard, lecteur de musique, liens YouTube et effets de voix en temps réel." />
+                    <TextBlock Style="{StaticResource Caption}" FontSize="13" Text="SpokaSoundBoard — soundboard, lecteur de musique, liens YouTube et effets de voix en temps réel." />
                     <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0"
                                Text="Vos réglages sont enregistrés automatiquement dans %AppData%\SpokaSoundBoard." />
                 </StackPanel>

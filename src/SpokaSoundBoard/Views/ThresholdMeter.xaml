@@ -9,7 +9,7 @@
                 <Border CornerRadius="4" Padding="8,2" Margin="0,0,10,0">
                     <Border.Style>
                         <Style TargetType="Border">
-                            <Setter Property="Background" Value="#262B3B" />
+                            <Setter Property="Background" Value="{DynamicResource ControlBrush}" />
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding VoiceActive}" Value="True">
                                     <Setter Property="Background" Value="#3322C55E" />
@@ -21,7 +21,7 @@
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Text" Value="Silence" />
-                                <Setter Property="Foreground" Value="{StaticResource SubtleTextBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource SubtleTextBrush}" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding VoiceActive}" Value="True">
                                         <Setter Property="Text" Value="Voix détectée" />

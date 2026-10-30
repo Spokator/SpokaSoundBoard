@@ -59,8 +59,12 @@ public sealed class SettingsStore
     {
         s.Voice ??= new VoiceEffectSettings();
         s.Mix ??= new MixSettings();
+        s.Appearance ??= new AppearanceSettings();
+        s.Appearance.UiScale = Math.Clamp(s.Appearance.UiScale, 0.8, 1.4);
         s.Hotkeys ??= new HotkeySettings();
         s.Hotkeys.ToggleDiscordShare ??= new HotkeyBinding();
+        s.Hotkeys.NextPreset ??= new HotkeyBinding();
+        s.Hotkeys.PreviousPreset ??= new HotkeyBinding();
         s.Pads ??= [];
         s.Playlist ??= [];
         s.CustomPresets ??= [];

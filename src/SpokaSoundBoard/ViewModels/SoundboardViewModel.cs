@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Windows.Data;
+using SpokaSoundBoard.Core;
 using System.ComponentModel;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -24,7 +26,13 @@ public partial class SoundboardViewModel : ObservableObject
             "Rechercher un son (ex. « vine boom », « sirène ») ou coller un lien…",
             [new(SearchSource.MyInstants, "Bruitages (MyInstants)", "\uE8A9"), new(SearchSource.YouTube, "YouTube", "\uE714")],
             AddFromLink);
+        PadsView = CollectionViewSource.GetDefaultView(Pads);
+        PadsView.Filter = o => o is SoundPad p && (string.IsNullOrWhiteSpace(Filter) || p.Name.Contains(Filter.Trim(), StringComparison.CurrentCultureIgnoreCase));
         foreach (var pad in Pads) pad.PropertyChanged += OnPadChanged;
+        main.Settings.Appearance.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AppearanceSettings.ShowPadHotkeys)) OnPropertyChanged(nameof(ShowHotkeys));
+        };
         Pads.CollectionChanged += (_, e) =>
         {
             if (e.NewItems != null)
@@ -39,9 +47,86 @@ public partial class SoundboardViewModel : ObservableObject
 
     public LinkImporter Link { get; }
 
+    public bool ShowHotkeys => _main.Settings.Appearance.ShowPadHotkeys;
+
     public IReadOnlyList<string> Colors => Palette;
 
     public bool IsEmpty => Pads.Count == 0;
+
+    /// <summary>Pads filtered by the search box.</summary>
+    public ICollectionView PadsView { get; }
+
+    [ObservableProperty] private string _filter = "";
+
+    partial void OnFilterChanged(string value) => PadsView.Refresh();
+
+    public void AnalyzeMissingLoudness()
+    {
+        foreach (var pad in Pads.Where(p => p.NormalizationDb == null && File.Exists(p.FilePath)).ToList())
+            Analyze(pad);
+    }
+
+    private void Analyze(SoundPad pad) => _main.Loudness.Enqueue(pad.FilePath, db =>
+    {
+        pad.NormalizationDb = db;
+        _main.Save();
+    });
+
+    private float EffectiveVolume(SoundPad pad) => pad.Volume * _main.NormalizationGain(pad.NormalizationDb);
+
+    [RelayCommand]
+    private void ExportPack()
+    {
+        if (Pads.Count == 0)
+        {
+            _main.ShowToast("Ajoutez d'abord des sons à votre soundboard.");
+            return;
+        }
+        var dialog = new SaveFileDialog
+        {
+            Title = "Exporter ma soundboard",
+            Filter = SoundboardPack.DialogFilter,
+            FileName = "Ma soundboard" + SoundboardPack.Extension,
+        };
+        if (dialog.ShowDialog() != true) return;
+        try
+        {
+            var count = SoundboardPack.Export(dialog.FileName, Path.GetFileNameWithoutExtension(dialog.FileName), Pads, _main.Settings.CustomPresets);
+            _main.ShowToast($"Pack exporté : {count} sons. Envoyez le fichier à vos amis !");
+        }
+        catch (Exception ex)
+        {
+            _main.ShowToast("Export impossible : " + ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private void ImportPack()
+    {
+        var dialog = new OpenFileDialog { Title = "Importer une soundboard", Filter = SoundboardPack.DialogFilter };
+        if (dialog.ShowDialog() == true) ImportPackFile(dialog.FileName);
+    }
+
+    public void ImportPackFile(string path)
+    {
+        try
+        {
+            var library = Path.Combine(_main.Downloader.CacheDirectory, "Packs");
+            var (pads, presets) = SoundboardPack.Import(path, library);
+            foreach (var pad in pads)
+            {
+                Pads.Add(pad);
+                if (pad.NormalizationDb == null) Analyze(pad);
+            }
+            var addedPresets = _main.Voice.AddImportedPresets(presets);
+            _main.Save();
+            _main.ShowToast($"Pack importé : {pads.Count} sons" + (addedPresets > 0 ? $" et {addedPresets} effets de voix." : "."));
+        }
+        catch (Exception ex)
+        {
+            _main.ShowToast("Import impossible : " + ex.Message);
+        }
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection))]
@@ -64,14 +149,20 @@ public partial class SoundboardViewModel : ObservableObject
     public void AddFiles(IEnumerable<string> paths)
     {
         var added = 0;
-        foreach (var path in paths.Where(AudioFileLoader.IsSupported))
+        var list = paths.ToList();
+        foreach (var pack in list.Where(p => p.EndsWith(SoundboardPack.Extension, StringComparison.OrdinalIgnoreCase)))
+            ImportPackFile(pack);
+        if (list.All(p => p.EndsWith(SoundboardPack.Extension, StringComparison.OrdinalIgnoreCase))) return;
+        foreach (var path in list.Where(AudioFileLoader.IsSupported))
         {
-            Pads.Add(new SoundPad
+            var newPad = new SoundPad
             {
                 Name = Path.GetFileNameWithoutExtension(path),
                 FilePath = path,
                 Color = Palette[Pads.Count % Palette.Length],
-            });
+            };
+            Pads.Add(newPad);
+            Analyze(newPad);
             added++;
         }
         if (added > 0)
@@ -95,6 +186,7 @@ public partial class SoundboardViewModel : ObservableObject
             Color = Palette[Pads.Count % Palette.Length],
         };
         Pads.Add(pad);
+        Analyze(pad);
         SelectedPad = pad;
     }
 
@@ -121,7 +213,7 @@ public partial class SoundboardViewModel : ObservableObject
         try
         {
             pad.IsPlaying = true;
-            await player.PlayAsync(pad.Id, pad.FilePath, pad.Volume, pad.Loop, pad.StartSeconds, pad.EndSeconds);
+            await player.PlayAsync(pad.Id, pad.FilePath, EffectiveVolume(pad), pad.Loop, pad.StartSeconds, pad.EndSeconds);
         }
         catch (Exception ex)
         {
@@ -187,8 +279,8 @@ public partial class SoundboardViewModel : ObservableObject
     private void OnPadChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (sender is not SoundPad pad) return;
-        if (e.PropertyName == nameof(SoundPad.Volume))
-            _main.Engine.Pads.SetVolume(pad.Id, pad.Volume);
+        if (e.PropertyName is nameof(SoundPad.Volume) or nameof(SoundPad.NormalizationDb))
+            _main.Engine.Pads.SetVolume(pad.Id, EffectiveVolume(pad));
         else if (e.PropertyName == nameof(SoundPad.IsPlaying) && pad.IsPlaying)
             _startGrace[pad.Id] = DateTime.UtcNow;
     }

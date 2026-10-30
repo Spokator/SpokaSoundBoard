@@ -22,6 +22,12 @@ public sealed class VoiceProcessor
     private readonly EchoEffect _echo;
     private readonly ReverbEffect _reverb;
     private readonly Compressor _compressor;
+    private readonly ThreeBandEq _eq;
+    private readonly ChorusEffect _chorus;
+    private readonly LofiEffect _lofi = new();
+    private readonly Biquad[] _muffle = [new(), new()];
+    private float _lastMuffle = -1;
+    private float _beepFrequency, _beepEndFrequency;
     private NoiseGenerator _noise = new(0xC0FFEE);
 
     private float _vadEnvelope;
@@ -54,6 +60,8 @@ public sealed class VoiceProcessor
         _echo = new EchoEffect(sampleRate);
         _reverb = new ReverbEffect(sampleRate);
         _compressor = new Compressor(sampleRate);
+        _eq = new ThreeBandEq(sampleRate);
+        _chorus = new ChorusEffect(sampleRate);
         _rumbleFilter.SetHighPass(sampleRate, 80f);
         _vadAttack = DspUtil.TimeCoefficient(4f, sampleRate);
         _vadRelease = DspUtil.TimeCoefficient(120f, sampleRate);
@@ -101,6 +109,11 @@ public sealed class VoiceProcessor
         var echo = fx && s.EchoEnabled;
         var reverb = fx && s.ReverbEnabled;
         var compress = fx && s.CompressorEnabled;
+        var eq = fx && s.EqEnabled;
+        var chorus = fx && s.ChorusEnabled;
+        var lofi = fx && s.LofiEnabled;
+        var muffle = fx && s.MuffleEnabled;
+        var beeps = radio && s.RogerBeepEnabled;
         var pitch = fx && MathF.Abs(s.PitchSemitones) > 0.05f;
         var squelch = radio && s.SquelchEnabled;
         var drive = 1f + s.RadioDrive * 14f;
@@ -129,11 +142,16 @@ public sealed class VoiceProcessor
             }
 
             // A transmission is a "radio keying": key held in PTT mode, voice detected otherwise.
-            var transmitting = micEnabled && (pushToTalk ? pushToTalkHeld : _vadActive || !s.GateEnabled && !squelch);
+            var transmitting = micEnabled && (pushToTalk ? pushToTalkHeld : _vadActive);
             if (transmitting != _wasTransmitting)
             {
                 if (squelch) StartSquelch(transmitting ? 0.06f : 0.16f);
-                if (!transmitting && radio && s.RogerBeepEnabled) StartBeep();
+                if (beeps)
+                {
+                    if (s.BeepStyle == RadioBeepStyle.Nasa) StartBeep(transmitting ? 2525f : 2475f, 0.25f);
+                    else if (!transmitting) StartBeep(s.BeepStyle == RadioBeepStyle.Simple ? 1000f : 1450f, s.BeepStyle == RadioBeepStyle.Simple ? 0.12f : 0.17f,
+                        s.BeepStyle == RadioBeepStyle.Simple ? 1000f : 1050f);
+                }
                 _wasTransmitting = transmitting;
             }
 
@@ -154,6 +172,7 @@ public sealed class VoiceProcessor
             x *= _gateGain;
 
             if (pitch) x = _pitch.Process(x);
+            if (eq) x = _eq.Process(x);
 
             if (radio)
             {
@@ -161,6 +180,8 @@ public sealed class VoiceProcessor
                 x = _radioPresence.Process(x);
                 x = MathF.Tanh(x * drive) * driveNorm * 0.6f;
             }
+
+            if (lofi) x = _lofi.Process(x);
 
             if (robot)
             {
@@ -170,6 +191,12 @@ public sealed class VoiceProcessor
                 x = x * (1 - s.RobotMix) + x * carrier * s.RobotMix * 1.6f;
             }
 
+            if (chorus) x = _chorus.Process(x);
+            if (muffle)
+            {
+                x = _muffle[0].Process(x);
+                x = _muffle[1].Process(x);
+            }
             if (echo) x = _echo.Process(x);
             if (reverb) x = _reverb.Process(x);
             if (compress) x = _compressor.Process(x);
@@ -192,8 +219,7 @@ public sealed class VoiceProcessor
             {
                 var progress = 1f - _beepRemaining / (float)_beepLength;
                 var env = MathF.Min(1f, MathF.Min(progress * 40f, (1 - progress) * 40f));
-                // Two-tone "roger beep".
-                var freq = progress < 0.5f ? 1450f : 1050f;
+                var freq = progress < 0.5f ? _beepFrequency : _beepEndFrequency;
                 _beepPhase += 2 * MathF.PI * freq / _sampleRate;
                 if (_beepPhase > 2 * MathF.PI) _beepPhase -= 2 * MathF.PI;
                 x += MathF.Sin(_beepPhase) * 0.18f * env;
@@ -219,9 +245,12 @@ public sealed class VoiceProcessor
         _squelchLength = _squelchRemaining = (int)(seconds * _sampleRate);
     }
 
-    private void StartBeep()
+    /// <param name="endFrequency">Second half frequency (two-tone beeps); defaults to the same tone.</param>
+    private void StartBeep(float frequency, float seconds, float? endFrequency = null)
     {
-        _beepLength = _beepRemaining = (int)(0.17f * _sampleRate);
+        _beepFrequency = frequency;
+        _beepEndFrequency = endFrequency ?? frequency;
+        _beepLength = _beepRemaining = (int)(seconds * _sampleRate);
         _beepPhase = 0;
     }
 
@@ -255,5 +284,18 @@ public sealed class VoiceProcessor
         _reverb.RoomSize = s.ReverbSize;
         _reverb.Mix = s.ReverbMix;
         _compressor.SetAmount(s.CompressorAmount);
+        _eq.Configure(s.EqLowDb, s.EqMidDb, s.EqHighDb);
+        _chorus.Rate = s.ChorusRate;
+        _chorus.Depth = s.ChorusDepth;
+        _chorus.Mix = s.ChorusMix;
+        _lofi.Drive = s.LofiDrive;
+        _lofi.Bits = s.LofiBits;
+        _lofi.Downsample = Math.Max(1, (int)MathF.Round(s.LofiDownsample));
+        if (s.MuffleHz != _lastMuffle)
+        {
+            _lastMuffle = s.MuffleHz;
+            _muffle[0].SetLowPass(_sampleRate, s.MuffleHz, 0.7f);
+            _muffle[1].SetLowPass(_sampleRate, s.MuffleHz, 0.7f);
+        }
     }
 }

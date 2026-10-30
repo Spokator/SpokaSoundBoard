@@ -28,6 +28,8 @@ public partial class DevicesViewModel : ObservableObject
             new("Activer / désactiver les effets", "Bascule rapide entre voix normale et effet", h.ToggleEffects),
             new("Musique dans le micro on/off", "Écouter la musique seul ou la partager", h.ToggleMediaToMic),
             new("Discord : partager musique & sons", "Vos amis Discord entendent (ou non) la musique et les sons", h.ToggleDiscordShare),
+            new("Effet de voix suivant", "Passe au preset suivant (ex. normale → pilote → robot…)", h.NextPreset),
+            new("Effet de voix précédent", "Revient au preset précédent", h.PreviousPreset),
         ];
     }
 

@@ -78,6 +78,29 @@ public partial class VoiceViewModel : ObservableObject
         _main.Save();
     }
 
+    /// <summary>Hotkeys "effet suivant / précédent".</summary>
+    public void CyclePreset(int direction)
+    {
+        if (Presets.Count == 0) return;
+        var index = Presets.ToList().FindIndex(p => p.Name == SelectedPresetName);
+        var next = Presets[((index < 0 ? 0 : index + direction) % Presets.Count + Presets.Count) % Presets.Count];
+        ApplyPreset(next);
+    }
+
+    public int AddImportedPresets(IEnumerable<EffectPreset> presets)
+    {
+        var added = 0;
+        foreach (var preset in presets)
+        {
+            if (Presets.Any(p => p.Name.Equals(preset.Name, StringComparison.CurrentCultureIgnoreCase))) continue;
+            preset.IsBuiltIn = false;
+            Presets.Add(preset);
+            _main.Settings.CustomPresets.Add(preset);
+            added++;
+        }
+        return added;
+    }
+
     [RelayCommand]
     private void ResetVoice()
     {

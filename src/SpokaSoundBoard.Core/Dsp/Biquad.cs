@@ -29,6 +29,23 @@ public sealed class Biquad
 
     public void Reset() => _z1 = _z2 = 0;
 
+    public void SetLowShelf(float sampleRate, float frequency, float gainDb) => SetShelf(sampleRate, frequency, gainDb, low: true);
+
+    public void SetHighShelf(float sampleRate, float frequency, float gainDb) => SetShelf(sampleRate, frequency, gainDb, low: false);
+
+    private void SetShelf(float sampleRate, float frequency, float gainDb, bool low)
+    {
+        Compute(sampleRate, frequency, 0.7071f, out _, out var cos, out var alpha);
+        var a = MathF.Pow(10f, gainDb / 40f);
+        var sq = 2 * MathF.Sqrt(a) * alpha;
+        if (low)
+            Set(a * ((a + 1) - (a - 1) * cos + sq), 2 * a * ((a - 1) - (a + 1) * cos), a * ((a + 1) - (a - 1) * cos - sq),
+                (a + 1) + (a - 1) * cos + sq, -2 * ((a - 1) + (a + 1) * cos), (a + 1) + (a - 1) * cos - sq);
+        else
+            Set(a * ((a + 1) + (a - 1) * cos + sq), -2 * a * ((a - 1) + (a + 1) * cos), a * ((a + 1) + (a - 1) * cos - sq),
+                (a + 1) - (a - 1) * cos + sq, 2 * ((a - 1) - (a + 1) * cos), (a + 1) - (a - 1) * cos - sq);
+    }
+
     public float Process(float x)
     {
         var y = _b0 * x + _z1;

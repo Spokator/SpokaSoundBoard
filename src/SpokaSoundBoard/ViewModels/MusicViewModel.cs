@@ -25,6 +25,10 @@ public partial class MusicViewModel : ObservableObject
             AddFromLink);
         Player.TrackEnded += () => System.Windows.Application.Current?.Dispatcher.BeginInvoke(OnTrackEnded);
         Playlist.CollectionChanged += (_, _) => OnPropertyChanged(nameof(IsEmpty));
+        main.Mix.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MixSettings.NormalizeLoudness)) ApplyGain();
+        };
     }
 
     private MusicPlayer Player => _main.Engine.Music;
@@ -33,6 +37,21 @@ public partial class MusicViewModel : ObservableObject
 
     public bool IsEmpty => Playlist.Count == 0;
 
+    public void AnalyzeMissingLoudness()
+    {
+        foreach (var track in Playlist.Where(t => t.NormalizationDb == null && File.Exists(t.FilePath)).ToList())
+            Analyze(track);
+    }
+
+    private void Analyze(TrackItem track) => _main.Loudness.Enqueue(track.FilePath, db =>
+    {
+        track.NormalizationDb = db;
+        if (track == CurrentTrack) ApplyGain();
+        _main.Save();
+    });
+
+    private void ApplyGain() => Player.Gain = _main.NormalizationGain(CurrentTrack?.NormalizationDb);
+
     public LinkImporter Link { get; }
 
     private void AddFromLink(DownloadedMedia media)
@@ -40,6 +59,7 @@ public partial class MusicViewModel : ObservableObject
         if (Playlist.Any(t => string.Equals(t.FilePath, media.FilePath, StringComparison.OrdinalIgnoreCase))) return;
         var track = new TrackItem { FilePath = media.FilePath, DisplayTitle = media.Title, SourceUrl = media.SourceUrl };
         Playlist.Add(track);
+        Analyze(track);
         // Start right away when nothing is playing, so a pasted link "just plays".
         if (!_main.Engine.Music.HasTrack) PlayTrack(track);
     }
@@ -116,7 +136,9 @@ public partial class MusicViewModel : ObservableObject
                 continue;
             }
             if (!AudioFileLoader.IsSupported(p) || !existing.Add(p)) continue;
-            Playlist.Add(new TrackItem { FilePath = p });
+            var track = new TrackItem { FilePath = p };
+            Playlist.Add(track);
+            Analyze(track);
             added++;
         }
         if (added > 0)
@@ -142,6 +164,7 @@ public partial class MusicViewModel : ObservableObject
             if (CurrentTrack != null) CurrentTrack.IsCurrent = false;
             CurrentTrack = track;
             track.IsCurrent = true;
+            ApplyGain();
             IsPlaying = true;
             Duration = Math.Max(1, Player.Duration.TotalSeconds);
             DurationText = Format(Player.Duration);

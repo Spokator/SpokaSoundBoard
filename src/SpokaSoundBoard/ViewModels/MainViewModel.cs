@@ -32,6 +32,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             ShowToast("Discord ou Windows baissait le son envoyé dans le micro virtuel : corrigé automatiquement. " +
                       "Dans Discord, mettez « Atténuation » à 0 %.");
         });
+        Loudness = new LoudnessService(_dispatcher);
         Downloader = new MediaDownloader(_store.Directory, System.IO.Path.Combine(AppContext.BaseDirectory, "tools"));
         Mix.PropertyChanged += (_, e) =>
         {
@@ -45,6 +46,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Voice = new VoiceViewModel(this);
         Devices = new DevicesViewModel(this);
         Setup = new SetupWizardViewModel(this);
+        Appearance = new AppearanceViewModel(this);
 
         Hotkeys.BindingsProvider = GetHotkeyBindings;
         Hotkeys.RegisterPushToTalk(() => Settings.Hotkeys.PushToTalk, held =>
@@ -73,6 +75,29 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public AudioEngine Engine { get; }
     public HotkeyService Hotkeys { get; }
     public MediaDownloader Downloader { get; }
+    public LoudnessService Loudness { get; }
+
+    /// <summary>Linear gain for a loudness correction, honouring the "normalize" switch.</summary>
+    public float NormalizationGain(double? db) =>
+        Mix.NormalizeLoudness && db is { } value ? DspUtil.DbToLinear((float)value) : 1f;
+
+    [ObservableProperty] private string _diagnosticsText = "";
+    [ObservableProperty] private UpdateInfo? _availableUpdate;
+    [ObservableProperty] private bool _isUpdating;
+    [ObservableProperty] private double _updateProgress;
+
+    public string CurrentVersion => (typeof(MainViewModel).Assembly.GetName().Version ?? new Version(1, 0)).ToString(3);
+
+    public bool CheckForUpdates
+    {
+        get => Settings.CheckForUpdates;
+        set
+        {
+            Settings.CheckForUpdates = value;
+            OnPropertyChanged();
+            Save();
+        }
+    }
     public MediaSearch Search => _search ??= new MediaSearch(Downloader);
     private MediaSearch? _search;
     private bool _volumeWarningShown;
@@ -108,6 +133,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public VoiceViewModel Voice { get; }
     public DevicesViewModel Devices { get; }
     public SetupWizardViewModel Setup { get; }
+    public AppearanceViewModel Appearance { get; }
 
     public bool Autostart
     {
@@ -165,6 +191,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Devices.InitializeSelection();
         RestartEngine();
         Music.RestoreState();
+        Soundboard.AnalyzeMissingLoudness();
+        Music.AnalyzeMissingLoudness();
+        if (Settings.CheckForUpdates) _ = CheckForUpdateAsync(silent: true);
         _meterTimer.Start();
         _saveTimer.Start();
         if (setupRequested || !Settings.FirstRunDone || Settings.SetupResumeStep != null)
@@ -254,6 +283,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         yield return (h.ToggleEffects, ToggleEffects);
         yield return (h.ToggleMediaToMic, ToggleMediaToMic);
         yield return (h.ToggleDiscordShare, ToggleDiscordShare);
+        yield return (h.NextPreset, () => Voice.CyclePreset(1));
+        yield return (h.PreviousPreset, () => Voice.CyclePreset(-1));
         foreach (var pad in Settings.Pads.ToList())
             yield return (pad.Hotkey, () => Soundboard.PlayPadCommand.Execute(pad));
     }
@@ -277,6 +308,73 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         Soundboard.RefreshPlayingState();
         Music.RefreshPosition();
+        if (++_diagnosticTicks % 30 == 0) UpdateDiagnostics();
+    }
+
+    private int _diagnosticTicks;
+
+    private void UpdateDiagnostics()
+    {
+        var d = Engine.GetDiagnostics();
+        DiagnosticsText =
+            $"Coupures micro : {d.MicDropouts}   ·   Coupures sortie Discord : {d.DiscordDropouts}   ·   Coupures casque : {d.HeadphoneDropouts}\n" +
+            $"Baisses de volume corrigées : {d.VolumeCorrections}   ·   Compensation d'horloge Discord : {(d.DiscordClockRatio - 1) * 100:+0.000;-0.000;0.000} %";
+    }
+
+    [RelayCommand]
+    private async Task CheckForUpdateNow() => await CheckForUpdateAsync(silent: false);
+
+    private async Task CheckForUpdateAsync(bool silent)
+    {
+        try
+        {
+            if (silent) await Task.Delay(TimeSpan.FromSeconds(5));
+            var current = typeof(MainViewModel).Assembly.GetName().Version ?? new Version(1, 0);
+            var update = await UpdateChecker.CheckAsync(current);
+            if (update != null && silent && update.Tag == Settings.SkippedUpdate) update = null;
+            AvailableUpdate = update;
+            if (!silent && update == null) ShowToast($"SpokaSoundBoard est à jour (version {CurrentVersion}).");
+        }
+        catch (Exception ex)
+        {
+            if (!silent) ShowToast("Vérification impossible : " + ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task InstallUpdate()
+    {
+        if (AvailableUpdate is not { } update || IsUpdating) return;
+        IsUpdating = true;
+        try
+        {
+            var setup = await UpdateChecker.DownloadAsync(update, new Progress<double>(p => UpdateProgress = p));
+            Save();
+            // The installer closes this instance, updates it and starts it again.
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(setup, "/SILENT /SP- /NOCANCEL /CLOSEAPPLICATIONS")
+            {
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            ShowToast("Mise à jour impossible : " + ex.Message);
+            IsUpdating = false;
+        }
+    }
+
+    [RelayCommand]
+    private void SkipUpdate()
+    {
+        Settings.SkippedUpdate = AvailableUpdate?.Tag;
+        AvailableUpdate = null;
+        Save();
+    }
+
+    [RelayCommand]
+    private void OpenReleaseNotes()
+    {
+        if (AvailableUpdate != null) WindowsIntegration.Open(AvailableUpdate.ReleaseUrl);
     }
 
     private static double Smooth(double previous, double next) => next > previous ? next : previous * 0.85 + next * 0.15;
@@ -329,6 +427,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _saveTimer.Stop();
         Save();
         Hotkeys.Dispose();
+        Loudness.Dispose();
         Engine.Dispose();
     }
 }

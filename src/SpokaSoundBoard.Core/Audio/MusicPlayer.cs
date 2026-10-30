@@ -20,6 +20,9 @@ public sealed class MusicPlayer : ISampleProvider, IDisposable
 
     public bool HasTrack => _reader != null;
 
+    /// <summary>Linear gain applied to the current track (loudness normalization).</summary>
+    public float Gain { get; set; } = 1f;
+
     /// <summary>Raised on the audio thread when a track reaches its end.</summary>
     public event Action? TrackEnded;
 
@@ -105,6 +108,10 @@ public sealed class MusicPlayer : ISampleProvider, IDisposable
             {
                 // Corrupted file: treat as end of track.
             }
+
+            var gain = Gain;
+            if (gain != 1f)
+                for (var i = 0; i < total; i++) buffer[offset + i] *= gain;
 
             if (total < count)
             {

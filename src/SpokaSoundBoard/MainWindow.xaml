@@ -5,8 +5,11 @@
         xmlns:conv="clr-namespace:SpokaSoundBoard.Converters"
         Title="SpokaSoundBoard" Width="1280" Height="820" MinWidth="1000" MinHeight="660"
         WindowStartupLocation="CenterScreen" Icon="Assets/app.ico"
-        Background="{StaticResource WindowBrush}" Foreground="{StaticResource TextBrush}">
+        Background="{DynamicResource WindowBrush}" Foreground="{DynamicResource TextBrush}">
     <Grid>
+        <Grid.LayoutTransform>
+            <ScaleTransform ScaleX="{Binding Settings.Appearance.UiScale}" ScaleY="{Binding Settings.Appearance.UiScale}" />
+        </Grid.LayoutTransform>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="250" />
             <ColumnDefinition Width="*" />
@@ -17,7 +20,7 @@
         </Grid.RowDefinitions>
 
         <!-- ============ Sidebar ============ -->
-        <Border Grid.RowSpan="2" Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,0,1,0">
+        <Border Grid.RowSpan="2" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,1,0">
             <DockPanel Margin="14,18,14,14">
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6,0,0,24">
                     <Image Source="Assets/logo.png" Width="40" Height="40" RenderOptions.BitmapScalingMode="HighQuality" />
@@ -71,13 +74,14 @@
                             </StackPanel>
                         </Button>
 
+                        <StackPanel Visibility="{Binding Settings.Appearance.ShowSidebarMeters, Converter={StaticResource BoolToVis}}">
                         <Grid Margin="0,0,0,4">
                             <TextBlock Text="Votre voix" Style="{StaticResource Caption}" />
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Ellipse Width="8" Height="8" Margin="0,0,6,0" VerticalAlignment="Center">
                                     <Ellipse.Style>
                                         <Style TargetType="Ellipse">
-                                            <Setter Property="Fill" Value="#3A4155" />
+                                            <Setter Property="Fill" Value="{DynamicResource IdleDotBrush}" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding Transmitting}" Value="True">
                                                     <Setter Property="Fill" Value="{StaticResource SuccessBrush}" />
@@ -108,7 +112,7 @@
                                        Text="{Binding DuckReductionDb, StringFormat=ducking {0:0} dB}" />
                         </Grid>
                         <ProgressBar Style="{StaticResource Meter}" Value="{Binding MediaLevel, Mode=OneWay}" Margin="0,0,0,10"
-                                     Foreground="{StaticResource BrandBrush}" />
+                                     Foreground="{DynamicResource BrandBrush}" />
 
                         <TextBlock Text="Sortie jeu" Style="{StaticResource Caption}" Margin="0,0,0,4" />
                         <ProgressBar Style="{StaticResource Meter}" Value="{Binding OutputLevel, Mode=OneWay}" Margin="0,0,0,10" />
@@ -118,6 +122,7 @@
                             <ProgressBar Style="{StaticResource Meter}" Value="{Binding DiscordLevel, Mode=OneWay}" Margin="0,0,0,10" />
                         </StackPanel>
                         <Border Height="2" />
+                        </StackPanel>
 
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="8" Height="8" Margin="0,0,8,0" VerticalAlignment="Center">
@@ -162,10 +167,11 @@
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Border Background="{StaticResource WarningSoftBrush}" BorderBrush="{StaticResource WarningBrush}" BorderThickness="0,0,0,1"
+            <Border Background="{DynamicResource WarningSoftBrush}" BorderBrush="{StaticResource WarningBrush}" BorderThickness="0,0,0,1"
                     Padding="20,10" Visibility="{Binding Devices.HasVirtualCable, Converter={StaticResource InverseBoolToVis}}">
                 <DockPanel>
                     <Button DockPanel.Dock="Right" Content="Installer maintenant" Style="{StaticResource AccentButton}" Padding="12,6"
@@ -176,7 +182,34 @@
                 </DockPanel>
             </Border>
 
-            <Grid Grid.Row="1">
+            <Border Grid.Row="1" Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="0,0,0,1"
+                    Padding="20,10" Visibility="{Binding AvailableUpdate, Converter={StaticResource NullToVis}}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button Style="{StaticResource FlatButton}" Content="Plus tard" Padding="10,6" Margin="0,0,8,0" Command="{Binding SkipUpdateCommand}" />
+                        <Button Style="{StaticResource FlatButton}" Content="Nouveautés" Padding="10,6" Margin="0,0,8,0" Command="{Binding OpenReleaseNotesCommand}" />
+                        <Button Style="{StaticResource AccentButton}" Padding="12,6" Command="{Binding InstallUpdateCommand}"
+                                IsEnabled="{Binding IsUpdating, Converter={StaticResource InverseBool}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE896;" FontSize="13" Margin="0,0,8,0" />
+                                <TextBlock Text="Mettre à jour" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Icon}" Text="&#xE895;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,12,0" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock>
+                            <Run Text="Nouvelle version disponible :" />
+                            <Run Text="{Binding AvailableUpdate.Tag, Mode=OneWay}" FontWeight="SemiBold" />
+                        </TextBlock>
+                        <ProgressBar Style="{StaticResource Meter}" Height="4" Margin="0,6,0,0" Maximum="100" Width="240" HorizontalAlignment="Left"
+                                     Value="{Binding UpdateProgress, Mode=OneWay}" Foreground="{DynamicResource BrandBrush}"
+                                     Visibility="{Binding IsUpdating, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <Grid Grid.Row="2">
                 <views:SoundboardView DataContext="{Binding Soundboard}"
                                       Visibility="{Binding DataContext.CurrentPage, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqualsToVis}, ConverterParameter=soundboard}" />
                 <views:MusicView DataContext="{Binding Music}"
@@ -188,7 +221,7 @@
         </Grid>
 
         <!-- ============ Player bar ============ -->
-        <Border Grid.Row="1" Grid.Column="1" Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource CardBorderBrush}"
+        <Border Grid.Row="1" Grid.Column="1" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="0,1,0,0" Padding="20,12" DataContext="{Binding Music}">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -198,8 +231,8 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="46" Height="46" CornerRadius="8" Background="{StaticResource AccentSoftBrush}">
-                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8D6;" FontSize="20" Foreground="{StaticResource Accent2Brush}" />
+                    <Border Width="46" Height="46" CornerRadius="8" Background="{DynamicResource AccentSoftBrush}">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8D6;" FontSize="20" Foreground="{DynamicResource Accent2Brush}" />
                     </Border>
                     <StackPanel Margin="12,0,0,0" VerticalAlignment="Center" MaxWidth="190">
                         <TextBlock Text="{Binding CurrentTitle}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding CurrentTitle}" />
@@ -259,12 +292,12 @@
                     </Grid>
                     <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Mix.MediaToMicEnabled}" FontSize="12"
                               ToolTip="Désactivé : vous seul entendez la musique et les sons">
-                        <TextBlock Text="Diffuser dans le micro" Style="{StaticResource Caption}" Foreground="{StaticResource TextBrush}" />
+                        <TextBlock Text="Diffuser dans le micro" Style="{StaticResource Caption}" Foreground="{DynamicResource TextBrush}" />
                     </CheckBox>
                     <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShareMediaWithDiscord}" FontSize="12" Margin="0,4,0,0"
                               ToolTip="Vos amis Discord entendent aussi la musique et les sons"
                               Visibility="{Binding Devices.HasDiscordOutput, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Text="…aussi sur Discord" Style="{StaticResource Caption}" Foreground="{StaticResource TextBrush}" />
+                        <TextBlock Text="…aussi sur Discord" Style="{StaticResource Caption}" Foreground="{DynamicResource TextBrush}" />
                     </CheckBox>
                 </StackPanel>
             </Grid>
@@ -272,10 +305,10 @@
 
         <!-- ============ Toast ============ -->
         <Border Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,24,20" Padding="16,12"
-                CornerRadius="10" Background="#F0262B3B" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" MaxWidth="420"
+                CornerRadius="10" Background="{DynamicResource ToastBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" MaxWidth="420"
                 Visibility="{Binding ToastMessage, Converter={StaticResource NullToVis}}" IsHitTestVisible="False">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Style="{StaticResource Icon}" Text="&#xE946;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                <TextBlock Style="{StaticResource Icon}" Text="&#xE946;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
                 <TextBlock Text="{Binding ToastMessage}" TextWrapping="Wrap" MaxWidth="360" />
             </StackPanel>
         </Border>
@@ -289,7 +322,7 @@
               Visibility="{Binding IsRecordingHotkey, Converter={StaticResource BoolToVis}}">
             <Border Style="{StaticResource Card}" Width="440" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="28">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Icon}" Text="&#xE765;" FontSize="38" Foreground="{StaticResource Accent2Brush}" />
+                    <TextBlock Style="{StaticResource Icon}" Text="&#xE765;" FontSize="38" Foreground="{DynamicResource Accent2Brush}" />
                     <TextBlock Text="Appuyez sur une touche ou un bouton de souris" FontSize="18" FontWeight="SemiBold"
                                HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Margin="0,14,0,6" />
                     <TextBlock Text="Combinaisons avec Ctrl / Maj / Alt acceptées. Boutons souris : molette, souris 4 et 5."

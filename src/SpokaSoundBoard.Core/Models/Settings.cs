@@ -3,6 +3,19 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace SpokaSoundBoard.Core.Models;
 
+/// <summary>Sound played by the radio effect around a transmission.</summary>
+public enum RadioBeepStyle
+{
+    /// <summary>Two-tone beep when you stop talking.</summary>
+    Roger,
+
+    /// <summary>NASA "Quindar" tones: 2525 Hz when you start, 2475 Hz when you stop.</summary>
+    Nasa,
+
+    /// <summary>Short single beep when you stop talking.</summary>
+    Simple,
+}
+
 /// <summary>
 /// All voice-processing parameters. Bound directly by the UI and read by the audio thread.
 /// </summary>
@@ -24,6 +37,7 @@ public partial class VoiceEffectSettings : ObservableObject
     [ObservableProperty] private float _radioNoise = 0.15f;
     [ObservableProperty] private bool _squelchEnabled = true;
     [ObservableProperty] private bool _rogerBeepEnabled;
+    [ObservableProperty] private RadioBeepStyle _beepStyle;
 
     [ObservableProperty] private bool _robotEnabled;
     [ObservableProperty] private float _robotFrequency = 60f;
@@ -40,6 +54,24 @@ public partial class VoiceEffectSettings : ObservableObject
 
     [ObservableProperty] private bool _compressorEnabled = true;
     [ObservableProperty] private float _compressorAmount = 0.4f;
+
+    [ObservableProperty] private bool _eqEnabled;
+    [ObservableProperty] private float _eqLowDb;
+    [ObservableProperty] private float _eqMidDb;
+    [ObservableProperty] private float _eqHighDb;
+
+    [ObservableProperty] private bool _chorusEnabled;
+    [ObservableProperty] private float _chorusRate = 0.8f;
+    [ObservableProperty] private float _chorusDepth = 0.5f;
+    [ObservableProperty] private float _chorusMix = 0.5f;
+
+    [ObservableProperty] private bool _lofiEnabled;
+    [ObservableProperty] private float _lofiDrive = 0.3f;
+    [ObservableProperty] private float _lofiBits = 10f;
+    [ObservableProperty] private float _lofiDownsample = 2f;
+
+    [ObservableProperty] private bool _muffleEnabled;
+    [ObservableProperty] private float _muffleHz = 900f;
 
     public VoiceEffectSettings Clone()
     {
@@ -60,6 +92,7 @@ public partial class VoiceEffectSettings : ObservableObject
         RadioNoise = o.RadioNoise;
         SquelchEnabled = o.SquelchEnabled;
         RogerBeepEnabled = o.RogerBeepEnabled;
+        BeepStyle = o.BeepStyle;
         RobotEnabled = o.RobotEnabled;
         RobotFrequency = o.RobotFrequency;
         RobotMix = o.RobotMix;
@@ -72,6 +105,20 @@ public partial class VoiceEffectSettings : ObservableObject
         ReverbMix = o.ReverbMix;
         CompressorEnabled = o.CompressorEnabled;
         CompressorAmount = o.CompressorAmount;
+        EqEnabled = o.EqEnabled;
+        EqLowDb = o.EqLowDb;
+        EqMidDb = o.EqMidDb;
+        EqHighDb = o.EqHighDb;
+        ChorusEnabled = o.ChorusEnabled;
+        ChorusRate = o.ChorusRate;
+        ChorusDepth = o.ChorusDepth;
+        ChorusMix = o.ChorusMix;
+        LofiEnabled = o.LofiEnabled;
+        LofiDrive = o.LofiDrive;
+        LofiBits = o.LofiBits;
+        LofiDownsample = o.LofiDownsample;
+        MuffleEnabled = o.MuffleEnabled;
+        MuffleHz = o.MuffleHz;
     }
 
     public void CopyFrom(VoiceEffectSettings o)
@@ -103,6 +150,9 @@ public partial class MixSettings : ObservableObject
     [ObservableProperty] private float _duckingAmountDb = -14f;
     [ObservableProperty] private float _duckingAttackMs = 60f;
     [ObservableProperty] private float _duckingReleaseMs = 700f;
+
+    /// <summary>Plays every sound and track at the same perceived loudness.</summary>
+    [ObservableProperty] private bool _normalizeLoudness = true;
 
     /// <summary>Radio mode: the voice only goes through while the push-to-talk key is held.</summary>
     [ObservableProperty] private bool _pushToTalkEnabled;

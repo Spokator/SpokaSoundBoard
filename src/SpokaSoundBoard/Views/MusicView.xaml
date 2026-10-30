@@ -39,10 +39,10 @@
         <local:LinkBar DockPanel.Dock="Top" DataContext="{Binding Link}" />
 
         <Grid>
-            <Border BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="2" CornerRadius="14" Margin="0,0,0,24"
+            <Border BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="2" CornerRadius="14" Margin="0,0,0,24"
                     Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="420">
-                    <TextBlock Style="{StaticResource Icon}" Text="&#xE8D6;" FontSize="54" Foreground="{StaticResource Accent2Brush}" />
+                    <TextBlock Style="{StaticResource Icon}" Text="&#xE8D6;" FontSize="54" Foreground="{DynamicResource Accent2Brush}" />
                     <TextBlock Text="Aucune musique" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,16,0,6" />
                     <TextBlock Style="{StaticResource Caption}" TextAlignment="Center" FontSize="13"
                                Text="Glissez-déposez des fichiers, des dossiers ou un lien YouTube depuis votre navigateur, ou utilisez les boutons en haut à droite." />
@@ -62,15 +62,15 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Border Width="32" Height="32" CornerRadius="6" Background="#262B3B">
+                            <Border Width="32" Height="32" CornerRadius="6" Background="{DynamicResource ControlBrush}">
                                 <TextBlock Text="&#xE8D6;" FontSize="13">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock" BasedOn="{StaticResource Icon}">
-                                            <Setter Property="Foreground" Value="{StaticResource SubtleTextBrush}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource SubtleTextBrush}" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsCurrent}" Value="True">
                                                     <Setter Property="Text" Value="&#xE995;" />
-                                                    <Setter Property="Foreground" Value="{StaticResource Accent2Brush}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource Accent2Brush}" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -81,10 +81,10 @@
                                 <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
-                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsCurrent}" Value="True">
-                                                    <Setter Property="Foreground" Value="{StaticResource Accent2Brush}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource Accent2Brush}" />
                                                     <Setter Property="FontWeight" Value="SemiBold" />
                                                 </DataTrigger>
                                             </Style.Triggers>
@@ -92,7 +92,7 @@
                                     </TextBlock.Style>
                                 </TextBlock>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE71B;" FontSize="10" Margin="0,0,5,0" Foreground="{StaticResource SubtleTextBrush}"
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE71B;" FontSize="10" Margin="0,0,5,0" Foreground="{DynamicResource SubtleTextBrush}"
                                                Visibility="{Binding HasSource, Converter={StaticResource BoolToVis}}" />
                                     <TextBlock Text="{Binding Folder}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" />
                                 </StackPanel>

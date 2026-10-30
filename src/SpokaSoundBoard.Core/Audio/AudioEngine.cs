@@ -4,6 +4,8 @@ using SpokaSoundBoard.Core.Models;
 
 namespace SpokaSoundBoard.Core.Audio;
 
+public sealed record AudioDiagnostics(int MicDropouts, int DiscordDropouts, int HeadphoneDropouts, int VolumeCorrections, double DiscordClockRatio);
+
 public enum EngineState
 {
     Stopped,
@@ -20,6 +22,9 @@ public sealed class AudioEngine : IDisposable
     private readonly object _lock = new();
     private MicInput? _mic;
     private readonly WasapiOut?[] _outputs = new WasapiOut?[3];
+    private readonly JitterBufferProvider?[] _busBuffers = new JitterBufferProvider?[3];
+    private JitterBufferProvider? _micBuffer;
+    private int _volumeCorrections;
     private bool _stopping;
     private readonly Timer _guardTimer;
     private string[] _protectedDevices = [];
@@ -43,7 +48,11 @@ public sealed class AudioEngine : IDisposable
         var corrections = 0;
         foreach (var id in Volatile.Read(ref _protectedDevices))
             corrections += AudioSessionGuard.Protect(id);
-        if (corrections > 0) VolumeCorrected?.Invoke(corrections);
+        if (corrections > 0)
+        {
+            Interlocked.Add(ref _volumeCorrections, corrections);
+            VolumeCorrected?.Invoke(corrections);
+        }
     }
 
     public MixerCore Core { get; }
@@ -86,7 +95,7 @@ public sealed class AudioEngine : IDisposable
                     {
                         _mic = new MicInput(micDevice);
                         _mic.Stopped += OnDeviceStopped;
-                        Core.SetMicSource(_mic.CreateProvider(MixerCore.SampleRate));
+                        Core.SetMicSource(_mic.CreateProvider(MixerCore.SampleRate, out _micBuffer));
                         _mic.Start();
                         MicName = _mic.DeviceName;
                     }
@@ -119,9 +128,17 @@ public sealed class AudioEngine : IDisposable
                 {
                     var device = devices[i];
                     if (device == null) continue;
-                    ISampleProvider provider = i == master
-                        ? new MasterBusProvider(Core, master, rings)
-                        : new JitterBufferProvider(rings[i]!, MixerCore.SampleRate, 2, 30f, 120f);
+                    ISampleProvider provider;
+                    if (i == master)
+                    {
+                        provider = new MasterBusProvider(Core, master, rings);
+                    }
+                    else
+                    {
+                        var jb = new JitterBufferProvider(rings[i]!, MixerCore.SampleRate, 2, 40f, 150f);
+                        _busBuffers[i] = jb;
+                        provider = jb;
+                    }
                     _outputs[i] = CreateOutput(device, provider);
                 }
 
@@ -154,6 +171,14 @@ public sealed class AudioEngine : IDisposable
         StateChanged?.Invoke();
     }
 
+    /// <summary>Drop-out counters since the audio was (re)started, for the diagnostics panel.</summary>
+    public AudioDiagnostics GetDiagnostics() => new(
+        _micBuffer?.Underruns ?? 0,
+        _busBuffers[1]?.Underruns ?? 0,
+        _busBuffers[2]?.Underruns ?? 0,
+        Volatile.Read(ref _volumeCorrections),
+        _busBuffers[1]?.Ratio ?? 1.0);
+
     public void Stop()
     {
         lock (_lock)
@@ -167,7 +192,7 @@ public sealed class AudioEngine : IDisposable
 
     private WasapiOut CreateOutput(MMDevice device, ISampleProvider provider)
     {
-        var output = new WasapiOut(device, AudioClientShareMode.Shared, true, 30);
+        var output = new WasapiOut(device, AudioClientShareMode.Shared, true, 40);
         output.PlaybackStopped += (_, e) => OnDeviceStopped(e.Exception);
         output.Init(provider);
         return output;
@@ -195,7 +220,9 @@ public sealed class AudioEngine : IDisposable
         {
             DisposeQuietly(_outputs[i]);
             _outputs[i] = null;
+            _busBuffers[i] = null;
         }
+        _micBuffer = null;
         DisposeQuietly(_mic);
         _mic = null;
         MicName = MainOutputName = DiscordOutputName = MonitorName = null;

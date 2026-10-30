@@ -26,7 +26,7 @@
                             <RadioButton.Template>
                                 <ControlTemplate TargetType="RadioButton">
                                     <Border x:Name="Chip" CornerRadius="14" Padding="12,5" BorderThickness="1"
-                                            Background="#262B3B" BorderBrush="#343B50">
+                                            Background="{DynamicResource ControlBrush}" BorderBrush="{DynamicResource ControlBorderBrush}">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Style="{StaticResource Icon}" Text="{Binding Icon}" FontSize="12" Margin="0,0,6,0" />
                                             <TextBlock Text="{Binding Label}" FontSize="12" />
@@ -34,8 +34,8 @@
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsChecked" Value="True">
-                                            <Setter TargetName="Chip" Property="Background" Value="{StaticResource AccentSoftBrush}" />
-                                            <Setter TargetName="Chip" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                            <Setter TargetName="Chip" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                                            <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -57,7 +57,7 @@
                         <TextBlock Text="{Binding SubmitLabel}" />
                     </StackPanel>
                 </Button>
-                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE721;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,12,0" />
+                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE721;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,12,0" />
                 <Grid>
                     <TextBox x:Name="UrlBox" Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center"
                              IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}" KeyDown="OnUrlKeyDown" />
@@ -80,15 +80,15 @@
             <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ImportPlaylist}" Margin="30,10,0,0" HorizontalAlignment="Left"
                       Visibility="{Binding ShowPlaylistOption, Converter={StaticResource BoolToVis}}"
                       IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}">
-                <TextBlock Text="Importer toute la playlist (jusqu'à 200 morceaux)" Style="{StaticResource Caption}" Foreground="{StaticResource TextBrush}" />
+                <TextBlock Text="Importer toute la playlist (jusqu'à 200 morceaux)" Style="{StaticResource Caption}" Foreground="{DynamicResource TextBrush}" />
             </CheckBox>
 
             <ProgressBar Style="{StaticResource Meter}" Height="6" Margin="30,12,0,0" Maximum="100"
                          Value="{Binding Progress, Mode=OneWay}" IsIndeterminate="{Binding IsIndeterminate}"
-                         Foreground="{StaticResource BrandBrush}"
+                         Foreground="{DynamicResource BrandBrush}"
                          Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
             <ProgressBar Style="{StaticResource Meter}" Height="4" Margin="30,12,0,0" IsIndeterminate="True"
-                         Foreground="{StaticResource BrandBrush}"
+                         Foreground="{DynamicResource BrandBrush}"
                          Visibility="{Binding IsSearching, Converter={StaticResource BoolToVis}}" />
 
             <TextBlock Text="{Binding Status}" Margin="30,8,0,0" TextWrapping="Wrap"
@@ -119,7 +119,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Grid Width="72" Height="40" Margin="0,0,12,0">
-                                        <Border CornerRadius="6" ClipToBounds="True" Background="#262B3B"
+                                        <Border CornerRadius="6" ClipToBounds="True" Background="{DynamicResource ControlBrush}"
                                                 Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}">
                                             <Image Source="{Binding ThumbnailUrl, TargetNullValue={x:Null}, IsAsync=True}" Stretch="UniformToFill" />
                                         </Border>
@@ -141,7 +141,7 @@
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsPreviewing}" Value="True">
                                                             <Setter Property="Content" Value="&#xE71A;" />
-                                                            <Setter Property="Foreground" Value="{StaticResource Accent2Brush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource Accent2Brush}" />
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding IsPreviewLoading}" Value="True">
                                                             <Setter Property="Content" Value="&#xE895;" />
@@ -177,7 +177,7 @@
                             </Border>
                             <DataTemplate.Triggers>
                                 <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="Row" Property="Background" Value="{StaticResource CardHoverBrush}" />
+                                    <Setter TargetName="Row" Property="Background" Value="{DynamicResource CardHoverBrush}" />
                                 </Trigger>
                             </DataTemplate.Triggers>
                         </DataTemplate>
