@@ -5,6 +5,7 @@ using SpokaSoundBoard.Core.Online;
 
 namespace SpokaSoundBoard.Tests;
 
+[Collection("Online")]
 public class RoutingTests
 {
     private const int Frames = 4800;

@@ -21,7 +21,9 @@ public partial class SoundboardViewModel : ObservableObject
     {
         _main = main;
         Link = new LinkImporter(main, "Sons", false,
-            "Collez un lien YouTube, MyInstants, TikTok… (Entrée pour importer)", AddFromLink);
+            "Rechercher un son (ex. « vine boom », « sirène ») ou coller un lien…",
+            [new(SearchSource.MyInstants, "Bruitages (MyInstants)", "\uE8A9"), new(SearchSource.YouTube, "YouTube", "\uE714")],
+            AddFromLink);
         foreach (var pad in Pads) pad.PropertyChanged += OnPadChanged;
         Pads.CollectionChanged += (_, e) =>
         {

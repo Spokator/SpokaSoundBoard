@@ -85,7 +85,7 @@ public sealed partial class MediaDownloader
     {
         var args = new List<string>
         {
-            "--no-config", "--ignore-errors", "--newline", "--progress", "--color", "never", "--windows-filenames", "--no-mtime",
+            "--no-config", "--encoding", "utf-8", "--ignore-errors", "--newline", "--progress", "--color", "never", "--windows-filenames", "--no-mtime",
             // MP3 / M4A / MP4 are played natively; other formats are converted afterwards.
             "-f", FormatOverride ?? "bestaudio[ext=m4a]/bestaudio[ext=mp3]/bestaudio[acodec^=mp4a]/bestaudio/best",
             "-P", outputDir,
@@ -148,6 +148,66 @@ public sealed partial class MediaDownloader
         await process.WaitForExitAsync(ct);
         await stderrTask;
         return (items, lastError);
+    }
+
+    /// <summary>YouTube search through yt-dlp ("ytsearchN:"), without downloading anything.</summary>
+    public async Task<IReadOnlyList<SearchResult>> SearchYouTubeAsync(string query, int count, CancellationToken ct)
+    {
+        await EnsureYtDlpAsync(null, ct);
+        var args = new[]
+        {
+            "--no-config", "--encoding", "utf-8", "--flat-playlist", "--ignore-errors",
+            "--print", $"%(id)s{Separator}%(title)s{Separator}%(channel,uploader)s{Separator}%(duration)s{Separator}%(live_status)s",
+            "--", $"ytsearch{Math.Clamp(count, 1, 30)}:{query.Trim()}",
+        };
+        var psi = CreateStartInfo(YtDlpPath, args);
+        using var process = Process.Start(psi) ?? throw new DownloadException("Impossible de lancer yt-dlp.");
+        using var registration = ct.Register(() => TryKill(process));
+        var errorTask = process.StandardError.ReadToEndAsync(ct);
+        var results = new List<SearchResult>();
+        while (await process.StandardOutput.ReadLineAsync(ct) is { } line)
+        {
+            var parts = line.Split(Separator);
+            if (parts.Length < 4 || string.IsNullOrWhiteSpace(parts[0]) || parts[0] == "NA") continue;
+            var id = parts[0];
+            TimeSpan? duration = double.TryParse(parts[3], System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var seconds) ? TimeSpan.FromSeconds(seconds) : null;
+            var isLive = parts.Length > 4 && parts[4].Contains("live", StringComparison.OrdinalIgnoreCase) && parts[4] != "not_live" && parts[4] != "was_live";
+            if (isLive) continue;
+            var channel = parts[2] == "NA" ? "YouTube" : parts[2];
+            results.Add(new SearchResult(parts[1], channel, $"https://www.youtube.com/watch?v={id}", null, duration,
+                $"https://i.ytimg.com/vi/{id}/mqdefault.jpg", SearchSource.YouTube, null));
+        }
+        await process.WaitForExitAsync(ct);
+        if (results.Count == 0)
+        {
+            var error = (await errorTask).Split('\n').LastOrDefault(l => l.StartsWith("ERROR", StringComparison.OrdinalIgnoreCase));
+            if (error != null) throw new DownloadException(FriendlyError(error));
+        }
+        return results;
+    }
+
+    /// <summary>Downloads a direct audio file (e.g. a MyInstants MP3) without yt-dlp.</summary>
+    public async Task<DownloadedMedia> DownloadDirectAsync(string audioUrl, string title, string pageUrl, string subFolder,
+        IProgress<DownloadProgress>? progress, CancellationToken ct)
+    {
+        var outputDir = Path.Combine(CacheDirectory, subFolder);
+        Directory.CreateDirectory(outputDir);
+        var extension = Path.GetExtension(new Uri(audioUrl).AbsolutePath);
+        if (string.IsNullOrEmpty(extension) || extension.Length > 5) extension = ".mp3";
+        var target = Path.Combine(outputDir, SafeFileName(title) + extension);
+        if (!File.Exists(target))
+            await DownloadFileAsync(audioUrl, target, progress, "Téléchargement", ct);
+        target = await EnsurePlayableAsync(target, progress, ct);
+        return new DownloadedMedia(target, title, pageUrl);
+    }
+
+    internal static string SafeFileName(string name)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var clean = new string(name.Select(c => invalid.Contains(c) ? '_' : c).ToArray()).Trim().TrimEnd('.');
+        if (clean.Length > 80) clean = clean[..80];
+        return clean.Length == 0 ? "son" : clean;
     }
 
     /// <summary>Converts formats NAudio cannot read (Opus, WebM…) to MP3 with ffmpeg.</summary>

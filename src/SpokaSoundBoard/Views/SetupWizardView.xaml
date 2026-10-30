@@ -180,8 +180,10 @@
                                         </Border>
                                     </DockPanel>
                                     <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" LineHeight="19">
-                                        Désactivez aussi, dans la même page : la suppression de bruit (Krisp), l'annulation d'écho et le contrôle
-                                        automatique du gain. Sinon Discord coupe la musique.
+                                        Dans la même page, sinon Discord coupe la musique par moments :<LineBreak />
+                                        • Suppression du bruit : <Bold>Aucune</Bold> · Annulation de l'écho, Activité vocale avancée, Contrôle auto du gain : <Bold>désactivés</Bold><LineBreak />
+                                        • Sensibilité d'entrée : « Déterminer automatiquement » désactivé, curseur <Bold>tout à gauche</Bold><LineBreak />
+                                        • Atténuation : <Bold>0 %</Bold>
                                     </TextBlock>
                                     <Button Style="{StaticResource AccentButton}" HorizontalAlignment="Left" Margin="0,12,0,0" Command="{Binding OpenDiscordVoiceSettingsCommand}">
                                         <StackPanel Orientation="Horizontal">

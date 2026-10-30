@@ -39,17 +39,22 @@ public sealed class MixerCore
     private float[] _voiceDry = new float[2048];
     private float[] _music = new float[4096];
     private float[] _pads = new float[4096];
+    private float[] _preview = new float[4096];
 
-    public MixerCore(VoiceEffectSettings voice, MixSettings mix, MusicPlayer music, SoundPadPlayer pads)
+    public MixerCore(VoiceEffectSettings voice, MixSettings mix, MusicPlayer music, SoundPadPlayer pads, MusicPlayer? preview = null)
     {
         _mix = mix;
         Music = music;
         Pads = pads;
+        Preview = preview;
         _voice = new VoiceProcessor(SampleRate, voice);
     }
 
     public MusicPlayer Music { get; }
     public SoundPadPlayer Pads { get; }
+
+    /// <summary>Headphones-only player used to listen to search results before adding them.</summary>
+    public MusicPlayer? Preview { get; }
     public EngineMeters Meters { get; } = new();
 
     /// <summary>Radio-mode key state, set by the hotkey service.</summary>
@@ -95,6 +100,8 @@ public sealed class MixerCore
 
         Music.Read(_music, 0, frames * 2);
         Pads.Read(_pads, 0, frames * 2);
+        var preview = Preview is { IsPlaying: true } && !monitor.IsEmpty;
+        if (preview) Preview!.Read(_preview, 0, frames * 2);
 
         var duckActive = mix.DuckingEnabled && _voice.VoiceActive && _voice.Transmitting;
         var duckLevel = DspUtil.DbToLinear(mix.DuckingAmountDb);
@@ -105,6 +112,7 @@ public sealed class MixerCore
         var toMic = mix.MediaToMicEnabled ? mix.MediaToMicVolume : 0f;
         var monitorVol = mix.MonitorVolume;
         var selfMonitor = mix.ListenToSelf ? monitorVol : 0f;
+        var previewVol = preview ? MathF.Max(monitorVol, 0.4f) : 0f;
 
         var gameMusic = mix.GameMusic ? toMic : 0f;
         var gameSounds = mix.GameSounds ? toMic : 0f;
@@ -144,6 +152,11 @@ public sealed class MixerCore
             {
                 monitor[f * 2] = (ml + pl) * monitorVol + wet * selfMonitor;
                 monitor[f * 2 + 1] = (mr + pr) * monitorVol + wet * selfMonitor;
+                if (preview)
+                {
+                    monitor[f * 2] += _preview[f * 2] * previewVol;
+                    monitor[f * 2 + 1] += _preview[f * 2 + 1] * previewVol;
+                }
             }
         }
 
@@ -180,6 +193,7 @@ public sealed class MixerCore
         {
             _music = new float[frames * 2];
             _pads = new float[frames * 2];
+            _preview = new float[frames * 2];
         }
     }
 }

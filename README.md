@@ -6,6 +6,7 @@ Soundboard moderne pour Windows : diffusez de la musique et des sons **dans votr
 
 - **Soundboard** : tuiles colorées, glisser-déposer, volume / couleur / boucle / extrait (début-fin) par son, raccourci global par son (clavier ou boutons souris 4/5/molette).
 - **Lecteur de musique** : playlist (fichiers ou dossiers entiers), aléatoire, répétition, barre de progression.
+- **Recherche intégrée** : tapez « booba mona lisa » (Musique, via YouTube) ou « vine boom » (Soundboard, via MyInstants ou YouTube). Les résultats s'affichent avec miniature et durée, ▶ pour écouter dans votre casque seulement, « Ajouter » pour l'ajouter.
 - **Import par lien** : collez (ou glissez depuis le navigateur) un lien YouTube, SoundCloud, MyInstants, TikTok, Twitch, MP3 direct… Pour la musique, une playlist entière peut être importée. L'audio est mis en cache sur le PC (`%AppData%\SpokaSoundBoard\Downloads`) grâce à [yt-dlp](https://github.com/yt-dlp/yt-dlp), téléchargé et mis à jour automatiquement ; ffmpeg n'est récupéré que si un site fournit un format à convertir. Respectez les droits des contenus que vous diffusez.
 - **Jeu / Discord séparés** : tableau « Qui entend quoi ? » (voix, effets, musique, sons) pour chaque sortie. Exemple : les passagers de l'hélico entendent la playlist et l'effet pilote, vos amis Discord seulement votre voix naturelle (même en mode radio).
 - **Ducking** : votre voix passe par-dessus la musique ; seuil, intensité, vitesses de baisse et de remontée réglables.
@@ -13,6 +14,8 @@ Soundboard moderne pour Windows : diffusez de la musique et des sons **dans votr
 - **Mode radio (appuyer pour parler)** : votre voix ne passe que quand vous maintenez la touche, avec le grésillement de radio ; la musique continue.
 - **Raccourcis globaux** utilisables en jeu (la touche n'est pas bloquée pour le jeu).
 - **Retour casque** : vous entendez la musique, et vous pouvez vous écouter pour tester vos effets.
+- **Zone de notification** : la croix réduit l'application près de l'horloge (musique et raccourcis continuent) ; clic droit sur l'icône pour couper le micro, les effets, la musique… ou quitter.
+- **Anti-coupures** : SpokaSoundBoard refuse l'atténuation automatique de Windows et rétablit le volume si Discord (option « Atténuation ») le baisse.
 - Formats : MP3, WAV, OGG, FLAC, M4A/AAC, WMA, AIFF.
 - Réglages enregistrés automatiquement dans `%AppData%\SpokaSoundBoard`.
 
@@ -43,8 +46,11 @@ L'installeur crée les raccourcis Bureau / menu Démarrer, propose le lancement 
 ### Discord
 
 1. Paramètres → Voix et vidéo → Périphérique d'entrée : **CABLE Output** (ou **Line 1** si vous avez séparé Discord du jeu).
-2. Désactivez la suppression de bruit (Krisp), l'annulation d'écho et le contrôle automatique du gain.
-3. Sensibilité d'entrée : réglez-la au minimum (ou utilisez le push-to-talk de Discord).
+2. Suppression du bruit : **Aucune** ; désactivez l'annulation d'écho, l'activité vocale avancée et le contrôle automatique du gain (ils prennent la musique pour du bruit et la coupent).
+3. Sensibilité d'entrée : désactivez « Déterminer automatiquement » et mettez le curseur tout à gauche (ou utilisez le push-to-talk de Discord).
+4. Atténuation : **0 %**.
+
+Si la musique se coupe par moments sur Discord alors qu'elle est continue dans l'application, c'est presque toujours l'un de ces réglages de Discord.
 
 ### Jeux
 

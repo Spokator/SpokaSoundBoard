@@ -235,9 +235,10 @@
                     <TextBlock Style="{StaticResource Caption}" FontSize="13" Margin="0,0,0,12" LineHeight="21">
                         1. Paramètres utilisateur → Voix et vidéo → Périphérique d'entrée : <Run Text="CABLE Output" Foreground="{StaticResource Accent2Brush}" />
                         (ou <Run Text="Line 1" Foreground="{StaticResource Accent2Brush}" /> si vous avez séparé Discord du jeu)<LineBreak />
-                        2. Désactivez la suppression de bruit (Krisp), l'annulation d'écho et le contrôle automatique du gain (sinon Discord coupe la musique).<LineBreak />
-                        3. Mode de saisie : « Détection de la voix » avec la sensibilité réglée au minimum, ou désactivez la détection automatique.<LineBreak />
-                        4. Astuce : « Qualité de la voix » au maximum dans les serveurs que vous gérez pour une musique plus claire.
+                        2. Traitement de la voix : Suppression du bruit = <Bold>Aucune</Bold>, et désactivez Annulation de l'écho, Activité vocale avancée et Contrôle automatique du gain. Ces filtres prennent la musique pour du bruit et la coupent.<LineBreak />
+                        3. Sensibilité d'entrée : désactivez « Déterminer automatiquement » et mettez le curseur <Bold>tout à gauche</Bold>, sinon Discord coupe le micro dans les passages calmes.<LineBreak />
+                        4. Atténuation (en bas de la page) : mettez-la à <Bold>0 %</Bold>. SpokaSoundBoard rétablit aussi automatiquement le volume si Discord ou Windows le baissent.<LineBreak />
+                        5. Astuce : « Qualité de la voix » au maximum dans les serveurs que vous gérez pour une musique plus claire.
                     </TextBlock>
                     <TextBlock Text="Jeux (hélico, simulateurs, FiveM, Arma, DCS…)" FontWeight="SemiBold" Margin="0,0,0,4" />
                     <TextBlock Style="{StaticResource Caption}" FontSize="13" LineHeight="21">
@@ -255,10 +256,16 @@
                         <TextBlock Style="{StaticResource Icon}" Text="&#xE770;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
                         <TextBlock Text="Application" Style="{StaticResource SectionTitle}" />
                     </StackPanel>
+                    <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding CloseToTray}" Margin="0,0,0,14">
+                        <StackPanel>
+                            <TextBlock Text="La croix réduit dans la zone de notification" Style="{StaticResource Label}" />
+                            <TextBlock Text="L'application continue (musique, raccourcis) avec une icône près de l'horloge. Clic droit sur l'icône → Quitter pour fermer." Style="{StaticResource Caption}" />
+                        </StackPanel>
+                    </CheckBox>
                     <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Autostart}" Margin="0,0,0,14">
                         <StackPanel>
                             <TextBlock Text="Lancer au démarrage de Windows" Style="{StaticResource Label}" />
-                            <TextBlock Text="S'ouvre réduit dans la barre des tâches" Style="{StaticResource Caption}" />
+                            <TextBlock Text="Démarre discrètement dans la zone de notification" Style="{StaticResource Caption}" />
                         </StackPanel>
                     </CheckBox>
                     <Button Style="{StaticResource FlatButton}" HorizontalAlignment="Left" Command="{Binding OpenSetupCommand}">
@@ -273,7 +280,7 @@
             <Border Style="{StaticResource Card}">
                 <StackPanel>
                     <TextBlock Text="À propos" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
-                    <TextBlock Style="{StaticResource Caption}" FontSize="13" Text="SpokaSoundBoard 1.2 — soundboard, lecteur de musique, liens YouTube et effets de voix en temps réel." />
+                    <TextBlock Style="{StaticResource Caption}" FontSize="13" Text="SpokaSoundBoard 1.3 — soundboard, lecteur de musique, liens YouTube et effets de voix en temps réel." />
                     <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0"
                                Text="Vos réglages sont enregistrés automatiquement dans %AppData%\SpokaSoundBoard." />
                 </StackPanel>

@@ -1,22 +1,63 @@
 <UserControl x:Class="SpokaSoundBoard.Views.LinkBar"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root">
     <!-- DataContext: LinkImporter -->
     <Border Style="{StaticResource Card}" Padding="16" Visibility="{Binding IsOpen, Converter={StaticResource BoolToVis}}">
         <StackPanel>
+            <!-- Sources -->
+            <ItemsControl ItemsSource="{Binding Sources}" Margin="30,0,0,10"
+                          Visibility="{Binding HasSeveralSources, Converter={StaticResource BoolToVis}}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <RadioButton GroupName="{Binding DataContext.Placeholder, ElementName=Root}" Margin="0,0,8,0" Cursor="Hand"
+                                     Command="{Binding DataContext.SelectSourceCommand, ElementName=Root}" CommandParameter="{Binding}">
+                            <RadioButton.IsChecked>
+                                <MultiBinding Converter="{StaticResource MultiEquals}" Mode="OneWay">
+                                    <Binding Path="Label" />
+                                    <Binding Path="DataContext.SelectedSource.Label" ElementName="Root" />
+                                </MultiBinding>
+                            </RadioButton.IsChecked>
+                            <RadioButton.Template>
+                                <ControlTemplate TargetType="RadioButton">
+                                    <Border x:Name="Chip" CornerRadius="14" Padding="12,5" BorderThickness="1"
+                                            Background="#262B3B" BorderBrush="#343B50">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="{Binding Icon}" FontSize="12" Margin="0,0,6,0" />
+                                            <TextBlock Text="{Binding Label}" FontSize="12" />
+                                        </StackPanel>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="Chip" Property="Background" Value="{StaticResource AccentSoftBrush}" />
+                                            <Setter TargetName="Chip" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </RadioButton.Template>
+                        </RadioButton>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
             <DockPanel>
                 <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE711;" ToolTip="Fermer"
                         Command="{Binding ToggleCommand}" Margin="8,0,0,0" VerticalAlignment="Center" />
                 <Button DockPanel.Dock="Right" Style="{StaticResource DangerButton}" Content="Annuler" Margin="8,0,0,0"
                         Command="{Binding CancelCommand}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
-                <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Margin="8,0,0,0" Command="{Binding ImportCommand}"
+                <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Margin="8,0,0,0" Command="{Binding SubmitCommand}" MinWidth="120"
                         Visibility="{Binding IsBusy, Converter={StaticResource InverseBoolToVis}}">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Style="{StaticResource Icon}" Text="&#xE896;" FontSize="13" Margin="0,0,8,0" />
-                        <TextBlock Text="Importer" />
+                        <TextBlock Style="{StaticResource Icon}" Text="{Binding SubmitIcon}" FontSize="13" Margin="0,0,8,0" />
+                        <TextBlock Text="{Binding SubmitLabel}" />
                     </StackPanel>
                 </Button>
-                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE71B;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,12,0" />
+                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE721;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,12,0" />
                 <Grid>
                     <TextBox x:Name="UrlBox" Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center"
                              IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}" KeyDown="OnUrlKeyDown" />
@@ -37,7 +78,7 @@
             </DockPanel>
 
             <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ImportPlaylist}" Margin="30,10,0,0" HorizontalAlignment="Left"
-                      Visibility="{Binding SupportsPlaylist, Converter={StaticResource BoolToVis}}"
+                      Visibility="{Binding ShowPlaylistOption, Converter={StaticResource BoolToVis}}"
                       IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}">
                 <TextBlock Text="Importer toute la playlist (jusqu'à 200 morceaux)" Style="{StaticResource Caption}" Foreground="{StaticResource TextBrush}" />
             </CheckBox>
@@ -46,8 +87,11 @@
                          Value="{Binding Progress, Mode=OneWay}" IsIndeterminate="{Binding IsIndeterminate}"
                          Foreground="{StaticResource BrandBrush}"
                          Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+            <ProgressBar Style="{StaticResource Meter}" Height="4" Margin="30,12,0,0" IsIndeterminate="True"
+                         Foreground="{StaticResource BrandBrush}"
+                         Visibility="{Binding IsSearching, Converter={StaticResource BoolToVis}}" />
 
-            <TextBlock Text="{Binding Status}" Margin="30,8,0,0" TextTrimming="CharacterEllipsis"
+            <TextBlock Text="{Binding Status}" Margin="30,8,0,0" TextWrapping="Wrap"
                        Visibility="{Binding Status, Converter={StaticResource NullToVis}}">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock" BasedOn="{StaticResource Caption}">
@@ -59,8 +103,90 @@
                     </Style>
                 </TextBlock.Style>
             </TextBlock>
-            <TextBlock Style="{StaticResource Caption}" Margin="30,6,0,0" FontSize="11"
-                       Text="YouTube, SoundCloud, MyInstants, TikTok, Twitch, liens MP3 directs… L'audio est enregistré sur votre PC pour une lecture instantanée. Respectez les droits des contenus que vous diffusez." />
+
+            <!-- Results -->
+            <ScrollViewer x:Name="ResultsScroll" MaxHeight="330" VerticalScrollBarVisibility="Auto" Margin="22,8,0,0"
+                          Visibility="{Binding HasResults, Converter={StaticResource BoolToVis}}">
+                <ItemsControl ItemsSource="{Binding Results}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border x:Name="Row" CornerRadius="8" Padding="8,6" Background="Transparent"
+                                    MouseLeftButtonDown="OnResultMouseDown">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid Width="72" Height="40" Margin="0,0,12,0">
+                                        <Border CornerRadius="6" ClipToBounds="True" Background="#262B3B"
+                                                Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}">
+                                            <Image Source="{Binding ThumbnailUrl, TargetNullValue={x:Null}, IsAsync=True}" Stretch="UniformToFill" />
+                                        </Border>
+                                        <Border Width="36" Height="36" CornerRadius="18" Background="{Binding Color, Converter={StaticResource HexToBrush}}"
+                                                Visibility="{Binding HasThumbnail, Converter={StaticResource InverseBoolToVis}}">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE8A9;" FontSize="14" Foreground="White" />
+                                        </Border>
+                                    </Grid>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}" />
+                                        <TextBlock Text="{Binding Details}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button Command="{Binding DataContext.PreviewResultCommand, ElementName=Root}" CommandParameter="{Binding}"
+                                                ToolTip="Écouter dans votre casque (vous seul)" MinWidth="38">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
+                                                    <Setter Property="Content" Value="&#xE768;" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsPreviewing}" Value="True">
+                                                            <Setter Property="Content" Value="&#xE71A;" />
+                                                            <Setter Property="Foreground" Value="{StaticResource Accent2Brush}" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsPreviewLoading}" Value="True">
+                                                            <Setter Property="Content" Value="&#xE895;" />
+                                                            <Setter Property="IsEnabled" Value="False" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                        <Button Style="{StaticResource IconButton}" Content="&#xE8A7;" ToolTip="Ouvrir la page"
+                                                Command="{Binding DataContext.OpenResultCommand, ElementName=Root}" CommandParameter="{Binding}" />
+                                        <Button Command="{Binding DataContext.AddResultCommand, ElementName=Root}" CommandParameter="{Binding}"
+                                                Margin="6,0,0,0" MinWidth="104" Padding="10,6">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource AccentButton}">
+                                                    <Setter Property="Content" Value="Ajouter" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                                            <Setter Property="Content" Value="Ajout…" />
+                                                            <Setter Property="IsEnabled" Value="False" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsAdded}" Value="True">
+                                                            <Setter Property="Content" Value="✓ Ajouté" />
+                                                            <Setter Property="Background" Value="#2622C55E" />
+                                                            <Setter Property="BorderBrush" Value="{StaticResource SuccessBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <DataTemplate.Triggers>
+                                <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Row" Property="Background" Value="{StaticResource CardHoverBrush}" />
+                                </Trigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <TextBlock Style="{StaticResource Caption}" Margin="30,8,0,0" FontSize="11"
+                       Text="Recherche YouTube / MyInstants, ou lien YouTube, SoundCloud, TikTok, Twitch, MP3… ▶ = écouter dans votre casque avant d'ajouter. Double-clic = ajouter. Respectez les droits des contenus que vous diffusez." />
         </StackPanel>
     </Border>
 </UserControl>

@@ -21,12 +21,29 @@ public sealed class AudioEngine : IDisposable
     private MicInput? _mic;
     private readonly WasapiOut?[] _outputs = new WasapiOut?[3];
     private bool _stopping;
+    private readonly Timer _guardTimer;
+    private string[] _protectedDevices = [];
 
     public AudioEngine(VoiceEffectSettings voice, MixSettings mix)
     {
         Music = new MusicPlayer(MixerCore.SampleRate);
         Pads = new SoundPadPlayer(MixerCore.SampleRate);
-        Core = new MixerCore(voice, mix, Music, Pads);
+        Preview = new MusicPlayer(MixerCore.SampleRate);
+        Core = new MixerCore(voice, mix, Music, Pads, Preview);
+        _guardTimer = new Timer(_ => GuardSessions(), null, Timeout.Infinite, Timeout.Infinite);
+    }
+
+    public MusicPlayer Preview { get; }
+
+    /// <summary>Raised (from a worker thread) when another app turned down the music sent to the virtual mics.</summary>
+    public event Action<int>? VolumeCorrected;
+
+    private void GuardSessions()
+    {
+        var corrections = 0;
+        foreach (var id in Volatile.Read(ref _protectedDevices))
+            corrections += AudioSessionGuard.Protect(id);
+        if (corrections > 0) VolumeCorrected?.Invoke(corrections);
     }
 
     public MixerCore Core { get; }
@@ -112,7 +129,17 @@ public sealed class AudioEngine : IDisposable
                 DiscordOutputName = devices[1]?.FriendlyName;
                 MonitorName = devices[2]?.FriendlyName;
 
+                // Virtual cables must never be turned down by Windows / Discord ducking.
+                var protectedIds = new List<string>();
+                if (devices[0] != null) protectedIds.Add(devices[0]!.ID);
+                if (devices[1] != null) protectedIds.Add(devices[1]!.ID);
+                Volatile.Write(ref _protectedDevices, protectedIds.ToArray());
+
+                // Ducking opt-out is best applied before the streams start.
+                GuardSessions();
                 foreach (var output in _outputs) output?.Play();
+                GuardSessions();
+                _guardTimer.Change(400, 400);
 
                 State = EngineState.Running;
                 StatusMessage = warnings.Count == 0 ? "En marche" : string.Join(" · ", warnings);
@@ -161,6 +188,8 @@ public sealed class AudioEngine : IDisposable
     private void StopUnlocked()
     {
         _stopping = true;
+        _guardTimer.Change(Timeout.Infinite, Timeout.Infinite);
+        Volatile.Write(ref _protectedDevices, []);
         Core.SetMicSource(null);
         for (var i = 0; i < _outputs.Length; i++)
         {
@@ -188,8 +217,10 @@ public sealed class AudioEngine : IDisposable
     public void Dispose()
     {
         Stop();
+        _guardTimer.Dispose();
         Music.Dispose();
         Pads.Dispose();
+        Preview.Dispose();
     }
 
     /// <summary>

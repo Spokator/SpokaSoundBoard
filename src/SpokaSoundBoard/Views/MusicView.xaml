@@ -10,10 +10,10 @@
                     <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" FontSize="14" />
                 </Button>
                 <Button Style="{StaticResource FlatButton}" Command="{Binding Link.ToggleCommand}" Margin="0,0,10,0"
-                        ToolTip="Ajouter depuis YouTube, SoundCloud… (ou glissez un lien depuis votre navigateur)">
+                        ToolTip="Rechercher une musique sur YouTube ou coller un lien. Vous pouvez aussi glisser un lien depuis votre navigateur.">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Style="{StaticResource Icon}" Text="&#xE71B;" FontSize="13" Margin="0,0,8,0" />
-                        <TextBlock Text="Ajouter un lien" />
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE721;" FontSize="13" Margin="0,0,8,0" />
+                        <TextBlock Text="Rechercher / lien" />
                     </StackPanel>
                 </Button>
                 <Button Style="{StaticResource FlatButton}" Command="{Binding AddFolderCommand}" Margin="0,0,10,0">

@@ -20,7 +20,9 @@ public partial class MusicViewModel : ObservableObject
         _repeat = main.Settings.Repeat;
         _shuffle = main.Settings.Shuffle;
         Link = new LinkImporter(main, "Musique", true,
-            "Collez un lien YouTube, SoundCloud… (vidéo ou playlist, Entrée pour importer)", AddFromLink);
+            "Rechercher une musique (ex. « booba mona lisa ») ou coller un lien YouTube, SoundCloud…",
+            [new(SearchSource.YouTube, "YouTube", "\uE714")],
+            AddFromLink);
         Player.TrackEnded += () => System.Windows.Application.Current?.Dispatcher.BeginInvoke(OnTrackEnded);
         Playlist.CollectionChanged += (_, _) => OnPropertyChanged(nameof(IsEmpty));
     }

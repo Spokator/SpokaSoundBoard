@@ -6,7 +6,9 @@ namespace SpokaSoundBoard;
 
 public partial class App : Application
 {
+    private const string ShowEventName = "SpokaSoundBoard.ShowWindow";
     private Mutex? _singleInstance;
+    private EventWaitHandle? _showEvent;
 
     public static string LogPath { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SpokaSoundBoard", "error.log");
@@ -14,12 +16,33 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         _singleInstance = new Mutex(true, "SpokaSoundBoard.SingleInstance", out var isFirst);
+        var startArgs = e.Args.Select(a => a.ToLowerInvariant()).ToHashSet();
         if (!isFirst)
         {
-            MessageBox.Show("SpokaSoundBoard est déjà ouvert.", "SpokaSoundBoard", MessageBoxButton.OK, MessageBoxImage.Information);
+            // Already running (maybe hidden in the tray): bring the existing window to the front.
+            if (!startArgs.Contains("--minimized"))
+            {
+                try
+                {
+                    using var signal = EventWaitHandle.OpenExisting(ShowEventName);
+                    signal.Set();
+                }
+                catch (WaitHandleCannotBeOpenedException)
+                {
+                    MessageBox.Show("SpokaSoundBoard est déjà ouvert.", "SpokaSoundBoard", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
             Shutdown();
             return;
         }
+
+        _showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
+        new Thread(() =>
+        {
+            while (_showEvent.WaitOne())
+                Dispatcher.BeginInvoke(() => (MainWindow as MainWindow)?.ShowFromTray());
+        })
+        { IsBackground = true, Name = "SpokaSoundBoard show signal" }.Start();
 
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         // Windows shutdown / installer update (Restart Manager): close the window so settings are saved.
@@ -36,9 +59,7 @@ public partial class App : Application
             new FrameworkPropertyMetadata(System.Windows.Markup.XmlLanguage.GetLanguage("fr-FR")));
 
         base.OnStartup(e);
-        var args = e.Args.Select(a => a.ToLowerInvariant()).ToHashSet();
-        var window = new MainWindow(args.Contains("--setup"));
-        if (args.Contains("--minimized")) window.WindowState = WindowState.Minimized;
+        var window = new MainWindow(startArgs.Contains("--setup"), startArgs.Contains("--minimized"));
         MainWindow = window;
         window.Show();
     }

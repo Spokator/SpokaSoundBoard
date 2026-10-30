@@ -46,9 +46,9 @@ Name: "fr"; MessagesFile: "compiler:Languages\French.isl"
 
 [CustomMessages]
 fr.DesktopIcon=Créer un raccourci sur le Bureau
-fr.Autostart=Lancer {#AppName} au démarrage de Windows (réduit)
+fr.Autostart=Lancer {#AppName} au démarrage de Windows (dans la zone de notification)
 fr.Options=Options :
-fr.LaunchApp=Lancer {#AppName} et ouvrir l'assistant de configuration
+fr.LaunchApp=Lancer {#AppName}
 fr.RemoveData=Voulez-vous aussi supprimer vos réglages, vos sons et vos musiques téléchargées ?%n%n(Choisissez « Non » pour les conserver en cas de réinstallation.)
 fr.DriversKept=Les micros virtuels (VB-CABLE, Virtual Audio Cable) ne sont pas supprimés car d'autres logiciels peuvent les utiliser. Vous pouvez les désinstaller depuis Paramètres Windows > Applications si besoin.
 

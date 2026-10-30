@@ -131,6 +131,11 @@ public class AppSettings
     public bool Shuffle { get; set; }
     public bool FirstRunDone { get; set; }
 
+    /// <summary>The window close button hides the app in the notification area instead of quitting.</summary>
+    public bool CloseToTray { get; set; } = true;
+
+    public bool TrayHintShown { get; set; }
+
     /// <summary>Assistant step to reopen after a restart (null = nothing pending).</summary>
     public int? SetupResumeStep { get; set; }
 

@@ -25,6 +25,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Settings = _store.Load();
         Engine = new AudioEngine(Settings.Voice, Settings.Mix);
         Engine.StateChanged += () => _dispatcher.BeginInvoke(UpdateEngineStatus);
+        Engine.VolumeCorrected += _ => _dispatcher.BeginInvoke(() =>
+        {
+            if (_volumeWarningShown) return;
+            _volumeWarningShown = true;
+            ShowToast("Discord ou Windows baissait le son envoyé dans le micro virtuel : corrigé automatiquement. " +
+                      "Dans Discord, mettez « Atténuation » à 0 %.");
+        });
         Downloader = new MediaDownloader(_store.Directory, System.IO.Path.Combine(AppContext.BaseDirectory, "tools"));
         Mix.PropertyChanged += (_, e) =>
         {
@@ -66,6 +73,23 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public AudioEngine Engine { get; }
     public HotkeyService Hotkeys { get; }
     public MediaDownloader Downloader { get; }
+    public MediaSearch Search => _search ??= new MediaSearch(Downloader);
+    private MediaSearch? _search;
+    private bool _volumeWarningShown;
+
+    /// <summary>Set by the tray "Quitter" item so the close button does not hide the window again.</summary>
+    public bool ExitRequested { get; set; }
+
+    public bool CloseToTray
+    {
+        get => Settings.CloseToTray;
+        set
+        {
+            Settings.CloseToTray = value;
+            OnPropertyChanged();
+            Save();
+        }
+    }
 
     /// <summary>Quick switch: do Discord friends also hear the music and the sounds?</summary>
     public bool ShareMediaWithDiscord
@@ -137,6 +161,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             ShowToast("Raccourcis globaux indisponibles : " + ex.Message);
         }
 
+        LinkImporter.CleanPreviewCache(Downloader);
         Devices.InitializeSelection();
         RestartEngine();
         Music.RestoreState();
