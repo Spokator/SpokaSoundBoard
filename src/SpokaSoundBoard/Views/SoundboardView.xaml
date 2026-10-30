@@ -1,0 +1,223 @@
+<UserControl x:Class="SpokaSoundBoard.Views.SoundboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:SpokaSoundBoard.Views"
+             AllowDrop="True" Drop="OnDrop" DragOver="OnDragOver" Background="Transparent">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <DockPanel Margin="28,24,20,0">
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,20">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                    <Button Style="{StaticResource DangerButton}" Command="{Binding StopAllCommand}" Margin="0,0,10,0" ToolTip="Arrêter tous les sons">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE71A;" FontSize="13" Margin="0,0,8,0" />
+                            <TextBlock Text="Tout arrêter" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource AccentButton}" Command="{Binding AddSoundsCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" FontSize="13" Margin="0,0,8,0" />
+                            <TextBlock Text="Ajouter des sons" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="Soundboard" Style="{StaticResource PageTitle}" />
+                    <TextBlock Style="{StaticResource PageSubtitle}"
+                               Text="Cliquez sur un son pour le diffuser dans votre micro (cliquez à nouveau pour l'arrêter). Clic droit ou crayon pour le modifier et lui donner un raccourci clavier." />
+                </StackPanel>
+            </DockPanel>
+
+            <Grid>
+                <!-- Empty state -->
+                <Border BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="2" CornerRadius="14" Margin="0,0,0,24"
+                        Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="420">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8A9;" FontSize="54" Foreground="{StaticResource AccentBrush}" />
+                        <TextBlock Text="Votre soundboard est vide" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,16,0,6" />
+                        <TextBlock Style="{StaticResource Caption}" TextAlignment="Center" FontSize="13"
+                                   Text="Glissez-déposez vos fichiers audio ici (MP3, WAV, OGG, FLAC, M4A…) ou cliquez sur « Ajouter des sons »." />
+                        <Button Style="{StaticResource AccentButton}" Content="Ajouter des sons" HorizontalAlignment="Center" Margin="0,18,0,0"
+                                Command="{Binding AddSoundsCommand}" />
+                    </StackPanel>
+                </Border>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVis}}">
+                    <ItemsControl x:Name="PadList" ItemsSource="{Binding Pads}" Margin="0,0,0,20">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Width="176" Height="122" Margin="0,0,14,14" Cursor="Hand" FocusVisualStyle="{x:Null}"
+                                        Command="{Binding DataContext.PlayPadCommand, ElementName=PadList}" CommandParameter="{Binding}"
+                                        Tag="{Binding DataContext, ElementName=PadList}" ToolTip="{Binding FilePath}">
+                                    <Button.ContextMenu>
+                                        <ContextMenu DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                                            <MenuItem Header="Lire / arrêter" Command="{Binding PlayPadCommand}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            <MenuItem Header="Modifier…" Command="{Binding EditPadCommand}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            <Separator />
+                                            <MenuItem Header="Supprimer" Command="{Binding DeletePadCommand}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Tile" CornerRadius="12" BorderThickness="1" Padding="14,12"
+                                                    Background="{Binding Color, Converter={StaticResource HexToSoftBrush}}"
+                                                    BorderBrush="{StaticResource CardBorderBrush}">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="*" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <Border Width="32" Height="32" CornerRadius="16" HorizontalAlignment="Left"
+                                                            Background="{Binding Color, Converter={StaticResource HexToBrush}}">
+                                                        <TextBlock x:Name="PlayIcon" Style="{StaticResource Icon}" Text="&#xE768;" FontSize="13" Foreground="White" />
+                                                    </Border>
+                                                    <Button x:Name="EditButton" Style="{StaticResource IconButton}" Content="&#xE70F;" FontSize="13" Padding="6"
+                                                            HorizontalAlignment="Right" VerticalAlignment="Top" Visibility="Hidden" ToolTip="Modifier"
+                                                            Command="{Binding Tag.EditPadCommand, RelativeSource={RelativeSource AncestorType=Button, AncestorLevel=1}}"
+                                                            CommandParameter="{Binding}" />
+                                                    <TextBlock Grid.Row="1" Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" TextWrapping="Wrap"
+                                                               TextTrimming="CharacterEllipsis" Margin="0,8,0,0" Foreground="{StaticResource TextBrush}" />
+                                                    <DockPanel Grid.Row="2">
+                                                        <TextBlock DockPanel.Dock="Right" Style="{StaticResource Icon}" Text="&#xE8EE;" FontSize="11"
+                                                                   Foreground="{StaticResource SubtleTextBrush}" ToolTip="En boucle"
+                                                                   Visibility="{Binding Loop, Converter={StaticResource BoolToVis}}" />
+                                                        <Border CornerRadius="4" Background="#33000000" Padding="6,2" HorizontalAlignment="Left"
+                                                                Visibility="{Binding Hotkey.IsSet, Converter={StaticResource BoolToVis}}">
+                                                            <TextBlock Text="{Binding Hotkey.Display}" FontSize="11" Foreground="{StaticResource SubtleTextBrush}" />
+                                                        </Border>
+                                                    </DockPanel>
+                                                </Grid>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Tile" Property="BorderBrush" Value="{Binding Color, Converter={StaticResource HexToBrush}}" />
+                                                    <Setter TargetName="EditButton" Property="Visibility" Value="Visible" />
+                                                </Trigger>
+                                                <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                    <Setter TargetName="Tile" Property="BorderBrush" Value="{Binding Color, Converter={StaticResource HexToBrush}}" />
+                                                    <Setter TargetName="Tile" Property="BorderThickness" Value="2" />
+                                                    <Setter TargetName="PlayIcon" Property="Text" Value="&#xE71A;" />
+                                                </DataTrigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="Tile" Property="Opacity" Value="0.8" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </DockPanel>
+
+        <!-- Pad editor -->
+        <Border Grid.Column="1" Width="320" Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource CardBorderBrush}"
+                BorderThickness="1,0,0,0" Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="20" DataContext="{Binding SelectedPad}">
+                    <DockPanel Margin="0,0,0,16">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE711;" ToolTip="Fermer"
+                                Command="{Binding DataContext.CloseEditorCommand, RelativeSource={RelativeSource AncestorType=local:SoundboardView}}" />
+                        <TextBlock Text="Modifier le son" Style="{StaticResource SectionTitle}" />
+                    </DockPanel>
+
+                    <TextBlock Text="Nom" Style="{StaticResource Caption}" Margin="0,0,0,4" />
+                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14" />
+
+                    <TextBlock Text="Fichier" Style="{StaticResource Caption}" Margin="0,0,0,4" />
+                    <DockPanel Margin="0,0,0,14">
+                        <Button DockPanel.Dock="Right" Content="Changer" Style="{StaticResource FlatButton}" Padding="10,5" Margin="8,0,0,0"
+                                Command="{Binding DataContext.ChangeFileCommand, RelativeSource={RelativeSource AncestorType=local:SoundboardView}}" />
+                        <TextBlock Text="{Binding FilePath}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
+                                   VerticalAlignment="Center" ToolTip="{Binding FilePath}" />
+                    </DockPanel>
+
+                    <local:SliderRow Label="Volume" Minimum="0" Maximum="2" Step="0.05" Format="%" Value="{Binding Volume}" />
+
+                    <TextBlock Text="Couleur" Style="{StaticResource Caption}" Margin="0,10,0,6" />
+                    <ItemsControl ItemsSource="{Binding DataContext.Colors, RelativeSource={RelativeSource AncestorType=local:SoundboardView}}" Margin="0,0,0,14">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Width="26" Height="26" Margin="0,0,6,6" Cursor="Hand"
+                                        Command="{Binding DataContext.SetColorCommand, RelativeSource={RelativeSource AncestorType=local:SoundboardView}}"
+                                        CommandParameter="{Binding}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Ellipse x:Name="Dot" Fill="{Binding Converter={StaticResource HexToBrush}}" Stroke="Transparent" StrokeThickness="2" />
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Dot" Property="Stroke" Value="White" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Loop}" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="Lecture en boucle" Style="{StaticResource Label}" />
+                            <TextBlock Text="Rejoue le son jusqu'à ce que vous l'arrêtiez" Style="{StaticResource Caption}" />
+                        </StackPanel>
+                    </CheckBox>
+
+                    <TextBlock Text="Raccourci global (fonctionne en jeu)" Style="{StaticResource Caption}" Margin="0,0,0,6" />
+                    <DockPanel Margin="0,0,0,22">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE74D;" ToolTip="Effacer le raccourci"
+                                Command="{Binding DataContext.ClearHotkeyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding Hotkey}" />
+                        <Button Style="{StaticResource FlatButton}" HorizontalContentAlignment="Left"
+                                Command="{Binding DataContext.RecordHotkeyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding Hotkey}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE765;" FontSize="14" Margin="0,0,10,0" />
+                                <TextBlock Text="{Binding Hotkey.Display}" />
+                            </StackPanel>
+                        </Button>
+                    </DockPanel>
+
+                    <UniformGrid Columns="2">
+                        <Button Style="{StaticResource AccentButton}" Margin="0,0,6,0"
+                                Command="{Binding DataContext.PlayPadCommand, RelativeSource={RelativeSource AncestorType=local:SoundboardView}}"
+                                CommandParameter="{Binding}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE768;" FontSize="12" Margin="0,0,8,0" />
+                                <TextBlock Text="Tester" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource DangerButton}" Margin="6,0,0,0"
+                                Command="{Binding DataContext.DeletePadCommand, RelativeSource={RelativeSource AncestorType=local:SoundboardView}}"
+                                CommandParameter="{Binding}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" FontSize="12" Margin="0,0,8,0" />
+                                <TextBlock Text="Supprimer" />
+                            </StackPanel>
+                        </Button>
+                    </UniformGrid>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>

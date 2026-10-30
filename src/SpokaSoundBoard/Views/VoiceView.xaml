@@ -1,0 +1,248 @@
+<UserControl x:Class="SpokaSoundBoard.Views.VoiceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:SpokaSoundBoard.Views"
+             x:Name="Root">
+    <!-- DataContext: MainViewModel -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28,24,28,24">
+            <DockPanel Margin="0,0,0,20">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                    <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding VoiceSettings.EffectsEnabled}" VerticalAlignment="Center">
+                        <TextBlock Text="Effets activés" FontWeight="SemiBold" />
+                    </CheckBox>
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="Voix &amp; effets" Style="{StaticResource PageTitle}" />
+                    <TextBlock Style="{StaticResource PageSubtitle}"
+                               Text="Choisissez un effet prêt à l'emploi puis ajustez chaque réglage. Activez « M'écouter » (avec un casque) pour entendre le résultat en direct." />
+                </StackPanel>
+            </DockPanel>
+
+            <!-- Presets -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,12">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Padding="10,5" FontSize="12"
+                                Content="Réinitialiser la voix" Command="{Binding Voice.ResetVoiceCommand}" />
+                        <TextBlock Text="Effets prêts à l'emploi" Style="{StaticResource SectionTitle}" />
+                    </DockPanel>
+                    <ItemsControl x:Name="PresetList" ItemsSource="{Binding Voice.Presets}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Width="190" Height="86" Margin="0,0,10,10" Cursor="Hand" ToolTip="{Binding Description}"
+                                        Command="{Binding DataContext.Voice.ApplyPresetCommand, ElementName=PresetList}" CommandParameter="{Binding}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Bg" CornerRadius="10" BorderThickness="1" Padding="12,10"
+                                                    Background="#20263A" BorderBrush="{StaticResource CardBorderBrush}">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Width="34" Height="34" CornerRadius="17" Background="{StaticResource AccentSoftBrush}" VerticalAlignment="Top">
+                                                        <TextBlock Style="{StaticResource Icon}" Text="{Binding Icon}" FontSize="15" Foreground="{StaticResource Accent2Brush}" />
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Foreground="{StaticResource TextBrush}" />
+                                                        <TextBlock Text="{Binding Description}" Style="{StaticResource Caption}" FontSize="11"
+                                                                   MaxHeight="32" TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                    <Button x:Name="Delete" Grid.Column="1" Style="{StaticResource IconButton}" Content="&#xE711;" FontSize="10"
+                                                            Padding="4" HorizontalAlignment="Right" VerticalAlignment="Bottom" Visibility="Collapsed"
+                                                            ToolTip="Supprimer ce preset"
+                                                            Command="{Binding DataContext.Voice.DeletePresetCommand, ElementName=PresetList}" CommandParameter="{Binding}" />
+                                                </Grid>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bg" Property="Background" Value="{StaticResource CardHoverBrush}" />
+                                                </Trigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsCustom}" Value="True" />
+                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource TemplatedParent}}" Value="True" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter TargetName="Delete" Property="Visibility" Value="Visible" />
+                                                </MultiDataTrigger>
+                                                <DataTrigger Value="True">
+                                                    <DataTrigger.Binding>
+                                                        <MultiBinding Converter="{StaticResource MultiEquals}">
+                                                            <Binding Path="Name" />
+                                                            <Binding Path="DataContext.Voice.SelectedPresetName" ElementName="PresetList" />
+                                                        </MultiBinding>
+                                                    </DataTrigger.Binding>
+                                                    <Setter TargetName="Bg" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                                    <Setter TargetName="Bg" Property="Background" Value="#2A7C5CFF" />
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <DockPanel Margin="0,6,0,0">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Content="Enregistrer mes réglages" Margin="10,0,0,0"
+                                Command="{Binding Voice.SavePresetCommand}" />
+                        <TextBox Text="{Binding Voice.NewPresetName, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center"
+                                 ToolTip="Nom de votre preset personnalisé" />
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" Text="Donnez un nom pour sauvegarder les réglages actuels comme preset personnel." />
+                </StackPanel>
+            </Border>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="14" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left column -->
+                <StackPanel>
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="Micro" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
+                            <local:ThresholdMeter Margin="0,0,0,8" />
+                            <local:SliderRow Label="Gain du micro" Minimum="-12" Maximum="24" Step="0.5" Format="dB"
+                                             Value="{Binding VoiceSettings.InputGainDb}" Description="Augmentez si votre micro est trop faible." />
+                            <local:SliderRow Label="Volume de votre voix" Minimum="-24" Maximum="12" Step="0.5" Format="dB"
+                                             Value="{Binding VoiceSettings.VoiceVolumeDb}" />
+                            <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding VoiceSettings.GateEnabled}" Margin="0,10,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Porte de bruit" Style="{StaticResource Label}" />
+                                    <TextBlock Text="Coupe le micro sous le seuil (clavier, ventilateur…)" Style="{StaticResource Caption}" />
+                                </StackPanel>
+                            </CheckBox>
+                            <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Mix.ListenToSelf}" Margin="0,12,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="M'écouter (test)" Style="{StaticResource Label}" />
+                                    <TextBlock Text="Entendre votre voix avec effets dans le casque. Utilisez un casque pour éviter le larsen !" Style="{StaticResource Caption}" />
+                                </StackPanel>
+                            </CheckBox>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,4">
+                                <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding VoiceSettings.RadioEnabled}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE709;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                                    <TextBlock Text="Radio / pilote" Style="{StaticResource SectionTitle}" />
+                                </StackPanel>
+                            </DockPanel>
+                            <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,6"
+                                       Text="Son de radio de cockpit : bande étroite, saturation, souffle et grésillement à chaque prise de parole." />
+                            <StackPanel IsEnabled="{Binding VoiceSettings.RadioEnabled}">
+                                <local:SliderRow Label="Coupure des graves" Minimum="100" Maximum="1200" Step="10" Format="{}{0:0} Hz"
+                                                 Value="{Binding VoiceSettings.RadioLowCutHz}" />
+                                <local:SliderRow Label="Coupure des aigus" Minimum="1500" Maximum="6000" Step="50" Format="{}{0:0} Hz"
+                                                 Value="{Binding VoiceSettings.RadioHighCutHz}" />
+                                <local:SliderRow Label="Saturation" Minimum="0" Maximum="1" Format="%" Value="{Binding VoiceSettings.RadioDrive}" />
+                                <local:SliderRow Label="Souffle radio" Minimum="0" Maximum="1" Format="%" Value="{Binding VoiceSettings.RadioNoise}" />
+                                <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding VoiceSettings.SquelchEnabled}" Margin="0,8,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Squelch (pschht)" Style="{StaticResource Label}" />
+                                        <TextBlock Text="Grésillement au début et à la fin de chaque phrase" Style="{StaticResource Caption}" />
+                                    </StackPanel>
+                                </CheckBox>
+                                <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding VoiceSettings.RogerBeepEnabled}" Margin="0,10,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Roger beep" Style="{StaticResource Label}" />
+                                        <TextBlock Text="Bip de fin de transmission" Style="{StaticResource Caption}" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Right column -->
+                <StackPanel Grid.Column="2">
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE8D6;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                                <TextBlock Text="Hauteur de la voix" Style="{StaticResource SectionTitle}" />
+                            </StackPanel>
+                            <local:SliderRow Label="Hauteur (négatif = grave, positif = aigu)" Minimum="-12" Maximum="12" Step="1" Format="st"
+                                             Value="{Binding VoiceSettings.PitchSemitones}" Description="0 = voix naturelle" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,4">
+                                <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding VoiceSettings.RobotEnabled}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE99A;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                                    <TextBlock Text="Robot" Style="{StaticResource SectionTitle}" />
+                                </StackPanel>
+                            </DockPanel>
+                            <StackPanel IsEnabled="{Binding VoiceSettings.RobotEnabled}">
+                                <local:SliderRow Label="Fréquence" Minimum="20" Maximum="300" Step="5" Format="{}{0:0} Hz" Value="{Binding VoiceSettings.RobotFrequency}" />
+                                <local:SliderRow Label="Intensité" Minimum="0" Maximum="1" Format="%" Value="{Binding VoiceSettings.RobotMix}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,4">
+                                <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding VoiceSettings.EchoEnabled}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE909;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                                    <TextBlock Text="Écho" Style="{StaticResource SectionTitle}" />
+                                </StackPanel>
+                            </DockPanel>
+                            <StackPanel IsEnabled="{Binding VoiceSettings.EchoEnabled}">
+                                <local:SliderRow Label="Délai" Minimum="40" Maximum="1000" Step="10" Format="{}{0:0} ms" Value="{Binding VoiceSettings.EchoDelayMs}" />
+                                <local:SliderRow Label="Répétitions" Minimum="0" Maximum="0.9" Format="%" Value="{Binding VoiceSettings.EchoFeedback}" />
+                                <local:SliderRow Label="Niveau" Minimum="0" Maximum="1" Format="%" Value="{Binding VoiceSettings.EchoMix}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,4">
+                                <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding VoiceSettings.ReverbEnabled}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE80F;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                                    <TextBlock Text="Réverbération" Style="{StaticResource SectionTitle}" />
+                                </StackPanel>
+                            </DockPanel>
+                            <StackPanel IsEnabled="{Binding VoiceSettings.ReverbEnabled}">
+                                <local:SliderRow Label="Taille de la pièce" Minimum="0" Maximum="1" Format="%" Value="{Binding VoiceSettings.ReverbSize}" />
+                                <local:SliderRow Label="Niveau" Minimum="0" Maximum="1" Format="%" Value="{Binding VoiceSettings.ReverbMix}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,4">
+                                <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding VoiceSettings.CompressorEnabled}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE9E9;" Foreground="{StaticResource Accent2Brush}" Margin="0,0,10,0" />
+                                    <TextBlock Text="Compresseur" Style="{StaticResource SectionTitle}" />
+                                </StackPanel>
+                            </DockPanel>
+                            <local:SliderRow Label="Intensité" Minimum="0" Maximum="1" Format="%" Value="{Binding VoiceSettings.CompressorAmount}"
+                                             IsEnabled="{Binding VoiceSettings.CompressorEnabled}"
+                                             Description="Égalise votre volume : la voix reste claire au-dessus de la musique." />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

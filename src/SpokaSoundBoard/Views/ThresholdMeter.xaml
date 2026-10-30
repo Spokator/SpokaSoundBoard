@@ -1,0 +1,44 @@
+<UserControl x:Class="SpokaSoundBoard.Views.ThresholdMeter"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- DataContext: MainViewModel -->
+    <StackPanel>
+        <Grid Margin="0,0,0,6">
+            <TextBlock Text="Seuil de détection de la voix" Style="{StaticResource Label}" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Border CornerRadius="4" Padding="8,2" Margin="0,0,10,0">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="#262B3B" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding VoiceActive}" Value="True">
+                                    <Setter Property="Background" Value="#3322C55E" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock FontSize="11">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="Silence" />
+                                <Setter Property="Foreground" Value="{StaticResource SubtleTextBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding VoiceActive}" Value="True">
+                                        <Setter Property="Text" Value="Voix détectée" />
+                                        <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Border>
+                <TextBlock Style="{StaticResource ValueText}" Text="{Binding VoiceSettings.VoiceThresholdDb, Converter={StaticResource Db}}" />
+            </StackPanel>
+        </Grid>
+        <ProgressBar Style="{StaticResource Meter}" Height="12" Value="{Binding MicLevel, Mode=OneWay}" Margin="10,0" />
+        <Slider Minimum="-60" Maximum="0" Value="{Binding VoiceSettings.VoiceThresholdDb}" IsMoveToPointEnabled="True"
+                SmallChange="1" LargeChange="3" ToolTip="Placez le curseur au-dessus du bruit de fond, en dessous de votre voix" />
+        <TextBlock Style="{StaticResource Caption}"
+                   Text="Parlez normalement : la barre doit dépasser le curseur. En silence, elle doit rester en dessous." />
+    </StackPanel>
+</UserControl>
