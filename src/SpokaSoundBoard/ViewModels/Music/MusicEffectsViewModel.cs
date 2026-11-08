@@ -39,7 +39,7 @@ public partial class MusicEffectsViewModel : ObservableObject
         Bands = labels.Select((l, i) => new EqBandViewModel(Settings, i, l)).ToList();
         Settings.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(MusicEffectSettings.PresetName)) OnPropertyChanged(nameof(CurrentPresetName));
+            OnPropertyChanged(nameof(CurrentPresetName));
             if (e.PropertyName is nameof(MusicEffectSettings.Speed)) OnPropertyChanged(nameof(SpeedText));
             music.Main.Save();
         };
@@ -49,7 +49,7 @@ public partial class MusicEffectsViewModel : ObservableObject
     public MusicSettings Music => _music.Settings;
     public IReadOnlyList<EqBandViewModel> Bands { get; }
 
-    public string CurrentPresetName => Settings.PresetName ?? "Personnalisé";
+    public string CurrentPresetName => Settings.PresetName ?? (Settings.IsNeutral ? "Aucun" : "Personnalisé");
     public string SpeedText => $"× {Settings.Speed:0.00}";
 
     public IReadOnlyList<MusicEffectPreset> Presets { get; } =

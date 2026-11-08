@@ -125,7 +125,7 @@
                            Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
                 <TextBlock Grid.Column="3" Text="{Binding DurationText}" Style="{StaticResource Caption}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0" />
                 <StackPanel Grid.Column="4" Orientation="Horizontal">
-                    <ToggleButton Style="{StaticResource ToggleIconButton}" FontSize="13" ToolTip="Favori" IsChecked="{Binding IsFavorite, Mode=OneWay}"
+                    <ToggleButton Style="{StaticResource ToggleIconButton}" FontSize="13" ToolTip="Favori" AutomationProperties.Name="Favori" IsChecked="{Binding IsFavorite, Mode=OneWay}"
                                   Command="{Binding DataContext.ToggleFavoriteCommand, ElementName=Root}" CommandParameter="{Binding}">
                         <ToggleButton.Content>
                             <TextBlock>
@@ -143,9 +143,9 @@
                             </TextBlock>
                         </ToggleButton.Content>
                     </ToggleButton>
-                    <Button Style="{StaticResource IconButton}" Content="&#xE768;" FontSize="13" ToolTip="Lire"
+                    <Button Style="{StaticResource IconButton}" Content="&#xE768;" FontSize="13" ToolTip="Lire" AutomationProperties.Name="Lire"
                             Command="{Binding DataContext.PlayTrackCommand, ElementName=Root}" CommandParameter="{Binding}" />
-                    <Button Style="{StaticResource IconButton}" Content="&#xE712;" FontSize="13" ToolTip="Plus d'actions" Click="OnMoreClick" />
+                    <Button Style="{StaticResource IconButton}" Content="&#xE712;" FontSize="13" ToolTip="Plus d'actions" AutomationProperties.Name="Plus d'actions" Click="OnMoreClick" />
                 </StackPanel>
             </Grid>
         </DataTemplate>
@@ -227,7 +227,7 @@
 
                 <DockPanel DockPanel.Dock="Top" Margin="8,18,0,6">
                     <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE710;" FontSize="12" Padding="6"
-                            ToolTip="Nouvelle playlist" Command="{Binding NewPlaylistCommand}" />
+                            ToolTip="Nouvelle playlist" AutomationProperties.Name="Nouvelle playlist" Command="{Binding NewPlaylistCommand}" />
                     <TextBlock Text="PLAYLISTS" Style="{StaticResource Caption}" FontWeight="SemiBold" VerticalAlignment="Center" />
                 </DockPanel>
                 <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="8,10,0,0"
@@ -287,13 +287,13 @@
                     <Button Style="{StaticResource AccentButton}" Command="{Binding Search.SubmitCommand}">
                         <TextBlock Text="{Binding Search.SubmitLabel}" />
                     </Button>
-                    <Button Style="{StaticResource FlatButton}" Margin="8,0,0,0" Command="{Binding AddFilesCommand}" ToolTip="Ajouter des fichiers audio de votre PC">
+                    <Button Style="{StaticResource FlatButton}" Margin="8,0,0,0" Command="{Binding AddFilesCommand}" ToolTip="Ajouter des fichiers audio de votre PC" AutomationProperties.Name="Ajouter des fichiers audio de votre PC">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource Icon}" Text="&#xE8E5;" FontSize="13" Margin="0,0,8,0" />
                             <TextBlock Text="Fichiers" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource FlatButton}" Margin="8,0,0,0" Command="{Binding AddFolderCommand}" ToolTip="Ajouter un dossier de musiques">
+                    <Button Style="{StaticResource FlatButton}" Margin="8,0,0,0" Command="{Binding AddFolderCommand}" ToolTip="Ajouter un dossier de musiques" AutomationProperties.Name="Ajouter un dossier de musiques">
                         <TextBlock Style="{StaticResource Icon}" Text="&#xE8B7;" FontSize="13" />
                     </Button>
                 </StackPanel>
@@ -366,7 +366,7 @@
                                     <TextBlock Grid.Column="2" Text="{Binding DurationText}" Style="{StaticResource Caption}" VerticalAlignment="Center" />
                                     <StackPanel Grid.Column="3" Orientation="Horizontal">
                                         <Button Command="{Binding DataContext.Search.PreviewCommand, ElementName=Root}" CommandParameter="{Binding}" FontSize="13"
-                                                ToolTip="Écouter dans votre casque seulement">
+                                                ToolTip="Écouter dans votre casque seulement" AutomationProperties.Name="Écouter dans votre casque seulement">
                                             <Button.Style>
                                                 <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
                                                     <Setter Property="Content" Value="&#xE7F6;" />
@@ -382,11 +382,11 @@
                                                 </Style>
                                             </Button.Style>
                                         </Button>
-                                        <Button Style="{StaticResource IconButton}" Content="&#xE768;" FontSize="13" ToolTip="Lire maintenant"
+                                        <Button Style="{StaticResource IconButton}" Content="&#xE768;" FontSize="13" ToolTip="Lire maintenant" AutomationProperties.Name="Lire maintenant"
                                                 Command="{Binding DataContext.Search.PlayCommand, ElementName=Root}" CommandParameter="{Binding}" />
-                                        <Button Style="{StaticResource IconButton}" Content="&#xE893;" FontSize="13" ToolTip="Lire ensuite"
+                                        <Button Style="{StaticResource IconButton}" Content="&#xE893;" FontSize="13" ToolTip="Lire ensuite" AutomationProperties.Name="Lire ensuite"
                                                 Command="{Binding DataContext.Search.PlayNextCommand, ElementName=Root}" CommandParameter="{Binding}" />
-                                        <Button Style="{StaticResource IconButton}" Content="&#xE90B;" FontSize="13" ToolTip="Ajouter à la file d'attente"
+                                        <Button Style="{StaticResource IconButton}" Content="&#xE90B;" FontSize="13" ToolTip="Ajouter à la file d'attente" AutomationProperties.Name="Ajouter à la file d'attente"
                                                 Command="{Binding DataContext.Search.QueueCommand, ElementName=Root}" CommandParameter="{Binding}" />
                                         <Button Command="{Binding DataContext.Search.AddCommand, ElementName=Root}" CommandParameter="{Binding}" FontSize="13" Margin="4,0,0,0" Padding="10,6">
                                             <Button.Style>
@@ -402,7 +402,7 @@
                                                 </Style>
                                             </Button.Style>
                                         </Button>
-                                        <Button Style="{StaticResource IconButton}" Content="&#xE712;" FontSize="13" ToolTip="Plus d'actions" Click="OnResultMoreClick">
+                                        <Button Style="{StaticResource IconButton}" Content="&#xE712;" FontSize="13" ToolTip="Plus d'actions" AutomationProperties.Name="Plus d'actions" Click="OnResultMoreClick">
                                             <Button.ContextMenu>
                                                 <ContextMenu DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
                                                     <MenuItem Header="Ajouter à une playlist" ItemsSource="{Binding Playlists}">
@@ -481,7 +481,7 @@
                                                 <Border DockPanel.Dock="Left" Width="54" Height="54" CornerRadius="8,0,0,8" Background="{Binding Color, Converter={StaticResource HexToBrush}}">
                                                     <TextBlock Style="{StaticResource Icon}" Text="&#xE90B;" FontSize="20" Foreground="White" />
                                                 </Border>
-                                                <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE768;" FontSize="14" Margin="0,0,6,0" ToolTip="Lire"
+                                                <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE768;" FontSize="14" Margin="0,0,6,0" ToolTip="Lire" AutomationProperties.Name="Lire"
                                                         Command="{Binding DataContext.PlayPlaylistCommand, ElementName=Root}" CommandParameter="{Binding}" />
                                                 <StackPanel VerticalAlignment="Center" Margin="12,0,0,0">
                                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" HorizontalAlignment="Left" />
@@ -518,13 +518,13 @@
                                 <TextBlock Style="{StaticResource Icon}" Text="{Binding SectionIcon}" FontSize="26" Foreground="{DynamicResource Accent2Brush}" />
                             </Border>
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Button Style="{StaticResource IconButton}" Content="&#xE8AC;" ToolTip="Renommer la playlist" Command="{Binding RenamePlaylistCommand}"
+                                <Button Style="{StaticResource IconButton}" Content="&#xE8AC;" ToolTip="Renommer la playlist" AutomationProperties.Name="Renommer la playlist" Command="{Binding RenamePlaylistCommand}"
                                         Visibility="{Binding IsPlaylist, Converter={StaticResource BoolToVis}}" />
-                                <Button Style="{StaticResource IconButton}" Content="&#xEDE1;" ToolTip="Exporter (M3U)" Command="{Binding ExportPlaylistCommand}"
+                                <Button Style="{StaticResource IconButton}" Content="&#xEDE1;" ToolTip="Exporter (M3U)" AutomationProperties.Name="Exporter (M3U)" Command="{Binding ExportPlaylistCommand}"
                                         Visibility="{Binding IsPlaylist, Converter={StaticResource BoolToVis}}" />
-                                <Button Style="{StaticResource IconButton}" Content="&#xE74D;" ToolTip="Supprimer la playlist" Command="{Binding DeletePlaylistCommand}"
+                                <Button Style="{StaticResource IconButton}" Content="&#xE74D;" ToolTip="Supprimer la playlist" AutomationProperties.Name="Supprimer la playlist" Command="{Binding DeletePlaylistCommand}"
                                         Visibility="{Binding IsPlaylist, Converter={StaticResource BoolToVis}}" />
-                                <Button Style="{StaticResource FlatButton}" Margin="8,0,0,0" Command="{Binding QueueSectionCommand}" ToolTip="Ajouter à la file d'attente">
+                                <Button Style="{StaticResource FlatButton}" Margin="8,0,0,0" Command="{Binding QueueSectionCommand}" ToolTip="Ajouter à la file d'attente" AutomationProperties.Name="Ajouter à la file d'attente">
                                     <TextBlock Style="{StaticResource Icon}" Text="&#xE90B;" FontSize="13" />
                                 </Button>
                                 <Button Style="{StaticResource FlatButton}" Margin="8,0,0,0" Command="{Binding ShuffleSectionCommand}">
@@ -734,9 +734,9 @@
                         </StackPanel>
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                <Button Style="{StaticResource IconButton}" Content="&#xE74E;" FontSize="13" ToolTip="Enregistrer la file comme playlist" Command="{Binding SaveQueueAsPlaylistCommand}" />
-                                <Button Style="{StaticResource IconButton}" Content="&#xE8C8;" FontSize="13" ToolTip="Retirer les doublons" Command="{Binding RemoveQueueDuplicatesCommand}" />
-                                <Button Style="{StaticResource IconButton}" Content="&#xE74D;" FontSize="13" ToolTip="Vider la file (garde le morceau en cours)" Command="{Binding ClearQueueCommand}" />
+                                <Button Style="{StaticResource IconButton}" Content="&#xE74E;" FontSize="13" ToolTip="Enregistrer la file comme playlist" AutomationProperties.Name="Enregistrer la file comme playlist" Command="{Binding SaveQueueAsPlaylistCommand}" />
+                                <Button Style="{StaticResource IconButton}" Content="&#xE8C8;" FontSize="13" ToolTip="Retirer les doublons" AutomationProperties.Name="Retirer les doublons" Command="{Binding RemoveQueueDuplicatesCommand}" />
+                                <Button Style="{StaticResource IconButton}" Content="&#xE74D;" FontSize="13" ToolTip="Vider la file (garde le morceau en cours)" AutomationProperties.Name="Vider la file (garde le morceau en cours)" Command="{Binding ClearQueueCommand}" />
                             </StackPanel>
                             <TextBlock VerticalAlignment="Center" Style="{StaticResource Caption}">
                                 <Run Text="{Binding UpNextCount, Mode=OneWay}" /><Run Text=" à suivre · glissez pour réordonner" />
@@ -774,7 +774,7 @@
                                                 </TextBlock>
                                                 <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
-                                            <Button Grid.Column="2" Style="{StaticResource IconButton}" Content="&#xE711;" FontSize="11" ToolTip="Retirer de la file"
+                                            <Button Grid.Column="2" Style="{StaticResource IconButton}" Content="&#xE711;" FontSize="11" ToolTip="Retirer de la file" AutomationProperties.Name="Retirer de la file"
                                                     Command="{Binding DataContext.RemoveFromQueueCommand, ElementName=Root}" CommandParameter="{Binding}" />
                                         </Grid>
                                     </DataTemplate>
@@ -787,7 +787,7 @@
                     <DockPanel Visibility="{Binding DataContext.SidePanel, ElementName=Root, Converter={StaticResource EqualsToVis}, ConverterParameter=lyrics}" DataContext="{Binding Lyrics}">
                         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
                             <TextBlock Text="Paroles : lrclib.net" Style="{StaticResource Caption}" FontSize="11" VerticalAlignment="Center" />
-                            <Button Style="{StaticResource IconButton}" Content="&#xE72C;" FontSize="11" ToolTip="Réessayer" Command="{Binding RetryCommand}" Margin="6,0,0,0" />
+                            <Button Style="{StaticResource IconButton}" Content="&#xE72C;" FontSize="11" ToolTip="Réessayer" AutomationProperties.Name="Réessayer" Command="{Binding RetryCommand}" Margin="6,0,0,0" />
                         </StackPanel>
                         <Grid>
                             <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" FontSize="14" TextWrapping="Wrap" Margin="0,20,0,0" TextAlignment="Center"
@@ -837,7 +837,7 @@
                         <StackPanel Margin="0,0,6,12">
                             <DockPanel>
                                 <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Content="Réinitialiser" Padding="10,5" Command="{Binding ResetCommand}" />
-                                <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.Enabled}">
+                                <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.Enabled}" Margin="0,0,12,0">
                                     <TextBlock Text="Effets musique" FontWeight="SemiBold" />
                                 </CheckBox>
                             </DockPanel>
@@ -864,7 +864,7 @@
                             <local:SliderRow Label="Basses" Minimum="0" Maximum="15" Value="{Binding Settings.BassDb, Mode=TwoWay}" Format="dB" Step="0.5" Margin="0,12,0,0" />
                             <local:SliderRow Label="Aigus" Minimum="-10" Maximum="10" Value="{Binding Settings.TrebleDb, Mode=TwoWay}" Format="dB" Step="0.5" />
                             <DockPanel Margin="0,6,0,0">
-                                <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE72C;" FontSize="11" ToolTip="Vitesse normale" Command="{Binding ResetSpeedCommand}" />
+                                <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE72C;" FontSize="11" ToolTip="Vitesse normale" AutomationProperties.Name="Vitesse normale" Command="{Binding ResetSpeedCommand}" />
                                 <TextBlock DockPanel.Dock="Right" Text="{Binding SpeedText}" Style="{StaticResource ValueText}" Width="52" TextAlignment="Right" VerticalAlignment="Center" />
                                 <TextBlock Text="Vitesse" Width="96" VerticalAlignment="Center" />
                                 <Slider Minimum="0.5" Maximum="2" Value="{Binding Settings.Speed}" IsMoveToPointEnabled="True" SmallChange="0.05" LargeChange="0.1"

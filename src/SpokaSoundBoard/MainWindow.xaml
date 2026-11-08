@@ -33,7 +33,7 @@
                 <!-- Live status card -->
                 <Border DockPanel.Dock="Bottom" Style="{StaticResource Card}" Padding="14" Margin="0">
                     <StackPanel>
-                        <Button Command="{Binding ToggleMicCommand}" Height="48" Margin="0,0,0,14" ToolTip="Couper / activer votre voix (la musique continue)">
+                        <Button Command="{Binding ToggleMicCommand}" Height="48" Margin="0,0,0,14" ToolTip="Couper / activer votre voix (la musique continue)" AutomationProperties.Name="Couper / activer votre voix (la musique continue)">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource FlatButton}">
                                     <Setter Property="Background" Value="#2622C55E" />
@@ -233,7 +233,7 @@
 
                 <DockPanel VerticalAlignment="Center" LastChildFill="True">
                     <Button DockPanel.Dock="Left" Style="{StaticResource IconButton}" Padding="0" Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                            CommandParameter="music" ToolTip="Ouvrir la musique">
+                            CommandParameter="music" ToolTip="Ouvrir la musique" AutomationProperties.Name="Ouvrir la musique">
                         <Border Width="50" Height="50" CornerRadius="8" Background="{DynamicResource AccentSoftBrush}" ClipToBounds="True">
                             <Grid>
                                 <TextBlock Style="{StaticResource Icon}" Text="&#xE8D6;" FontSize="20" Foreground="{DynamicResource Accent2Brush}" />
@@ -242,7 +242,7 @@
                             </Grid>
                         </Border>
                     </Button>
-                    <ToggleButton DockPanel.Dock="Right" Style="{StaticResource ToggleIconButton}" FontSize="14" ToolTip="Favori"
+                    <ToggleButton DockPanel.Dock="Right" Style="{StaticResource ToggleIconButton}" FontSize="14" ToolTip="Favori" AutomationProperties.Name="Favori"
                                   IsChecked="{Binding CurrentTrack.IsFavorite, Mode=OneWay}" Command="{Binding ToggleFavoriteCurrentCommand}"
                                   Visibility="{Binding HasTrack, Converter={StaticResource BoolToVis}}">
                         <TextBlock>
@@ -267,10 +267,10 @@
 
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="20,0">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <ToggleButton Style="{StaticResource ToggleIconButton}" Content="&#xE8B1;" ToolTip="Lecture aléatoire"
+                        <ToggleButton Style="{StaticResource ToggleIconButton}" Content="&#xE8B1;" ToolTip="Lecture aléatoire" AutomationProperties.Name="Lecture aléatoire"
                                       IsChecked="{Binding Shuffle}" Margin="0,0,8,0" />
-                        <Button Style="{StaticResource IconButton}" Content="&#xE892;" ToolTip="Précédent" Command="{Binding PreviousCommand}" />
-                        <Button Command="{Binding PlayPauseCommand}" Margin="10,0" ToolTip="Lecture / pause">
+                        <Button Style="{StaticResource IconButton}" Content="&#xE892;" ToolTip="Précédent" AutomationProperties.Name="Précédent" Command="{Binding PreviousCommand}" />
+                        <Button Command="{Binding PlayPauseCommand}" Margin="10,0" ToolTip="Lecture / pause" AutomationProperties.Name="Lecture / pause">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource PlayButton}">
                                     <Setter Property="Content" Value="&#xE768;" />
@@ -282,7 +282,7 @@
                                 </Style>
                             </Button.Style>
                         </Button>
-                        <Button Style="{StaticResource IconButton}" Content="&#xE893;" ToolTip="Suivant" Command="{Binding NextCommand}" />
+                        <Button Style="{StaticResource IconButton}" Content="&#xE893;" ToolTip="Suivant" AutomationProperties.Name="Suivant" Command="{Binding NextCommand}" />
                         <Button Style="{StaticResource IconButton}" Content="{Binding RepeatIcon}" ToolTip="{Binding RepeatTooltip}"
                                 Command="{Binding CycleRepeatCommand}" Margin="8,0,0,0">
                             <Button.Foreground>
@@ -312,9 +312,9 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
                     <views:SpectrumBars Width="64" Height="28" BarCount="12" Margin="0,0,10,0" Player="{Binding DataContext.Engine.Music, RelativeSource={RelativeSource AncestorType=Window}}"
                                         BarBrush="{StaticResource BrandBrush}" Opacity="0.85" />
-                    <Button Style="{StaticResource IconButton}" Content="&#xE90B;" ToolTip="File d'attente" Click="OnShowMusicPanel" Tag="queue" />
-                    <Button Style="{StaticResource IconButton}" Content="&#xE8BD;" ToolTip="Paroles" Click="OnShowMusicPanel" Tag="lyrics" />
-                    <Button Style="{StaticResource IconButton}" Content="&#xE9E9;" ToolTip="Effets musique (basses, nightcore, 8D, karaoké…)" Click="OnShowMusicPanel" Tag="effects" />
+                    <Button Style="{StaticResource IconButton}" Content="&#xE90B;" ToolTip="File d'attente" AutomationProperties.Name="File d'attente" Click="OnShowMusicPanel" Tag="queue" />
+                    <Button Style="{StaticResource IconButton}" Content="&#xE8BD;" ToolTip="Paroles" AutomationProperties.Name="Paroles" Click="OnShowMusicPanel" Tag="lyrics" />
+                    <Button Style="{StaticResource IconButton}" Content="&#xE9E9;" ToolTip="Effets musique (basses, nightcore, 8D, karaoké…)" AutomationProperties.Name="Effets musique (basses, nightcore, 8D, karaoké…)" Click="OnShowMusicPanel" Tag="effects" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="3" VerticalAlignment="Center"

@@ -8,12 +8,23 @@ using SpokaSoundBoard.Core.Online;
 namespace SpokaSoundBoard.ViewModels.Music;
 
 /// <summary>A web search result shown in the music search panel.</summary>
-public sealed partial class MusicResultViewModel(SearchResult result, string? reason = null) : ObservableObject
+public sealed partial class MusicResultViewModel : ObservableObject
 {
-    public SearchResult Result { get; } = result;
-    public string Title => Result.Title;
-    public string Subtitle => Result.Artist ?? Result.Subtitle;
-    public string? Reason { get; } = reason;
+    public MusicResultViewModel(SearchResult result, string? reason = null)
+    {
+        Result = result;
+        Reason = reason;
+        // « Daft Punk - One More Time (Official Video) » → « One More Time » by « Daft Punk ».
+        var (artist, title) = ArtistTitle.Split(result.Title, result.Subtitle);
+        Title = string.IsNullOrWhiteSpace(title) ? result.Title : title;
+        Artist = result.Artist ?? artist;
+    }
+
+    public SearchResult Result { get; }
+    public string Title { get; }
+    public string? Artist { get; }
+    public string Subtitle => Artist ?? Result.Subtitle;
+    public string? Reason { get; }
     public string? ThumbnailUrl => Result.ThumbnailUrl;
     public bool HasThumbnail => !string.IsNullOrEmpty(Result.ThumbnailUrl);
     public string DurationText => Result.Duration is { } d ? MusicViewModel.Format(d) : "";
@@ -194,8 +205,8 @@ public partial class MusicSearchViewModel : ObservableObject
         var existing = _music.Library.FindExisting(null, r.PageUrl);
         item.Track = existing ?? new TrackItem
         {
-            DisplayTitle = r.Title,
-            Artist = r.Artist,
+            DisplayTitle = item.Title,
+            Artist = item.Artist,
             SourceUrl = r.PageUrl,
             ThumbnailUrl = r.ThumbnailUrl,
             DurationSeconds = r.Duration?.TotalSeconds,

@@ -109,17 +109,20 @@ public partial class MusicViewModel
         await AppendAutoplayAsync();
     }
 
-    private TrackItem FromResult(SearchResult r) =>
-        Library.FindExisting(null, r.PageUrl) ?? new TrackItem
+    private TrackItem FromResult(SearchResult r)
+    {
+        var (artist, title) = ArtistTitle.Split(r.Title, r.Subtitle);
+        return Library.FindExisting(null, r.PageUrl) ?? new TrackItem
         {
-            DisplayTitle = r.Title,
-            Artist = r.Artist,
+            DisplayTitle = string.IsNullOrWhiteSpace(title) ? r.Title : title,
+            Artist = r.Artist ?? artist,
             SourceUrl = r.PageUrl,
             ThumbnailUrl = r.ThumbnailUrl,
             DurationSeconds = r.Duration?.TotalSeconds,
             State = TrackState.Remote,
             IsTransient = true,
         };
+    }
 
     private static string SeedQuery(TrackItem t) => string.IsNullOrWhiteSpace(t.Artist) ? t.Title : $"{t.Artist} - {t.Title}";
 
