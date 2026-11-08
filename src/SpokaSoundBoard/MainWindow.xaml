@@ -153,6 +153,8 @@
                                  IsChecked="{Binding CurrentPage, Converter={StaticResource EqualsConv}, ConverterParameter=soundboard}" />
                     <RadioButton Style="{StaticResource NavButton}" GroupName="Nav" Tag="&#xE8D6;" Content="Musique"
                                  IsChecked="{Binding CurrentPage, Converter={StaticResource EqualsConv}, ConverterParameter=music}" />
+                    <RadioButton Style="{StaticResource NavButton}" GroupName="Nav" Tag="&#xE7FC;" Content="Blind test"
+                                 IsChecked="{Binding CurrentPage, Converter={StaticResource EqualsConv}, ConverterParameter=blindtest}" />
                     <RadioButton Style="{StaticResource NavButton}" GroupName="Nav" Tag="&#xE720;" Content="Voix &amp; effets"
                                  IsChecked="{Binding CurrentPage, Converter={StaticResource EqualsConv}, ConverterParameter=voice}" />
                     <RadioButton Style="{StaticResource NavButton}" GroupName="Nav" Tag="&#xE9E9;" Content="Mixage &amp; ducking"
@@ -214,6 +216,8 @@
                                       Visibility="{Binding DataContext.CurrentPage, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqualsToVis}, ConverterParameter=soundboard}" />
                 <views:MusicView DataContext="{Binding Music}"
                                  Visibility="{Binding DataContext.CurrentPage, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqualsToVis}, ConverterParameter=music}" />
+                <views:BlindTestView DataContext="{Binding BlindTest}"
+                                     Visibility="{Binding DataContext.CurrentPage, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqualsToVis}, ConverterParameter=blindtest}" />
                 <views:VoiceView Visibility="{Binding CurrentPage, Converter={StaticResource EqualsToVis}, ConverterParameter=voice}" />
                 <views:MixView Visibility="{Binding CurrentPage, Converter={StaticResource EqualsToVis}, ConverterParameter=mix}" />
                 <views:SettingsView Visibility="{Binding CurrentPage, Converter={StaticResource EqualsToVis}, ConverterParameter=settings}" />

@@ -54,6 +54,8 @@
 
             <local:LinkBar DockPanel.Dock="Top" DataContext="{Binding Link}" />
 
+            <local:TextToSpeechPanel DockPanel.Dock="Top" DataContext="{Binding Tts}" />
+
             <Grid DockPanel.Dock="Top" Margin="0,0,0,14" Width="320" HorizontalAlignment="Left"
                   Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVis}}">
                 <TextBox Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged}" Padding="30,6,8,6" VerticalContentAlignment="Center" />
