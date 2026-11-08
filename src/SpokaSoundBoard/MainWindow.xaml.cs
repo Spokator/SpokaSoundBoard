@@ -17,9 +17,12 @@ public partial class MainWindow : Window
     private readonly bool _openSetup;
     private TrayIconService? _tray;
     private bool _dragging;
+    private readonly List<string> _pendingPacks = [];
+    private bool _initialized;
 
-    public MainWindow(bool openSetup = false, bool startInTray = false)
+    public MainWindow(bool openSetup = false, bool startInTray = false, string? packToImport = null)
     {
+        if (packToImport != null) _pendingPacks.Add(packToImport);
         InitializeComponent();
         _vm = new MainViewModel();
         DataContext = _vm;
@@ -57,6 +60,9 @@ public partial class MainWindow : Window
             HasDiscordOutput: () => _vm.Devices.HasDiscordOutput));
 
         _vm.Initialize(_openSetup);
+        _initialized = true;
+        foreach (var pack in _pendingPacks) ImportPack(pack);
+        _pendingPacks.Clear();
         if (_startInTray)
         {
             ShowInTaskbar = true;
@@ -79,6 +85,18 @@ public partial class MainWindow : Window
         Topmost = true;
         Topmost = false;
         Focus();
+    }
+
+    /// <summary>Imports a .spokapack opened from Explorer (startup argument or forwarded by a second instance).</summary>
+    public void ImportPack(string path)
+    {
+        if (!_initialized)
+        {
+            _pendingPacks.Add(path);
+            return;
+        }
+        _vm.CurrentPage = "soundboard";
+        _vm.Soundboard.ImportPackFile(path);
     }
 
     private void ExitApplication()

@@ -88,6 +88,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     public string CurrentVersion => (typeof(MainViewModel).Assembly.GetName().Version ?? new Version(1, 0)).ToString(3);
 
+    /// <summary>Microsoft Store (MSIX) edition: updates come from the Store, autostart is a StartupTask.</summary>
+    public bool IsStoreEdition => AppEnvironment.IsPackaged;
+
+    public string EditionName => IsStoreEdition ? "Microsoft Store" : "Installeur";
+
+    public const string PrivacyPolicyUrl = "https://github.com/Spokator/SpokaSoundBoard/blob/main/docs/PRIVACY.md";
+
+    public string SettingsLocationText => IsStoreEdition
+        ? "Vos réglages et votre bibliothèque sont enregistrés automatiquement sur ce PC, dans le dossier privé de l'application (supprimé si vous la désinstallez)."
+        : @"Vos réglages sont enregistrés automatiquement dans %AppData%\SpokaSoundBoard.";
+
+    [RelayCommand]
+    private static void OpenPrivacyPolicy() => WindowsIntegration.Open(PrivacyPolicyUrl);
+
     public bool CheckForUpdates
     {
         get => Settings.CheckForUpdates;
@@ -135,21 +149,54 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public SetupWizardViewModel Setup { get; }
     public AppearanceViewModel Appearance { get; }
 
+    private bool _autostart;
+
+    /// <summary>"Lancer au démarrage de Windows": Run key (installer edition) or StartupTask (Store edition).</summary>
     public bool Autostart
     {
-        get => WindowsIntegration.IsAutostartEnabled();
+        get => _autostart;
         set
         {
-            try
-            {
-                WindowsIntegration.SetAutostart(value);
-            }
-            catch (Exception ex)
-            {
-                ShowToast("Impossible de modifier le démarrage automatique : " + ex.Message);
-            }
-            OnPropertyChanged();
+            if (!SetProperty(ref _autostart, value)) return;
+            _ = ApplyAutostartAsync(value);
         }
+    }
+
+    /// <summary>Reads the real state (the user can change it in Windows settings / Task Manager at any time).</summary>
+    public async Task RefreshAutostartAsync()
+    {
+        try
+        {
+            SetProperty(ref _autostart, await WindowsIntegration.IsAutostartEnabledAsync(), nameof(Autostart));
+        }
+        catch
+        {
+            // Keep the displayed value.
+        }
+    }
+
+    private async Task ApplyAutostartAsync(bool enabled)
+    {
+        try
+        {
+            switch (await WindowsIntegration.SetAutostartAsync(enabled))
+            {
+                case AutostartResult.DisabledByUser:
+                    ShowToast("Windows a désactivé le lancement au démarrage de SpokaSoundBoard. Activez-le dans " +
+                              "Paramètres Windows → Applications → Démarrage (la page vient de s'ouvrir).", 10);
+                    WindowsIntegration.Open(WindowsIntegration.StartupAppsSettings);
+                    break;
+                case AutostartResult.ControlledByPolicy:
+                    ShowToast("Le lancement au démarrage est imposé par votre administrateur : voyez " +
+                              "Paramètres Windows → Applications → Démarrage.", 10);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowToast("Impossible de modifier le démarrage automatique : " + ex.Message);
+        }
+        await RefreshAutostartAsync();
     }
 
     [ObservableProperty] private string _currentPage = "soundboard";
@@ -193,7 +240,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Music.RestoreState();
         Soundboard.AnalyzeMissingLoudness();
         Music.AnalyzeMissingLoudness();
-        if (Settings.CheckForUpdates) _ = CheckForUpdateAsync(silent: true);
+        // Store edition: the Store updates the app, never check GitHub nor run an installer.
+        if (Settings.CheckForUpdates && !IsStoreEdition) _ = CheckForUpdateAsync(silent: true);
+        _ = RefreshAutostartAsync();
         _meterTimer.Start();
         _saveTimer.Start();
         if (setupRequested || !Settings.FirstRunDone || Settings.SetupResumeStep != null)
@@ -266,10 +315,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (parameter is HotkeyBinding binding) binding.Clear();
     }
 
-    public void ShowToast(string message)
+    public void ShowToast(string message, double seconds = 4)
     {
         ToastMessage = message;
         _toastTimer.Stop();
+        _toastTimer.Interval = TimeSpan.FromSeconds(seconds);
         _toastTimer.Start();
     }
 
@@ -326,6 +376,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private async Task CheckForUpdateAsync(bool silent)
     {
+        if (IsStoreEdition) return;
         try
         {
             if (silent) await Task.Delay(TimeSpan.FromSeconds(5));
@@ -344,7 +395,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task InstallUpdate()
     {
-        if (AvailableUpdate is not { } update || IsUpdating) return;
+        if (AvailableUpdate is not { } update || IsUpdating || IsStoreEdition) return;
         IsUpdating = true;
         try
         {

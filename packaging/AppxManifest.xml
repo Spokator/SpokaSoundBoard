@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MSIX manifest of the Microsoft Store edition. scripts/build-store.ps1 replaces __VERSION__ (x.y.z.0, from the csproj)
+  and, with -TestSign only, swaps the Publisher for CN=SpokaSoundBoard-Dev.
+  Identity Name and Publisher MUST match Partner Center > Gestion des produits > Identité du produit (see docs/STORE.md).
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap3 desktop rescap">
+
+  <Identity
+    Name="Spokator.SpokaSoundBoard"
+    Publisher="CN=1FBF4454-E4DA-41D2-BBA3-8C9433B84CE4"
+    Version="__VERSION__"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>SpokaSoundBoard</DisplayName>
+    <PublisherDisplayName>Spokator</PublisherDisplayName>
+    <Description>Soundboard, musique et effets de voix pour Discord et les jeux</Description>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Resources>
+    <Resource Language="fr-FR" />
+  </Resources>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
+    <DeviceCapability Name="microphone" />
+  </Capabilities>
+
+  <Applications>
+    <Application Id="SpokaSoundBoard" Executable="SpokaSoundBoard.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="SpokaSoundBoard"
+        Description="Soundboard, musique et effets de voix pour Discord et les jeux"
+        BackgroundColor="#0b0d14"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" Square71x71Logo="Assets\Square71x71Logo.png" ShortName="SpokaSoundBoard">
+          <uap:ShowNameOnTiles>
+            <uap:ShowOn Tile="square150x150Logo" />
+            <uap:ShowOn Tile="wide310x150Logo" />
+          </uap:ShowNameOnTiles>
+        </uap:DefaultTile>
+        <uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#0b0d14" />
+      </uap:VisualElements>
+
+      <Extensions>
+        <!-- "Lancer au démarrage de Windows": enabled by the app (StartupTask.RequestEnableAsync), never by default. -->
+        <desktop:Extension Category="windows.startupTask" Executable="SpokaSoundBoard.exe" EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask TaskId="SpokaSoundBoardStartup" Enabled="false" DisplayName="SpokaSoundBoard" />
+        </desktop:Extension>
+
+        <!-- Double-click on a .spokapack: the app starts (or the running one is signalled) with the path as argument. -->
+        <uap3:Extension Category="windows.fileTypeAssociation">
+          <uap3:FileTypeAssociation Name="spokapack" Parameters="&quot;%1&quot;">
+            <uap:DisplayName>Pack SpokaSoundBoard</uap:DisplayName>
+            <uap:Logo>Assets\Square44x44Logo.png</uap:Logo>
+            <uap:InfoTip>Sons et effets de voix à importer dans SpokaSoundBoard</uap:InfoTip>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.spokapack</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap3:FileTypeAssociation>
+        </uap3:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+</Package>

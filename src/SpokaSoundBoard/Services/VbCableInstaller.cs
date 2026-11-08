@@ -2,17 +2,38 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
+using SpokaSoundBoard.Core;
 
 namespace SpokaSoundBoard.Services;
 
-/// <summary>Downloads the official free VB-CABLE driver and launches its installer (requires admin).</summary>
+/// <summary>
+/// Downloads the official free VB-CABLE driver and launches its installer (requires admin).
+/// Store edition: never downloads or runs an installer (Store policy, see docs/STORE.md); the official download page
+/// is opened instead and the user installs the driver by hand.
+/// </summary>
 public static class VbCableInstaller
 {
     public const string HomePage = "https://vb-audio.com/Cable/";
     private const string PackageUrl = "https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack45.zip";
 
+    /// <summary>False in the Store edition: the official page is opened instead of running the installer.</summary>
+    public static bool CanInstallAutomatically => !AppEnvironment.IsPackaged;
+
+    public const string ManualVbCableSteps =
+        "Page VB-Audio ouverte : téléchargez « VBCABLE_Driver_Pack », extrayez le .zip, clic droit sur « VBCABLE_Setup_x64.exe » → « Exécuter en tant qu'administrateur » → « Install Driver », puis redémarrez le PC.";
+
+    public const string ManualVacSteps =
+        "Page Virtual Audio Cable ouverte : téléchargez « Virtual Audio Cable Lite », extrayez le .zip, lancez « setup64.exe » → « Install », puis redémarrez le PC si demandé.";
+
     public static async Task DownloadAndRunAsync(IProgress<string> progress)
     {
+        if (!CanInstallAutomatically)
+        {
+            OpenUrl(HomePage);
+            progress.Report(ManualVbCableSteps);
+            return;
+        }
+
         var folder = Path.Combine(Path.GetTempPath(), "SpokaSoundBoard", "VBCABLE");
         if (Directory.Exists(folder)) Directory.Delete(folder, true);
         Directory.CreateDirectory(folder);
@@ -52,6 +73,13 @@ public static class VbCableInstaller
     /// </summary>
     public static async Task DownloadAndRunVacLiteAsync(IProgress<string> progress)
     {
+        if (!CanInstallAutomatically)
+        {
+            OpenUrl(VacHomePage);
+            progress.Report(ManualVacSteps);
+            return;
+        }
+
         var folder = Path.Combine(Path.GetTempPath(), "SpokaSoundBoard", "VACLite");
         if (Directory.Exists(folder)) Directory.Delete(folder, true);
         Directory.CreateDirectory(folder);

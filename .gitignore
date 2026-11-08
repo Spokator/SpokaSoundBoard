@@ -7,3 +7,5 @@ TestResults/
 __pycache__/
 installer/deps/
 .claude/worktrees/
+dist-store/
+packaging/deps/

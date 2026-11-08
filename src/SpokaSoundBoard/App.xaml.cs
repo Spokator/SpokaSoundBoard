@@ -13,14 +13,24 @@ public partial class App : Application
     public static string LogPath { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SpokaSoundBoard", "error.log");
 
+    /// <summary>.spokapack files handed to a second instance (double-click while the app runs), imported by the first one.</summary>
+    private static string PendingPacksPath { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SpokaSoundBoard", "pending-packs.txt");
+
     protected override void OnStartup(StartupEventArgs e)
     {
         _singleInstance = new Mutex(true, "SpokaSoundBoard.SingleInstance", out var isFirst);
         var startArgs = e.Args.Select(a => a.ToLowerInvariant()).ToHashSet();
+        // Double-click on a .spokapack (file association of the MSIX manifest) or "Ouvrir avec".
+        var packToImport = e.Args.FirstOrDefault(a =>
+            a.EndsWith(Core.SoundboardPack.Extension, StringComparison.OrdinalIgnoreCase) && File.Exists(a));
+        // Store edition: "Lancer au démarrage de Windows" goes through the StartupTask, which passes no argument.
+        var startMinimized = startArgs.Contains("--minimized") || Services.WindowsIntegration.WasLaunchedByStartupTask();
         if (!isFirst)
         {
+            if (packToImport != null) QueuePack(packToImport);
             // Already running (maybe hidden in the tray): bring the existing window to the front.
-            if (!startArgs.Contains("--minimized"))
+            if (!startMinimized)
             {
                 try
                 {
@@ -40,7 +50,12 @@ public partial class App : Application
         new Thread(() =>
         {
             while (_showEvent.WaitOne())
-                Dispatcher.BeginInvoke(() => (MainWindow as MainWindow)?.ShowFromTray());
+                Dispatcher.BeginInvoke(() =>
+                {
+                    if (MainWindow is not MainWindow main) return;
+                    main.ShowFromTray();
+                    foreach (var pack in TakeQueuedPacks()) main.ImportPack(pack);
+                });
         })
         { IsBackground = true, Name = "SpokaSoundBoard show signal" }.Start();
 
@@ -59,9 +74,48 @@ public partial class App : Application
             new FrameworkPropertyMetadata(System.Windows.Markup.XmlLanguage.GetLanguage("fr-FR")));
 
         base.OnStartup(e);
-        var window = new MainWindow(startArgs.Contains("--setup"), startArgs.Contains("--minimized"));
+        var window = new MainWindow(startArgs.Contains("--setup"), startMinimized && packToImport == null, packToImport);
         MainWindow = window;
         window.Show();
+    }
+
+    private static void QueuePack(string path)
+    {
+        // Several files opened at once start several instances: retry while another one appends.
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(PendingPacksPath)!);
+                File.AppendAllLines(PendingPacksPath, [Path.GetFullPath(path)]);
+                return;
+            }
+            catch (IOException)
+            {
+                Thread.Sleep(50);
+            }
+            catch (Exception ex)
+            {
+                Log(ex);
+                return;
+            }
+        }
+    }
+
+    private static List<string> TakeQueuedPacks()
+    {
+        try
+        {
+            if (!File.Exists(PendingPacksPath)) return [];
+            var packs = File.ReadAllLines(PendingPacksPath).Where(File.Exists).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            File.Delete(PendingPacksPath);
+            return packs;
+        }
+        catch (Exception ex)
+        {
+            Log(ex);
+            return [];
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)
