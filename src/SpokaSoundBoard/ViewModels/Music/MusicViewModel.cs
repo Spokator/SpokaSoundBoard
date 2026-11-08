@@ -282,6 +282,7 @@ public partial class MusicViewModel : ObservableObject
 
     public void SeekTo(double seconds)
     {
+        if (IsExternalPlayback) return;
         Player.Seek(TimeSpan.FromSeconds(seconds));
         Position = seconds;
         PositionText = Format(TimeSpan.FromSeconds(seconds));
