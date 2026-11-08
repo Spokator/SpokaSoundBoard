@@ -31,6 +31,8 @@ Diffusez votre playlist et vos sons **dans votre micro**, parlez par-dessus (la 
 | 📻 **Autoplay et radio** | Quand la file se termine, des morceaux similaires s'enchaînent. « Pour vous » propose des titres d'après vos écoutes. |
 | 🎤 **Paroles synchronisées** | Mode karaoké : la ligne en cours s'affiche en grand (paroles lrclib.net). |
 | 🎚️ **Effets musique** | Basses, égaliseur 10 bandes, nightcore, vaporwave, slowed + reverb, audio 8D, karaoké (voix retirée), salle de concert… en direct. |
+| 🏆 **Blind test** | Animez un blind test dans Discord ou en jeu : extraits joués dans le micro, révélation, scores, podium et classement de tous les temps. |
+| 🗨️ **Synthèse vocale** | Tapez une phrase, elle est dite dans votre micro (voix Windows), et devient un son de la soundboard en un clic. |
 | 📊 **Statistiques** | Top morceaux et artistes, heures d'écoute, séries, rétrospective de l'année. |
 | 🗣️ **Ducking** | Quand vous parlez, la musique baisse pour que votre voix passe par-dessus, puis remonte doucement. |
 | 🎙️ **23 effets de voix** | Pilote d'hélico, tour de contrôle, talkie-walkie, astronaute NASA, pilote de chasse, téléphone, vieille radio, mégaphone, robot, Dark Vador, démon, fantôme, alien, sous l'eau, lo-fi 8 bits… Chaque réglage est modifiable et vous pouvez enregistrer vos propres presets. |
