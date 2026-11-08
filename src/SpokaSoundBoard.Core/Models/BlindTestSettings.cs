@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using SpokaSoundBoard.Core.Speech;
 
 namespace SpokaSoundBoard.Core.Models;
 
@@ -122,8 +123,14 @@ public partial class TextToSpeechSettings : ObservableObject
 {
     public const int MaxHistory = 10;
 
-    /// <summary>WinRT voice id (null = a French voice if installed, otherwise the system default).</summary>
+    /// <summary>
+    /// WinRT voice id, or a natural voice id (<c>neural:pack:key</c>, see <see cref="NeuralVoiceCatalog"/>).
+    /// Null = automatic: a natural voice once downloaded, otherwise a French Windows voice, otherwise the system default.
+    /// </summary>
     [ObservableProperty] private string? _voiceId;
+
+    /// <summary>Language the natural voices read the text in (they are multilingual; Windows voices have their own).</summary>
+    [ObservableProperty] private string _language = NeuralVoiceCatalog.DefaultLanguage;
 
     /// <summary>Speaking rate, 0.5 to 3 (1 = normal).</summary>
     [ObservableProperty] private double _rate = 1;
@@ -155,6 +162,9 @@ public partial class TextToSpeechSettings : ObservableObject
         Rate = double.IsFinite(Rate) ? Math.Clamp(Rate, 0.5, 3) : 1;
         Pitch = double.IsFinite(Pitch) ? Math.Clamp(Pitch, 0.3, 2) : 1;
         Volume = double.IsFinite(Volume) ? Math.Clamp(Volume, 0, 2) : 1;
+        Language = NeuralVoiceCatalog.NormalizeLanguage(Language);
+        // A natural voice removed from the catalog falls back to automatic.
+        if (NeuralVoiceCatalog.IsNeuralVoiceId(VoiceId) && NeuralVoiceCatalog.FindVoice(VoiceId) == null) VoiceId = null;
         History ??= [];
         History.RemoveAll(string.IsNullOrWhiteSpace);
         if (History.Count > MaxHistory) History.RemoveRange(MaxHistory, History.Count - MaxHistory);
