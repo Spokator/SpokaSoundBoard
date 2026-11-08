@@ -54,7 +54,7 @@
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                     <TextBlock Style="{StaticResource Icon}" Text="&#xE7F5;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,12,0" />
-                                    <TextBlock Text="Installer le micro virtuel (gratuit, en un clic)" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding VirtualMicFeature}" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                     <TextBlock Style="{StaticResource Icon}" Text="&#xE8BD;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,12,0" />
@@ -77,7 +77,7 @@
                                     <TextBlock Foreground="{StaticResource WarningBrush}" FontWeight="SemiBold" TextWrapping="Wrap"
                                                Text="Windows bloque l'accès au micro pour les applications." />
                                     <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,8"
-                                               Text="Activez « Accès au microphone » et « Autoriser les applications de bureau à accéder au microphone », puis revenez ici." />
+                                               Text="{Binding MicrophoneBlockedHelp}" />
                                     <StackPanel Orientation="Horizontal">
                                         <Button Style="{StaticResource AccentButton}" Content="Ouvrir les paramètres de confidentialité" Command="{Binding OpenMicrophonePrivacyCommand}" Margin="0,0,10,0" />
                                         <Button Style="{StaticResource FlatButton}" Content="Vérifier à nouveau" Command="{Binding RecheckMicrophoneCommand}" />
@@ -96,7 +96,20 @@
                         <!-- 2. Virtual microphones -->
                         <StackPanel Visibility="{Binding Step, Converter={StaticResource EqualsToVis}, ConverterParameter=2}">
                             <TextBlock TextWrapping="Wrap" Margin="0,0,0,16" LineHeight="20"
+                                       Visibility="{Binding IsStoreEdition, Converter={StaticResource InverseBoolToVis}}"
                                        Text="Pour que les autres vous entendent avec la musique et les effets, Windows a besoin d'un « micro virtuel ». Cliquez sur Installer : la fenêtre officielle s'ouvre, acceptez l'autorisation administrateur puis cliquez sur « Install Driver » (ou « Install »)." />
+
+                            <!-- Store edition: the app may not download or run installers, the user installs the driver himself. -->
+                            <StackPanel Margin="0,0,0,16" Visibility="{Binding IsStoreEdition, Converter={StaticResource BoolToVis}}">
+                                <TextBlock TextWrapping="Wrap" LineHeight="20" Margin="0,0,0,8"
+                                           Text="Pour que les autres vous entendent avec la musique et les effets, Windows a besoin d'un « micro virtuel » : VB-CABLE, un pilote audio gratuit de VB-Audio. Il s'installe depuis son site officiel, en quelques clics :" />
+                                <TextBlock Style="{StaticResource Caption}" FontSize="13" TextWrapping="Wrap" LineHeight="20">
+                                    1. Cliquez sur « Ouvrir le site » ci-dessous : la page officielle de VB-CABLE s'ouvre dans votre navigateur.<LineBreak />
+                                    2. Téléchargez <Bold>VBCABLE_Driver_Pack</Bold> (bouton « Download »), ouvrez le fichier .zip puis choisissez « Extraire tout ».<LineBreak />
+                                    3. Dans le dossier extrait, clic droit sur <Bold>VBCABLE_Setup_x64</Bold> → « Exécuter en tant qu'administrateur », puis cliquez sur <Bold>Install Driver</Bold>.<LineBreak />
+                                    4. Redémarrez le PC, puis rouvrez SpokaSoundBoard : l'assistant reprendra ici et affichera « Installé ».
+                                </TextBlock>
+                            </StackPanel>
 
                             <Border Style="{StaticResource Card}" Background="{DynamicResource SubCardBrush}" Padding="16" Margin="0,0,0,12">
                                 <DockPanel>
@@ -105,7 +118,7 @@
                                             <TextBlock Style="{StaticResource Icon}" Text="&#xE73E;" Foreground="{StaticResource SuccessBrush}" Margin="0,0,8,0" />
                                             <TextBlock Text="Installé" Foreground="{StaticResource SuccessBrush}" FontWeight="SemiBold" />
                                         </StackPanel>
-                                        <Button Style="{StaticResource AccentButton}" Content="Installer" Command="{Binding InstallVirtualMicCommand}"
+                                        <Button Style="{StaticResource AccentButton}" Content="{Binding InstallButtonLabel}" Command="{Binding InstallVirtualMicCommand}"
                                                 Visibility="{Binding Devices.HasVirtualCable, Converter={StaticResource InverseBoolToVis}}"
                                                 IsEnabled="{Binding Devices.IsInstalling, Converter={StaticResource InverseBool}}" />
                                     </Grid>
@@ -125,7 +138,7 @@
                                             <TextBlock Style="{StaticResource Icon}" Text="&#xE73E;" Foreground="{StaticResource SuccessBrush}" Margin="0,0,8,0" />
                                             <TextBlock Text="Installé" Foreground="{StaticResource SuccessBrush}" FontWeight="SemiBold" />
                                         </StackPanel>
-                                        <Button Style="{StaticResource FlatButton}" Content="Installer" Command="{Binding InstallSecondCableCommand}"
+                                        <Button Style="{StaticResource FlatButton}" Content="{Binding InstallButtonLabel}" Command="{Binding InstallSecondCableCommand}"
                                                 Visibility="{Binding Devices.HasSecondCable, Converter={StaticResource InverseBoolToVis}}"
                                                 IsEnabled="{Binding Devices.IsInstallingSecond, Converter={StaticResource InverseBool}}" />
                                     </Grid>
@@ -148,8 +161,7 @@
                                     </StackPanel>
                                     <StackPanel Margin="0,0,12,0">
                                         <TextBlock Text="Un redémarrage peut être nécessaire" FontWeight="SemiBold" />
-                                        <TextBlock Style="{StaticResource Caption}"
-                                                   Text="Si le micro n'apparaît pas encore comme « Installé », redémarrez : l'assistant se rouvrira tout seul juste après." />
+                                        <TextBlock Style="{StaticResource Caption}" Text="{Binding RebootHelp}" />
                                     </StackPanel>
                                 </DockPanel>
                             </Border>

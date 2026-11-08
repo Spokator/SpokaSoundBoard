@@ -6,3 +6,5 @@ dist/
 TestResults/
 __pycache__/
 installer/deps/
+dist-store/
+packaging/deps/
