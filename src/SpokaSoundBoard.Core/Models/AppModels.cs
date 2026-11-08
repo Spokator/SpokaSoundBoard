@@ -69,31 +69,153 @@ public partial class SoundPad : ObservableObject
     [ObservableProperty] private bool _isPlaying;
 }
 
+/// <summary>Availability of a track's audio file.</summary>
+public enum TrackState
+{
+    /// <summary>The audio file is on disk and can be played.</summary>
+    Ready,
+
+    /// <summary>Known by its metadata only (imported playlist, recommendation): downloaded on first play.</summary>
+    Remote,
+
+    Downloading,
+
+    /// <summary>The last download / resolution failed.</summary>
+    Error,
+}
+
+/// <summary>One track of the music library. A track can exist without a file yet (see <see cref="TrackState.Remote"/>).</summary>
 public partial class TrackItem : ObservableObject
 {
-    [ObservableProperty] private string _filePath = "";
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>Title given by the web source; local files use their file name.</summary>
-    public string? DisplayTitle { get; set; }
+    /// <summary>Local audio file (empty while a remote track has not been downloaded yet).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Title), nameof(Folder), nameof(IsDownloaded))]
+    private string _filePath = "";
 
-    public string? SourceUrl { get; set; }
+    /// <summary>Title given by the web source or the tags; local files fall back to their file name.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Title))]
+    private string? _displayTitle;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Subtitle))]
+    private string? _artist;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSource), nameof(Folder))]
+    private string? _sourceUrl;
+
+    /// <summary>Search used to find the audio of an imported track ("artist - title"), when no URL is known.</summary>
+    public string? SearchQuery { get; set; }
+
+    /// <summary>Cover / thumbnail (http URL or local file).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasThumbnail))]
+    private string? _thumbnailUrl;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DurationText))]
+    private double? _durationSeconds;
 
     /// <summary>Automatic loudness correction in dB (null = not analysed yet).</summary>
     public double? NormalizationDb { get; set; }
+
+    [ObservableProperty] private bool _isFavorite;
+
+    public DateTime AddedAt { get; set; } = DateTime.Now;
+    public int PlayCount { get; set; }
+    public DateTime? LastPlayedAt { get; set; }
 
     [JsonIgnore]
     [ObservableProperty] private bool _isCurrent;
 
     [JsonIgnore]
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsBusy))]
+    private TrackState _state;
+
+    [JsonIgnore]
+    [ObservableProperty] private string? _stateMessage;
+
+    [JsonIgnore]
+    public bool IsBusy => State == TrackState.Downloading;
+
+    [JsonIgnore]
+    public bool IsDownloaded => !string.IsNullOrEmpty(FilePath) && File.Exists(FilePath);
+
+    [JsonIgnore]
     public bool HasSource => !string.IsNullOrEmpty(SourceUrl);
 
     [JsonIgnore]
-    public string Title => string.IsNullOrWhiteSpace(DisplayTitle) ? Path.GetFileNameWithoutExtension(FilePath) : DisplayTitle;
+    public bool HasThumbnail => !string.IsNullOrEmpty(ThumbnailUrl);
+
+    [JsonIgnore]
+    public string Title => !string.IsNullOrWhiteSpace(DisplayTitle) ? DisplayTitle
+        : !string.IsNullOrEmpty(FilePath) ? Path.GetFileNameWithoutExtension(FilePath)
+        : SearchQuery ?? "Sans titre";
+
+    /// <summary>Artist when known, otherwise the source (site or folder).</summary>
+    [JsonIgnore]
+    public string Subtitle => string.IsNullOrWhiteSpace(Artist) ? Folder : Artist;
+
+    [JsonIgnore]
+    public string DurationText => DurationSeconds is { } s and > 0
+        ? (s >= 3600 ? TimeSpan.FromSeconds(s).ToString(@"h\:mm\:ss") : $"{(int)(s / 60)}:{(int)(s % 60):00}")
+        : "";
 
     [JsonIgnore]
     public string Folder => HasSource && Uri.TryCreate(SourceUrl, UriKind.Absolute, out var uri)
         ? uri.Host.Replace("www.", "", StringComparison.OrdinalIgnoreCase)
-        : Path.GetFileName(Path.GetDirectoryName(FilePath)) ?? "";
+        : string.IsNullOrEmpty(FilePath) ? "" : Path.GetFileName(Path.GetDirectoryName(FilePath)) ?? "";
+}
+
+/// <summary>A user playlist: an ordered list of library track ids.</summary>
+public partial class MusicPlaylist : ObservableObject
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    [ObservableProperty] private string _name = "";
+    [ObservableProperty] private string _color = "#7C5CFF";
+
+    /// <summary>Web playlist it was imported from (Spotify, Deezer, YouTube…), if any.</summary>
+    public string? SourceUrl { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+    public ObservableCollection<Guid> TrackIds { get; set; } = [];
+}
+
+/// <summary>One listening, for the history, the statistics and the recommendations.</summary>
+public sealed class HistoryEntry
+{
+    public Guid TrackId { get; set; }
+    public string Title { get; set; } = "";
+    public string? Artist { get; set; }
+    public string? SourceUrl { get; set; }
+    public DateTime PlayedAt { get; set; } = DateTime.Now;
+
+    /// <summary>Seconds actually listened (updated when the track ends or is skipped).</summary>
+    public double ListenedSeconds { get; set; }
+}
+
+/// <summary>Persisted content of library.json (kept apart from settings.json, which stays small).</summary>
+public sealed class MusicLibraryData
+{
+    public int Version { get; set; } = 1;
+    public ObservableCollection<TrackItem> Tracks { get; set; } = [];
+    public ObservableCollection<MusicPlaylist> Playlists { get; set; } = [];
+    public List<HistoryEntry> History { get; set; } = [];
+
+    /// <summary>Artists / titles the user does not want recommended ("👎").</summary>
+    public List<string> DislikedArtists { get; set; } = [];
+    public List<string> DislikedUrls { get; set; } = [];
+
+    /// <summary>Queue saved on exit, restored at the next start.</summary>
+    public List<Guid> SavedQueue { get; set; } = [];
+    public int SavedQueueIndex { get; set; } = -1;
+    public double SavedPositionSeconds { get; set; }
 }
 
 public enum RepeatMode
@@ -165,8 +287,11 @@ public class AppSettings
     public HotkeySettings Hotkeys { get; set; } = new();
 
     public ObservableCollection<SoundPad> Pads { get; set; } = [];
+    /// <summary>Pre-2.0 single playlist. Migrated once into library.json, then left empty.</summary>
     public ObservableCollection<TrackItem> Playlist { get; set; } = [];
     public List<EffectPreset> CustomPresets { get; set; } = [];
+
+    public MusicSettings Music { get; set; } = new();
 
     public string? SelectedPresetName { get; set; } = "Voix normale";
     public RepeatMode Repeat { get; set; } = RepeatMode.All;

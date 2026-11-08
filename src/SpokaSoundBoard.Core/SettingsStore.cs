@@ -67,6 +67,9 @@ public sealed class SettingsStore
         s.Hotkeys.PreviousPreset ??= new HotkeyBinding();
         s.Pads ??= [];
         s.Playlist ??= [];
+        s.Music ??= new MusicSettings();
+        s.Music.Effects ??= new MusicEffectSettings();
+        s.Music.CrossfadeSeconds = Math.Clamp(s.Music.CrossfadeSeconds, 0, 12);
         s.CustomPresets ??= [];
         foreach (var pad in s.Pads) pad.Hotkey ??= new HotkeyBinding();
         return s;

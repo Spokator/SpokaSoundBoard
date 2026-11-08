@@ -1,0 +1,10 @@
+# SpokaSoundBoard: notes for contributors
+
+- **Stack**: .NET 9, WPF + MVVM (CommunityToolkit.Mvvm source generators), NAudio (WASAPI), xUnit.
+  `src/SpokaSoundBoard.Core` (net9.0-windows, no UI) · `src/SpokaSoundBoard` (WPF app, net9.0-windows10.0.19041.0, WinRT available) · `tests/SpokaSoundBoard.Tests` (references Core only).
+- **Language**: every user-visible string is French, with proper typography (« guillemets », non-breaking spaces before : ; ? ! are not required). Code, identifiers and comments are in English.
+- **Audio thread rules** (`MixerCore.Render`, every `ISampleProvider.Read`): no allocation in steady state, no blocking I/O, no exceptions escaping (output silence instead), short locks only. Sample rate is `MixerCore.SampleRate` (48 kHz), stereo interleaved float.
+- **Settings** are `ObservableObject`s read live by the audio thread; persisted as JSON by `SettingsStore` (settings.json). The music library lives in `library.json` (`MusicLibraryData`). New settings need defaults and a `Sanitize` entry so old files load.
+- **Packaged (Microsoft Store) mode**: check `AppEnvironment.IsPackaged`. When packaged, never download or update executables (yt-dlp, ffmpeg, installers) at runtime, never write the `Run`/`RunOnce` registry keys, and never self-update.
+- **Build / test**: `dotnet build SpokaSoundBoard.sln` and `dotnet test tests/SpokaSoundBoard.Tests`. Online tests only run with `SPOKA_ONLINE_TESTS=1`. Keep all tests green; add tests for any new Core logic.
+- **Style**: file-scoped namespaces, `sealed` by default, nullable enabled, XAML styles from `Themes/Styles.xaml` and theme brushes via `DynamicResource` (themes are switched at runtime by `ThemeService`).
