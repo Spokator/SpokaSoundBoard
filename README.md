@@ -32,7 +32,7 @@ Diffusez votre playlist et vos sons **dans votre micro**, parlez par-dessus (la 
 | 🎤 **Paroles synchronisées** | Mode karaoké : la ligne en cours s'affiche en grand (paroles lrclib.net). |
 | 🎚️ **Effets musique** | Basses, égaliseur 10 bandes, nightcore, vaporwave, slowed + reverb, audio 8D, karaoké (voix retirée), salle de concert… en direct. |
 | 🏆 **Blind test** | Animez un blind test dans Discord ou en jeu : extraits joués dans le micro, révélation, scores, podium et classement de tous les temps. |
-| 🗨️ **Synthèse vocale** | Tapez une phrase, elle est dite dans votre micro (voix Windows), et devient un son de la soundboard en un clic. |
+| 🗨️ **Synthèse vocale** | Tapez une phrase, elle est dite dans votre micro, et devient un son de la soundboard en un clic. Voix naturelles neuronales hors ligne (téléchargement unique de 139 Mo) ou voix Windows. |
 | 📊 **Statistiques** | Top morceaux et artistes, heures d'écoute, séries, rétrospective de l'année. |
 | 🗣️ **Ducking** | Quand vous parlez, la musique baisse pour que votre voix passe par-dessus, puis remonte doucement. |
 | 🎙️ **23 effets de voix** | Pilote d'hélico, tour de contrôle, talkie-walkie, astronaute NASA, pilote de chasse, téléphone, vieille radio, mégaphone, robot, Dark Vador, démon, fantôme, alien, sous l'eau, lo-fi 8 bits… Chaque réglage est modifiable et vous pouvez enregistrer vos propres presets. |
@@ -117,6 +117,7 @@ Les tests en ligne (téléchargements et recherches réels) s'activent avec `$en
 
 - [NAudio](https://github.com/naudio/NAudio) pour l'audio, [NVorbis](https://github.com/NVorbis/NVorbis) pour l'OGG, et [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet).
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) (Unlicense) pour la recherche et l'import par lien, et [FFmpeg](https://ffmpeg.org) pour les conversions (téléchargé si nécessaire).
+- Voix naturelles : [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (Apache-2.0) et [ONNX Runtime](https://github.com/microsoft/onnxruntime) (MIT) livrés avec l'application ; le modèle [Supertonic 3](https://huggingface.co/Supertone/supertonic-3) de Supertone (licence [OpenRAIL-M](https://huggingface.co/Supertone/supertonic-3/blob/main/LICENSE)) est téléchargé à la demande.
 - Micros virtuels : [VB-CABLE](https://vb-audio.com/Cable/) de VB-Audio (donationware) et [Virtual Audio Cable](https://vac.muzychenko.net/) d'Eugene Muzychenko. Ils ne sont pas redistribués : ils sont téléchargés depuis leurs sites officiels.
 
 Respectez les droits des contenus que vous diffusez.

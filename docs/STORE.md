@@ -137,6 +137,8 @@ Microsoft relit la soumission, en général en quelques jours. S'il y a un refus
 >
 > Bundled tools: tools\yt-dlp.exe (Unlicense) and tools\ffmpeg.exe (GPL, license in tools\ffmpeg-LICENSE.txt) are part of the package and are only run when the user searches or imports a link. The Store edition never updates or downloads executables; new versions ship as Store updates. There is no self-update, no telemetry and no account.
 >
+> Natural text-to-speech voices: the sherpa-onnx / ONNX Runtime libraries (sherpa-onnx-c-api.dll, onnxruntime.dll) are part of the package. When the user clicks "Télécharger" in the text-to-speech options, the app downloads a voice model (data files only: .onnx, .json, .bin, about 139 MB, SHA-256 checked) from Hugging Face into its data folder; no executable code is ever downloaded.
+>
 > Global hotkeys use low-level keyboard/mouse hooks so they work in full-screen games; keys are passed through to the game unchanged and nothing is recorded.
 >
 > The source code is public: https://github.com/Spokator/SpokaSoundBoard
@@ -171,7 +173,7 @@ Comme pour SpokaStream, **essaie avec un profil Windows sans données SpokaSound
 - **VB-CABLE n'est pas sur le Store.** Le Store ne permet pas d'installer un pilote. Si un testeur estime l'application inutilisable sans lui, répondre que l'écoute locale, la soundboard et les effets marchent sans pilote, et que VB-CABLE est un pilote gratuit qu'on installe depuis le site de son éditeur, comme le font d'autres soundboards du Store. Plan B : mettre en avant ce point dans la description et les notes.
 - **`runFullTrust` et hooks bas niveau.** C'est courant (Discord, OBS, autres soundboards), mais Microsoft reste juge. Plan B : si les hooks posent problème, ne garder en édition Store que les raccourcis globaux classiques (`RegisterHotKey`), qui ne nécessitent aucun hook, en perdant les boutons de souris.
 - **ffmpeg en GPL.** Le build `win64-gpl` est redistribué dans le paquet : la licence est livrée dans `tools\`, et le code source de ffmpeg est public (lien dans la licence et sur https://github.com/yt-dlp/FFmpeg-Builds). Si on préfère éviter la GPL, la variante `win64-lgpl` du même dépôt suffit pour l'audio : changer l'URL dans `scripts/build-store.ps1`.
-- **Taille.** Le paquet pèse environ 165 Mo (runtime .NET autonome, yt-dlp, ffmpeg) ; le Store le compresse et ne télécharge que les fichiers modifiés lors des mises à jour.
+- **Taille.** Le paquet pèse environ 175 Mo (runtime .NET autonome, yt-dlp, ffmpeg, moteur des voix naturelles : +21 Mo de DLL, environ +8 Mo compressés ; le modèle de voix de 139 Mo n'est pas dans le paquet, il est téléchargé à la demande) ; le Store le compresse et ne télécharge que les fichiers modifiés lors des mises à jour.
 - **Données séparées.** Les deux éditions ne partagent pas leurs écritures : passer de l'une à l'autre conserve les réglages existants au premier lancement (lecture), mais les modifications faites ensuite restent dans l'édition qui les a faites. On peut exporter sa soundboard en `.spokapack` pour la transférer.
 
 ## Pour une nouvelle version

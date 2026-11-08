@@ -1,6 +1,8 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using SpokaSoundBoard.Core.Audio;
+using SpokaSoundBoard.Core.Speech;
 using Windows.Media.SpeechSynthesis;
 
 namespace SpokaSoundBoard.Services;
@@ -14,30 +16,44 @@ public sealed record SpeechVoice(string Id, string Name, string Language)
 }
 
 /// <summary>
-/// Offline text-to-speech with the Windows voices (Windows.Media.SpeechSynthesis). Phrases are rendered to WAV files
-/// in a small cache, so they can be played by the soundboard player (and therefore go into the microphone).
+/// Offline text-to-speech with two engines: natural (neural) voices run in-process by sherpa-onnx once their model
+/// is downloaded, and the classic Windows voices (Windows.Media.SpeechSynthesis) as a fallback. Phrases are
+/// rendered to WAV files in a small cache, so they can be played by the soundboard player (and therefore go into
+/// the microphone). Rendering always happens off the UI thread.
 /// </summary>
 public sealed class SpeechService : IDisposable
 {
     public const int MaxTextLength = 500;
     private const int MaxCachedFiles = 40;
 
+    /// <summary>The natural voice model is freed after this long without speaking (it holds about 300 MB).</summary>
+    private static readonly TimeSpan NeuralIdleUnload = TimeSpan.FromMinutes(5);
+
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly string _cacheDirectory;
+    private readonly Timer _idleTimer;
     private SpeechSynthesizer? _synthesizer;
 
-    public SpeechService(string cacheDirectory)
+    public SpeechService(string cacheDirectory, string voicesDirectory)
     {
         _cacheDirectory = cacheDirectory;
         Voices = LoadVoices();
+        Models = new VoiceModelStore(voicesDirectory);
+        Neural = new NeuralSpeechEngine(Models);
+        _idleTimer = new Timer(_ => Neural.Unload(), null, Timeout.Infinite, Timeout.Infinite);
     }
 
-    /// <summary>Installed voices, French ones first (empty when speech synthesis is unavailable).</summary>
+    /// <summary>Installed Windows voices, French ones first (empty when speech synthesis is unavailable).</summary>
     public IReadOnlyList<SpeechVoice> Voices { get; }
 
-    public bool IsAvailable => Voices.Count > 0;
+    /// <summary>Downloaded natural voice models.</summary>
+    public VoiceModelStore Models { get; }
 
-    /// <summary>The voice to use when none was chosen: French (France first) if installed, else the system default.</summary>
+    public NeuralSpeechEngine Neural { get; }
+
+    public bool HasWindowsVoices => Voices.Count > 0;
+
+    /// <summary>The Windows voice to use when none was chosen: French (France first) if installed, else the system default.</summary>
     public SpeechVoice? DefaultVoice
     {
         get
@@ -58,24 +74,17 @@ public sealed class SpeechService : IDisposable
         }
     }
 
-    /// <summary>Renders <paramref name="text"/> to a WAV file (reused when the same phrase was already rendered).</summary>
+    /// <summary>Renders <paramref name="text"/> with a Windows voice (reused when the same phrase was already rendered).</summary>
     /// <param name="rate">Speaking rate, 0.5 to 6 (1 = normal).</param>
     /// <param name="pitch">Pitch, 0 to 2 (1 = normal).</param>
     public async Task<string> SynthesizeAsync(string text, string? voiceId, double rate, double pitch)
     {
-        text = text.Trim();
-        if (text.Length == 0) throw new ArgumentException("Texte vide.", nameof(text));
-        if (text.Length > MaxTextLength) text = text[..MaxTextLength];
+        text = Clean(text);
         rate = Math.Clamp(rate, 0.5, 6);
         pitch = Math.Clamp(pitch, 0, 2);
 
-        var key = Hash($"{voiceId}|{rate:0.00}|{pitch:0.00}|{text}");
-        var path = Path.Combine(_cacheDirectory, key + ".wav");
-        if (File.Exists(path))
-        {
-            File.SetLastWriteTimeUtc(path, DateTime.UtcNow);
-            return path;
-        }
+        var path = CachePath($"{voiceId}|{rate:0.00}|{pitch:0.00}|{text}");
+        if (Reuse(path)) return path;
 
         await _gate.WaitAsync();
         try
@@ -103,6 +112,75 @@ public sealed class SpeechService : IDisposable
         }
     }
 
+    /// <summary>
+    /// Renders <paramref name="text"/> with a natural voice on a worker thread: model output resampled to the
+    /// mixer's 48 kHz stereo float, peak-normalized. Pitch is not adjustable with these voices.
+    /// </summary>
+    /// <param name="rate">Speaking rate (1 = normal), clamped to the engine's range.</param>
+    public async Task<string> SynthesizeNeuralAsync(string text, NeuralVoice voice, string language, double rate)
+    {
+        text = Clean(text);
+        language = NeuralVoiceCatalog.NormalizeLanguage(language);
+        rate = Math.Clamp(rate, NeuralSpeechEngine.MinSpeed, NeuralSpeechEngine.MaxSpeed);
+
+        var path = CachePath($"{voice.Id}|{language}|{rate:0.00}|{Neural.Steps}|{text}");
+        if (Reuse(path)) return path;
+
+        await _gate.WaitAsync();
+        try
+        {
+            if (File.Exists(path)) return path;
+            _idleTimer.Change(Timeout.Infinite, Timeout.Infinite);
+            Directory.CreateDirectory(_cacheDirectory);
+            await Task.Run(() =>
+            {
+                var speech = Neural.Synthesize(voice, text, language, rate);
+                var stereo = SpeechAudio.ToMixerFormat(speech.Samples, speech.SampleRate);
+                var temp = path + ".tmp";
+                SpeechAudio.WriteWav(temp, stereo, MixerCore.SampleRate, 2);
+                File.Move(temp, path, true);
+            });
+            Prune();
+            return path;
+        }
+        finally
+        {
+            _idleTimer.Change(NeuralIdleUnload, Timeout.InfiniteTimeSpan);
+            _gate.Release();
+        }
+    }
+
+    /// <summary>Loads the natural voice model in the background, so the first phrase is not delayed (best effort).</summary>
+    public Task WarmUpAsync(NeuralVoice voice) => Task.Run(() =>
+    {
+        try
+        {
+            var pack = NeuralVoiceCatalog.PackOf(voice);
+            if (!Models.IsInstalled(pack)) return;
+            Neural.Load(pack);
+            _idleTimer.Change(NeuralIdleUnload, Timeout.InfiniteTimeSpan);
+        }
+        catch
+        {
+            // The real call reports the error.
+        }
+    });
+
+    /// <summary>Frees the natural voice model now (before deleting its files).</summary>
+    public async Task UnloadNeuralAsync()
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            _idleTimer.Change(Timeout.Infinite, Timeout.Infinite);
+            await Task.Run(Neural.Unload);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     /// <summary>Duration of a rendered phrase (zero when unknown).</summary>
     public static TimeSpan DurationOf(string path)
     {
@@ -115,6 +193,22 @@ public sealed class SpeechService : IDisposable
         {
             return TimeSpan.Zero;
         }
+    }
+
+    private static string Clean(string text)
+    {
+        text = text.Trim();
+        if (text.Length == 0) throw new ArgumentException("Texte vide.", nameof(text));
+        return text.Length > MaxTextLength ? text[..MaxTextLength] : text;
+    }
+
+    private string CachePath(string key) => Path.Combine(_cacheDirectory, Hash(key) + ".wav");
+
+    private static bool Reuse(string path)
+    {
+        if (!File.Exists(path)) return false;
+        try { File.SetLastWriteTimeUtc(path, DateTime.UtcNow); } catch { /* in use */ }
+        return true;
     }
 
     private static IReadOnlyList<SpeechVoice> LoadVoices()
@@ -155,7 +249,9 @@ public sealed class SpeechService : IDisposable
 
     public void Dispose()
     {
+        _idleTimer.Dispose();
         _synthesizer?.Dispose();
+        Neural.Dispose();
         _gate.Dispose();
     }
 }

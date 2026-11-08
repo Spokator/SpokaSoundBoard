@@ -23,7 +23,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0"
-                            ToolTip="Une voix Windows lit votre texte dans le micro, comme un son de la soundboard">
+                            ToolTip="Une voix de synthèse lit votre texte dans le micro, comme un son de la soundboard">
                     <Border Width="32" Height="32" CornerRadius="16" Background="{DynamicResource AccentSoftBrush}">
                         <TextBlock Style="{StaticResource Icon}" Text="&#xE8F2;" FontSize="14" Foreground="{DynamicResource Accent2Brush}" />
                     </Border>
@@ -80,9 +80,20 @@
                 </StackPanel>
             </Grid>
 
-            <TextBlock Style="{StaticResource Caption}" Foreground="{DynamicResource WarningBrush}" Margin="0,8,0,0"
-                       Visibility="{Binding IsAvailable, Converter={StaticResource InverseBoolToVis}}"
-                       Text="Aucune voix de synthèse n'est installée sur ce PC. Ajoutez-en une dans Paramètres Windows → Heure et langue → Voix (voix « Français »)." />
+            <TextBlock Style="{StaticResource Caption}" Foreground="{DynamicResource WarningBrush}" Margin="0,8,0,0" TextWrapping="Wrap"
+                       Visibility="{Binding IsAvailable, Converter={StaticResource InverseBoolToVis}}">
+                <Run Text="Aucune voix de synthèse sur ce PC : téléchargez les voix naturelles (" /><Run Text="{Binding PackSizeText, Mode=OneWay}" /><Run Text=") dans les options ci-dessous, ou ajoutez une voix dans Paramètres Windows → Heure et langue → Voix." />
+            </TextBlock>
+
+            <!-- Folded: invitation to try the natural voices -->
+            <DockPanel Margin="0,8,0,0" Visibility="{Binding ShowCollapsedHint, Converter={StaticResource BoolToVis}}">
+                <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Padding="10,4" FontSize="12"
+                        Command="{Binding ToggleExpandedCommand}" Content="Découvrir" />
+                <TextBlock Style="{StaticResource Caption}" VerticalAlignment="Center" TextWrapping="Wrap">
+                    <Run Text="&#xE945;" FontFamily="{StaticResource IconFont}" Foreground="{DynamicResource Accent2Brush}" />
+                    <Run Text=" Voix trop robotique ? Les voix naturelles sonnent bien plus humain et fonctionnent hors ligne." />
+                </TextBlock>
+            </DockPanel>
 
             <!-- Options -->
             <StackPanel Margin="0,14,0,0" Visibility="{Binding Settings.IsExpanded, Converter={StaticResource BoolToVis}}">
@@ -98,19 +109,106 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel VerticalAlignment="Top" Margin="0,6,0,0">
                         <TextBlock Text="Voix" Style="{StaticResource Label}" Margin="0,0,0,6" />
-                        <ComboBox ItemsSource="{Binding Voices}" SelectedItem="{Binding SelectedVoice}" DisplayMemberPath="Display"
-                                  IsEnabled="{Binding IsAvailable}" />
-                        <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0"
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE768;" FontSize="12" Padding="8" Margin="6,0,0,0"
+                                    Command="{Binding PreviewVoiceCommand}" IsEnabled="{Binding IsAvailable}"
+                                    ToolTip="Écouter un aperçu de la voix dans le casque (pas dans le micro)" AutomationProperties.Name="Écouter un aperçu de la voix" />
+                            <ComboBox ItemsSource="{Binding VoicesView}" SelectedItem="{Binding SelectedVoice}" DisplayMemberPath="Display"
+                                      IsEnabled="{Binding IsAvailable}" AutomationProperties.Name="Voix">
+                                <ComboBox.GroupStyle>
+                                    <GroupStyle>
+                                        <GroupStyle.HeaderTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}" Style="{StaticResource Caption}" FontWeight="SemiBold" Margin="10,8,0,4" />
+                                            </DataTemplate>
+                                        </GroupStyle.HeaderTemplate>
+                                    </GroupStyle>
+                                </ComboBox.GroupStyle>
+                            </ComboBox>
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                   Visibility="{Binding SelectedNeedsDownload, Converter={StaticResource BoolToVis}}"
+                                   Text="Cette voix naturelle n'est pas encore téléchargée : la voix Windows parle en attendant." />
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
                                    Visibility="{Binding HasNoFrenchVoice, Converter={StaticResource BoolToVis}}"
-                                   Text="Pas de voix française : installez-la dans Paramètres Windows → Heure et langue → Voix." />
+                                   Text="Pas de voix Windows française : téléchargez les voix naturelles ou installez-la dans Paramètres Windows → Heure et langue → Voix." />
                     </StackPanel>
                     <local:SliderRow Grid.Column="2" Label="Vitesse" Minimum="0.5" Maximum="3" Step="0.1" Format="{}{0:0.0} ×"
                                      Value="{Binding Settings.Rate}" />
-                    <local:SliderRow Grid.Column="4" Label="Hauteur" Minimum="0.3" Maximum="2" Step="0.1" Format="{}{0:0.0}"
-                                     Value="{Binding Settings.Pitch}" Description="Grave ← 1 → aigu" />
+                    <Grid Grid.Column="4">
+                        <local:SliderRow Label="Hauteur" Minimum="0.3" Maximum="2" Step="0.1" Format="{}{0:0.0}"
+                                         Value="{Binding Settings.Pitch}" Description="Grave ← 1 → aigu"
+                                         Visibility="{Binding ShowPitch, Converter={StaticResource BoolToVis}}" />
+                        <StackPanel Margin="0,6" Visibility="{Binding IsNaturalSelected, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="Hauteur" Style="{StaticResource Label}" Foreground="{DynamicResource SubtleTextBrush}" />
+                            <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                       Text="Non réglable avec les voix naturelles : choisissez plutôt une autre voix (femme ou homme)." />
+                        </StackPanel>
+                    </Grid>
                     <local:SliderRow Grid.Column="6" Label="Volume" Minimum="0" Maximum="2" Step="0.05" Format="%"
                                      Value="{Binding Settings.Volume}" />
                 </Grid>
+
+                <!-- Natural voices: download offer / progress / installed -->
+                <Border Background="{DynamicResource SubCardBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="12,10" Margin="0,12,0,0">
+                    <StackPanel>
+                        <!-- Offer -->
+                        <DockPanel Visibility="{Binding ShowNaturalOffer, Converter={StaticResource BoolToVis}}">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Padding="12,6" Margin="12,0,0,0" VerticalAlignment="Center"
+                                    Command="{Binding DownloadNaturalCommand}" ToolTip="Télécharger le modèle des voix naturelles (une seule fois)"
+                                    AutomationProperties.Name="Télécharger les voix naturelles">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE896;" FontSize="12" Margin="0,0,8,0" />
+                                    <TextBlock>
+                                        <Run Text="Télécharger (" /><Run Text="{Binding PackSizeText, Mode=OneWay}" /><Run Text=")" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Button>
+                            <StackPanel>
+                                <TextBlock Text="Voix naturelles" Style="{StaticResource Label}" FontWeight="SemiBold" />
+                                <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" TextWrapping="Wrap"
+                                           Text="10 voix neuronales (5 femmes, 5 hommes) bien plus réalistes que les voix Windows, en français et dans 30 autres langues. Elles fonctionnent hors ligne, sur votre PC." />
+                            </StackPanel>
+                        </DockPanel>
+
+                        <!-- Download in progress -->
+                        <DockPanel Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVis}}">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Padding="10,5" Margin="12,0,0,0" VerticalAlignment="Center"
+                                    Command="{Binding CancelDownloadCommand}" Content="Annuler" />
+                            <StackPanel>
+                                <TextBlock Text="{Binding DownloadStatus}" Style="{StaticResource Label}" />
+                                <ProgressBar Height="4" Margin="0,8,0,0" Minimum="0" Maximum="100" Value="{Binding DownloadPercent, Mode=OneWay}" />
+                            </StackPanel>
+                        </DockPanel>
+
+                        <!-- Installed -->
+                        <DockPanel Visibility="{Binding IsNaturalInstalled, Converter={StaticResource BoolToVis}}">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE74D;" FontSize="12" Padding="8" Margin="8,0,0,0"
+                                    VerticalAlignment="Center" Command="{Binding DeleteNaturalCommand}"
+                                    ToolTip="Supprimer les voix naturelles du PC" AutomationProperties.Name="Supprimer les voix naturelles" />
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                                <TextBlock Text="Langue lue" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}" DisplayMemberPath="Name" MinWidth="130"
+                                          ToolTip="Langue de vos phrases (le texte n'est pas traduit)" AutomationProperties.Name="Langue lue par les voix naturelles" />
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource Label}" FontWeight="SemiBold">
+                                    <Run Text="&#xE73E;" FontFamily="{StaticResource IconFont}" Foreground="{DynamicResource SuccessBrush}" />
+                                    <Run Text=" Voix naturelles installées (" /><Run Text="{Binding PackSizeText, Mode=OneWay}" /><Run Text=")" />
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" TextWrapping="Wrap"
+                                           Text="Choisissez une voix dans la liste et écoutez-la avec ▶ ; indiquez à droite la langue de vos phrases." />
+                            </StackPanel>
+                        </DockPanel>
+
+                        <!-- License (shown before and after downloading) -->
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="11">
+                            <Run Text="{Binding LicenseText, Mode=OneWay}" />
+                            <Hyperlink Command="{Binding OpenLicenseCommand}" Foreground="{DynamicResource Accent2Brush}">Lire la licence</Hyperlink>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
 
                 <TextBlock Text="Phrases rapides" Style="{StaticResource Caption}" FontWeight="SemiBold" Margin="0,12,0,8" />
                 <ItemsControl ItemsSource="{Binding QuickPhrases}">
