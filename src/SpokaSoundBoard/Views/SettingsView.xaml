@@ -37,7 +37,7 @@
                                     IsEnabled="{Binding IsInstalling, Converter={StaticResource InverseBool}}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Style="{StaticResource Icon}" Text="&#xE896;" FontSize="13" Margin="0,0,8,0" />
-                                    <TextBlock Text="Installer VB-CABLE automatiquement" />
+                                    <TextBlock Text="{Binding InstallVbCableLabel}" />
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource FlatButton}" Content="Site officiel" Command="{Binding OpenVbCableSiteCommand}" Margin="0,0,10,0" />
@@ -81,7 +81,7 @@
                                     IsEnabled="{Binding IsInstallingSecond, Converter={StaticResource InverseBool}}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Style="{StaticResource Icon}" Text="&#xE896;" FontSize="13" Margin="0,0,8,0" />
-                                    <TextBlock Text="Installer Virtual Audio Cable Lite" />
+                                    <TextBlock Text="{Binding InstallVacLabel}" />
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource FlatButton}" Content="Site officiel" Command="{Binding OpenVacSiteCommand}" Margin="0,0,10,0" />

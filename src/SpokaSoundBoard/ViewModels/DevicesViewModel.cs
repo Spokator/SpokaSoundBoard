@@ -11,6 +11,11 @@ public sealed record HotkeyRow(string Label, string Description, HotkeyBinding B
 
 public partial class DevicesViewModel : ObservableObject
 {
+    /// <summary>The Store edition cannot run driver installers: it opens the official download pages instead.</summary>
+    public string InstallVbCableLabel => Core.AppEnvironment.IsPackaged ? "Télécharger VB-CABLE (site officiel)" : "Installer VB-CABLE automatiquement";
+
+    public string InstallVacLabel => Core.AppEnvironment.IsPackaged ? "Télécharger Virtual Audio Cable Lite" : "Installer Virtual Audio Cable Lite";
+
     private readonly MainViewModel _main;
     private bool _suppressApply;
 

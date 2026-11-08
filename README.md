@@ -26,7 +26,12 @@ Diffusez votre playlist et vos sons **dans votre micro**, parlez par-dessus (la 
 | --- | --- |
 | 🎛️ **Soundboard** | Tuiles colorées, glisser-déposer, volume, boucle et extrait (début / fin) par son, raccourci clavier ou souris (boutons 4 / 5, molette) utilisable en pleine partie, filtre pour retrouver un son. |
 | 🔎 **Recherche intégrée** | Tapez « booba mona lisa » ou « vine boom » : résultats YouTube et MyInstants, ▶ pour écouter dans votre casque seulement, « Ajouter » en un clic. Les liens (YouTube, SoundCloud, TikTok, Twitch, MP3…) et les playlists fonctionnent aussi. |
-| 🎵 **Lecteur de musique** | Playlist (fichiers, dossiers, liens), aléatoire, répétition, volume égalisé automatiquement. |
+| 🎵 **Lecteur de musique** | Bibliothèque, playlists, file d'attente façon Spotify, fondu enchaîné ou enchaînement sans blanc, favoris, historique, pochettes, volume égalisé automatiquement. |
+| 📥 **Import de playlists** | Collez un lien Spotify, Deezer, Apple Music, YouTube ou SoundCloud : la playlist est recréée, chaque morceau est téléchargé au moment de l'écouter. |
+| 📻 **Autoplay et radio** | Quand la file se termine, des morceaux similaires s'enchaînent. « Pour vous » propose des titres d'après vos écoutes. |
+| 🎤 **Paroles synchronisées** | Mode karaoké : la ligne en cours s'affiche en grand (paroles lrclib.net). |
+| 🎚️ **Effets musique** | Basses, égaliseur 10 bandes, nightcore, vaporwave, slowed + reverb, audio 8D, karaoké (voix retirée), salle de concert… en direct. |
+| 📊 **Statistiques** | Top morceaux et artistes, heures d'écoute, séries, rétrospective de l'année. |
 | 🗣️ **Ducking** | Quand vous parlez, la musique baisse pour que votre voix passe par-dessus, puis remonte doucement. |
 | 🎙️ **23 effets de voix** | Pilote d'hélico, tour de contrôle, talkie-walkie, astronaute NASA, pilote de chasse, téléphone, vieille radio, mégaphone, robot, Dark Vador, démon, fantôme, alien, sous l'eau, lo-fi 8 bits… Chaque réglage est modifiable et vous pouvez enregistrer vos propres presets. |
 | 📻 **Mode radio** | Votre voix ne passe que quand vous maintenez la touche, avec le grésillement et le bip de fin (roger, NASA « Quindar »…). |
@@ -82,20 +87,22 @@ Prérequis : Windows 10/11, [SDK .NET 9](https://dotnet.microsoft.com/download),
 
 ```powershell
 dotnet build                                # compile
-dotnet test tests\SpokaSoundBoard.Tests     # 53 tests (DSP, mixage, dérive d'horloge, packs, mises à jour…)
+dotnet test tests\SpokaSoundBoard.Tests     # tests (DSP, mixage, lecteur, bibliothèque, sources en ligne…)
 dotnet run --project src\SpokaSoundBoard    # lance l'application
 .\scripts\publish.ps1                       # exe autonome dans .\dist
 .\scripts\build-installer.ps1               # installeur complet dans .\dist
+.\scripts\build-store.ps1                   # paquet MSIX pour le Microsoft Store dans .\dist-store (voir docs/STORE.md)
 ```
 
-Les tests en ligne (téléchargements et recherches réels) s'activent avec `$env:SPOKA_ONLINE_TESTS = "1"`.
+Les tests en ligne (téléchargements et recherches réels) s'activent avec `$env:SPOKA_ONLINE_TESTS = "1"`. Pour lancer une version de développement sans toucher à vos vrais réglages ni à votre bibliothèque : `$env:SPOKA_DATA_DIR = "C:\Temp\spoka-dev"`.
 
 | Dossier | Contenu |
 | --- | --- |
-| `src/SpokaSoundBoard.Core` | Moteur audio (NAudio / WASAPI), DSP (effets, ducking, limiteur, égalisation du volume), recherche et import en ligne (yt-dlp, MyInstants), packs, mises à jour |
+| `src/SpokaSoundBoard.Core` | Moteur audio (NAudio / WASAPI), DSP (effets, ducking, limiteur, égalisation du volume), lecteur de musique (fondu enchaîné, effets, spectre), bibliothèque et file d'attente, recherche, import de playlists, paroles et recommandations (yt-dlp, MyInstants, Spotify, Deezer, Apple Music, lrclib), packs, mises à jour |
 | `src/SpokaSoundBoard` | Application WPF (.NET 9), MVVM (CommunityToolkit.Mvvm), thèmes, raccourcis globaux, zone de notification, assistant |
 | `tests/SpokaSoundBoard.Tests` | Tests xUnit |
 | `installer/` | Script Inno Setup et images de l'installeur |
+| `packaging/` | Manifeste et images du paquet Microsoft Store (MSIX) |
 | `tools/` | Génération de l'icône et des images (Pillow) |
 
 ### Publier une version
