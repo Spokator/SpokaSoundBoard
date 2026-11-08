@@ -152,7 +152,11 @@ public partial class MusicViewModel
                 : "");
 
         if (IsHome) RefreshHome();
-        if (IsStats) Stats = new StatsViewModel(Library);
+        if (IsStats)
+        {
+            if (Stats == null) Stats = new StatsViewModel(Library);
+            else Stats.Refresh();
+        }
     }
 
     private void RefreshHome()
@@ -249,6 +253,10 @@ public partial class MusicViewModel
                 if (track.IsFavorite) Library.ToggleFavorite(track);
                 break;
             default:
+                var inPlaylists = Library.Playlists.Count(p => p.TrackIds.Contains(track.Id));
+                var question = $"Retirer « {track.Title} » de votre bibliothèque ?"
+                               + (inPlaylists > 0 ? $"\n\nIl sera aussi retiré de {inPlaylists} playlist(s)." : "");
+                if (MessageBox.Show(question, "SpokaSoundBoard", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
                 Library.Remove(track);
                 Queue.Remove(track);
                 if (track == CurrentTrack) Stop();

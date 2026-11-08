@@ -357,6 +357,7 @@ public partial class MusicSearchViewModel : ObservableObject
         Status = "Ajout du morceau…";
         try
         {
+            var existed = _music.Library.FindExisting(null, url) != null;
             var track = _music.Library.AddOrGet(new TrackItem { SourceUrl = url, State = TrackState.Remote });
             track.IsTransient = false;
             if (_music.SelectedPlaylist is { } playlist) _music.Library.AddToPlaylist(playlist, [track]);
@@ -365,7 +366,8 @@ public partial class MusicSearchViewModel : ObservableObject
             {
                 HasError = true;
                 Status = $"Import impossible : {track.StateMessage}";
-                _music.Library.Remove(track);
+                // Only undo what this call created: an existing library entry is kept.
+                if (!existed) _music.Library.Remove(track);
                 return;
             }
             Status = $"Ajouté : {track.Title}";

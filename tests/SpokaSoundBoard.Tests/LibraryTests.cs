@@ -137,6 +137,30 @@ public class PlayQueueTests
     }
 
     [Fact]
+    public void PeekNextAlwaysMatchesAdvanceWithShuffleAndRepeatAll()
+    {
+        var q = new PlayQueue(new Random(7)) { Repeat = RepeatMode.All };
+        q.Replace(Tracks(6));
+        q.Shuffle = true;
+        for (var i = 0; i < 40; i++)
+        {
+            var peeked = q.PeekNext();
+            Assert.Same(peeked, q.Advance(true));
+        }
+    }
+
+    [Fact]
+    public void ConsumeWithDuplicatesPlaysTheFollowingItem()
+    {
+        var q = new PlayQueue { Consume = true, Repeat = RepeatMode.Off };
+        var t = Tracks(2);
+        q.Replace([t[0], t[1], t[0]]);
+        Assert.Equal(t[1], q.PeekNext());
+        Assert.Equal(t[1], q.Advance(true));
+        Assert.Equal(t[0], q.Advance(true));
+    }
+
+    [Fact]
     public void RemoveDuplicatesKeepsFirstAndCurrent()
     {
         var q = new PlayQueue();
@@ -253,7 +277,11 @@ public class MusicLibraryTests
 
             File.WriteAllText(store.FilePath, "{ corrupted");
             Assert.Empty(store.Load().Tracks);
-            Assert.True(File.Exists(store.FilePath + ".bak"));
+            Assert.True(store.LoadFailed);
+            Assert.NotEmpty(Directory.GetFiles(dir, "library.json.*.bak"));
+            // An unreadable library is never overwritten by an empty one.
+            Assert.Throws<IOException>(() => store.Save(new MusicLibraryData()));
+            Assert.Equal("{ corrupted", File.ReadAllText(store.FilePath));
         }
         finally
         {
@@ -264,7 +292,7 @@ public class MusicLibraryTests
     [Fact]
     public void CompletesArtistAndThumbnailOfMigratedWebTracks()
     {
-        var data = new MusicLibraryData();
+        var data = new MusicLibraryData { Version = 1 };
         data.Tracks.Add(new TrackItem { DisplayTitle = "SDM - Yakalelo (Clip officiel)", SourceUrl = "https://www.youtube.com/watch?v=abc123XYZ_0" });
         data.Tracks.Add(new TrackItem { DisplayTitle = "Mr. Ocho", SourceUrl = "https://youtu.be/def456" });
         var lib = new MusicLibrary(data);
@@ -273,6 +301,11 @@ public class MusicLibraryTests
         Assert.Equal("https://i.ytimg.com/vi/abc123XYZ_0/hqdefault.jpg", lib.Tracks[0].ThumbnailUrl);
         Assert.Null(lib.Tracks[1].Artist);
         Assert.Equal("Mr. Ocho", lib.Tracks[1].Title);
+
+        // Done once: a title the user keeps is not split again at the next start.
+        lib.Tracks[1].DisplayTitle = "Queen - Live";
+        var again = new MusicLibrary(lib.Data);
+        Assert.Null(again.Tracks[1].Artist);
     }
 
     [Fact]

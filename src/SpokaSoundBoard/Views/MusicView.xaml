@@ -64,9 +64,49 @@
                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                 <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE8A7;" /></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="Retirer" Command="{Binding RemoveTrackCommand}"
+            <MenuItem Header="Retirer de cette liste" Command="{Binding RemoveTrackCommand}"
                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                 <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" /></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+
+        <!-- Context menu of the queue rows: acts on the queue, never on the library. -->
+        <ContextMenu x:Key="QueueMenu" x:Shared="False" DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+            <MenuItem Header="Lire maintenant" Command="{Binding JumpToQueueItemCommand}"
+                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE768;" /></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Ajouter à une playlist" ItemsSource="{Binding Playlists}">
+                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE710;" /></MenuItem.Icon>
+                <MenuItem.ItemContainerStyle>
+                    <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                        <Setter Property="Header" Value="{Binding Name}" />
+                        <Setter Property="Command" Value="{Binding DataContext.AddToPlaylistCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                        <Setter Property="CommandParameter">
+                            <Setter.Value>
+                                <MultiBinding Converter="{StaticResource ArrayConv}">
+                                    <Binding Path="PlacementTarget.DataContext" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                    <Binding />
+                                </MultiBinding>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </MenuItem.ItemContainerStyle>
+            </MenuItem>
+            <MenuItem Header="Favori" Command="{Binding ToggleFavoriteCommand}"
+                      IsChecked="{Binding PlacementTarget.DataContext.IsFavorite, RelativeSource={RelativeSource AncestorType=ContextMenu}, Mode=OneWay}"
+                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+            <MenuItem Header="Morceaux similaires" Command="{Binding ShowSimilarCommand}"
+                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+            <MenuItem Header="Ajouter à la bibliothèque" Command="{Binding AddToLibraryCommand}"
+                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      Visibility="{Binding PlacementTarget.DataContext.IsTransient, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVis}}" />
+            <MenuItem Header="Ouvrir la source" Command="{Binding OpenSourceCommand}"
+                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+            <Separator />
+            <MenuItem Header="Retirer de la file" Command="{Binding RemoveFromQueueCommand}"
+                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE711;" /></MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
 
@@ -751,7 +791,7 @@
                                      PreviewMouseLeftButtonDown="OnListMouseDown" PreviewMouseMove="OnQueueMouseMove" Drop="OnQueueDrop" DragOver="OnReorderDragOver">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate DataType="{x:Type models:TrackItem}">
-                                        <Grid Margin="0,2" Background="Transparent" Tag="{Binding DataContext, ElementName=Root}" ContextMenu="{StaticResource TrackMenu}">
+                                        <Grid Margin="0,2" Background="Transparent" Tag="{Binding DataContext, ElementName=Root}" ContextMenu="{StaticResource QueueMenu}">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="46" />
                                                 <ColumnDefinition Width="*" />

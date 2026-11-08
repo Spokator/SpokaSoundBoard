@@ -54,13 +54,14 @@ public sealed class MusicLibrary
         if (existing != null)
         {
             // Complete the existing entry with what the new one knows.
-            if (!existing.IsDownloaded && track.IsDownloaded) existing.FilePath = track.FilePath;
-            existing.Artist ??= track.Artist;
-            existing.ThumbnailUrl ??= track.ThumbnailUrl;
-            existing.DurationSeconds ??= track.DurationSeconds;
-            if (string.IsNullOrWhiteSpace(existing.DisplayTitle)) existing.DisplayTitle = track.DisplayTitle;
-            if (!track.IsTransient) existing.IsTransient = false;
-            Changed?.Invoke();
+            var changed = false;
+            if (!existing.IsDownloaded && track.IsDownloaded) { existing.FilePath = track.FilePath; changed = true; }
+            if (existing.Artist == null && track.Artist != null) { existing.Artist = track.Artist; changed = true; }
+            if (existing.ThumbnailUrl == null && track.ThumbnailUrl != null) { existing.ThumbnailUrl = track.ThumbnailUrl; changed = true; }
+            if (existing.DurationSeconds == null && track.DurationSeconds != null) { existing.DurationSeconds = track.DurationSeconds; changed = true; }
+            if (string.IsNullOrWhiteSpace(existing.DisplayTitle) && !string.IsNullOrWhiteSpace(track.DisplayTitle)) { existing.DisplayTitle = track.DisplayTitle; changed = true; }
+            if (!track.IsTransient && existing.IsTransient) { existing.IsTransient = false; changed = true; }
+            if (changed) Changed?.Invoke();
             return existing;
         }
         CompleteWebMetadata(track);
@@ -334,11 +335,14 @@ public sealed class MusicLibrary
             for (var i = p.TrackIds.Count - 1; i >= 0; i--)
                 if (!ids.Contains(p.TrackIds[i])) p.TrackIds.RemoveAt(i);
         }
+        var upgrade = data.Version < MusicLibraryData.CurrentVersion;
         foreach (var t in data.Tracks)
         {
             t.State = t.IsDownloaded ? TrackState.Ready : TrackState.Remote;
-            CompleteWebMetadata(t);
+            // Derived once (it rewrites titles): later edits by the user are never touched again.
+            if (upgrade) CompleteWebMetadata(t);
         }
+        data.Version = MusicLibraryData.CurrentVersion;
     }
 
     /// <summary>

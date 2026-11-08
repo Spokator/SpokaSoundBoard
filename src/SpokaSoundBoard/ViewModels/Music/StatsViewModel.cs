@@ -47,6 +47,8 @@ public partial class StatsViewModel : ObservableObject
         if (period != null) Period = period;
     }
 
+    public void Refresh() => Compute();
+
     private void Compute()
     {
         double? DurationOf(Guid id) => _library.Find(id)?.DurationSeconds;

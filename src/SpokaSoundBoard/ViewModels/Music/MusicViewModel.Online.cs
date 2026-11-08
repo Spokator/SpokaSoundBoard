@@ -21,12 +21,10 @@ public partial class MusicViewModel
     /// Autoplay: appends a few tracks similar to the last one (YouTube mix), skipping what was played recently
     /// and what the user disliked. Returns true when something was added.
     /// </summary>
-    private async Task<bool> AppendAutoplayAsync()
+    private async Task<bool> AppendAutoplayCoreAsync()
     {
-        if (_fetchingAutoplay) return false;
         var seed = Queue.Items.LastOrDefault() ?? CurrentTrack ?? Library.RecentlyPlayed(1).FirstOrDefault();
         if (seed == null) return false;
-        _fetchingAutoplay = true;
         try
         {
             var exclude = RecentUrls();
@@ -41,10 +39,6 @@ public partial class MusicViewModel
         catch
         {
             return false;
-        }
-        finally
-        {
-            _fetchingAutoplay = false;
         }
     }
 

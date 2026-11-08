@@ -210,7 +210,10 @@ public sealed class HistoryEntry
 /// <summary>Persisted content of library.json (kept apart from settings.json, which stays small).</summary>
 public sealed class MusicLibraryData
 {
-    public int Version { get; set; } = 1;
+    public const int CurrentVersion = 2;
+
+    /// <summary>1 = written by an early 2.0 build (web metadata not yet derived); 2 = current.</summary>
+    public int Version { get; set; } = CurrentVersion;
     public ObservableCollection<TrackItem> Tracks { get; set; } = [];
     public ObservableCollection<MusicPlaylist> Playlists { get; set; } = [];
     public List<HistoryEntry> History { get; set; } = [];

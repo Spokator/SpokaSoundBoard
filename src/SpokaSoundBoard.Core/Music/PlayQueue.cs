@@ -229,8 +229,7 @@ public sealed class PlayQueue
         {
             // The played track leaves the queue; what followed it now sits at its index.
             RemoveAt(CurrentIndex);
-            next = Items.IndexOf(previous) >= 0 ? next : next - 1;
-            if (next < 0) next = 0;
+            next = Math.Max(0, next - 1);
             previous = null;
         }
 
@@ -245,13 +244,14 @@ public sealed class PlayQueue
             next = 0;
             if (_shuffle && Items.Count > 2)
             {
-                // New lap: reshuffle, avoiding the track that just played coming first again.
-                var last = previous;
-                var all = Items.ToList();
-                FisherYates(all);
-                if (last != null && all[0] == last) (all[0], all[^1]) = (all[^1], all[0]);
+                // New lap: reshuffle everything except the first item, which PeekNext() announced
+                // (and the player may already have preloaded).
+                var first = Items[0];
+                var rest = Items.Skip(1).ToList();
+                FisherYates(rest);
                 Items.Clear();
-                foreach (var t in all) Items.Add(t);
+                Items.Add(first);
+                foreach (var t in rest) Items.Add(t);
             }
         }
 

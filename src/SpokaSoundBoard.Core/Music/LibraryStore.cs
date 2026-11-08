@@ -27,26 +27,47 @@ public sealed class LibraryStore
 
     public bool Exists => File.Exists(FilePath);
 
+    /// <summary>
+    /// True when library.json exists but could not be read: saving is then refused for this session so a
+    /// transient lock (sync tool, antivirus) or a newer format never replaces the user's library with an empty one.
+    /// </summary>
+    public bool LoadFailed { get; private set; }
+
     public MusicLibraryData Load()
     {
-        try
+        LoadFailed = false;
+        if (!File.Exists(FilePath)) return new MusicLibraryData();
+        for (var attempt = 0; ; attempt++)
         {
-            if (File.Exists(FilePath))
+            try
             {
                 using var stream = File.OpenRead(FilePath);
-                var data = JsonSerializer.Deserialize<MusicLibraryData>(stream, Options);
-                if (data != null) return data;
+                return JsonSerializer.Deserialize<MusicLibraryData>(stream, Options) ?? throw new JsonException("empty");
+            }
+            catch (IOException) when (attempt < 4)
+            {
+                // Locked by another process for a moment: try again.
+                Thread.Sleep(250);
+            }
+            catch
+            {
+                LoadFailed = true;
+                try
+                {
+                    File.Copy(FilePath, $"{FilePath}.{DateTime.Now:yyyyMMdd-HHmmss}.bak", false);
+                }
+                catch
+                {
+                    // Keep going: the original file is left untouched anyway.
+                }
+                return new MusicLibraryData();
             }
         }
-        catch
-        {
-            try { File.Copy(FilePath, FilePath + ".bak", true); } catch { /* ignore */ }
-        }
-        return new MusicLibraryData();
     }
 
     public void Save(MusicLibraryData data)
     {
+        if (LoadFailed) throw new IOException("La bibliothèque n'a pas pu être lue au démarrage : elle n'est pas écrasée. Redémarrez SpokaSoundBoard.");
         System.IO.Directory.CreateDirectory(Directory);
         var temp = FilePath + ".tmp";
         using (var stream = File.Create(temp))

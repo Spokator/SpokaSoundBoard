@@ -32,7 +32,6 @@ public partial class MusicViewModel : ObservableObject
     private int _playToken;
     private int _consecutiveFailures;
     private TrackItem? _preparedNext;
-    private bool _fetchingAutoplay;
 
     public MusicViewModel(MainViewModel main)
     {
@@ -251,7 +250,7 @@ public partial class MusicViewModel : ObservableObject
         if (IsExternalPlayback) return;
         var next = Queue.Advance(auto: false);
         if (next != null) _ = StartAsync(next);
-        else _ = AutoplayOrStopAsync();
+        else _ = AutoplayOrStopAsync(Queue.Count);
     }
 
     [RelayCommand]
@@ -432,34 +431,46 @@ public partial class MusicViewModel : ObservableObject
     // ---- Playback core -------------------------------------------------------------------------------------
 
     private double _resumePosition;
+    private Task<bool>? _autoplayTask;
+
+    private static bool SamePath(string? a, string? b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Downloads the track if needed, then plays it. Stale requests (the user clicked elsewhere) are dropped.</summary>
     private async Task StartAsync(TrackItem track, double resumeAt = 0)
     {
+        if (IsExternalPlayback)
+        {
+            _main.ShowToast("Le lecteur est utilisé par le blind test : terminez la partie pour reprendre la musique.");
+            return;
+        }
+
         var token = ++_playToken;
         FinishHistoryEntry();
         SetCurrent(track);
+        // Whatever was preloaded belongs to the previous context.
+        _preparedNext = null;
+        Player.SetNext(null, 1f);
 
         if (!track.IsDownloaded)
         {
+            // Silence the previous track while this one downloads: its end must not move the queue along.
+            Player.Stop();
             IsLoading = true;
+            IsPlaying = false;
             var ok = await EnsureLocalAsync(track);
             if (token != _playToken) return;
             IsLoading = false;
             if (!ok)
             {
                 _main.ShowToast($"Lecture impossible de « {track.Title} » : {track.StateMessage}");
-                if (++_consecutiveFailures < MaxConsecutiveFailures && Queue.Advance(auto: false) is { } skip && skip != track)
-                    _ = StartAsync(skip);
-                else
-                    Stop();
+                SkipAfterFailure(track);
                 return;
             }
         }
 
         try
         {
-            Player.Load(track.FilePath);
+            Player.Load(track.FilePath, _main.NormalizationGain(track.NormalizationDb));
             if (resumeAt > 1) Player.Seek(TimeSpan.FromSeconds(resumeAt));
         }
         catch (Exception ex)
@@ -467,16 +478,26 @@ public partial class MusicViewModel : ObservableObject
             track.State = TrackState.Error;
             track.StateMessage = ex.Message;
             _main.ShowToast($"Lecture impossible de « {track.Title} » : {ex.Message}");
-            if (++_consecutiveFailures < MaxConsecutiveFailures && Queue.Advance(auto: false) is { } skip && skip != track)
-                _ = StartAsync(skip);
+            Player.Stop();
+            SkipAfterFailure(track);
             return;
         }
 
         _consecutiveFailures = 0;
-        _preparedNext = null;
-        ApplyGain();
         OnStarted(track);
         SchedulePrepareNext();
+    }
+
+    /// <summary>After a track failed: try the next ones, but give up after a few failures in a row.</summary>
+    private void SkipAfterFailure(TrackItem failed)
+    {
+        if (++_consecutiveFailures < MaxConsecutiveFailures && Queue.Advance(auto: false) is { } skip && skip != failed)
+        {
+            _ = StartAsync(skip);
+            return;
+        }
+        _consecutiveFailures = 0;
+        Stop();
     }
 
     /// <summary>Common bookkeeping once a track is actually audible.</summary>
@@ -504,35 +525,38 @@ public partial class MusicViewModel : ObservableObject
 
     private void OnTrackAdvanced(string path)
     {
-        // The player crossfaded into the track we preloaded: move the queue along.
-        FinishHistoryEntry();
+        // The player moved on by itself into the track we preloaded. Ignore stale notifications
+        // (a Load / StartAsync happened since: _preparedNext was cleared or replaced).
         var expected = _preparedNext;
+        if (IsLoading || expected == null || !SamePath(expected.FilePath, path) || !SamePath(Player.CurrentFile, path)) return;
         _preparedNext = null;
+        FinishHistoryEntry();
+
         var next = Queue.Advance(auto: true);
-        if (next == null || !string.Equals(next.FilePath, path, StringComparison.OrdinalIgnoreCase))
+        if (next != expected)
         {
-            // The queue changed between the preload and the transition: trust the queue.
-            if (next != null) _ = StartAsync(next);
-            else if (expected != null) OnStarted(expected);
-            return;
+            // The queue changed after the preload: the player is right, align the queue on it.
+            var index = Queue.Items.IndexOf(expected);
+            if (index >= 0) Queue.JumpTo(index);
         }
-        ApplyGain();
-        OnStarted(next);
+        // The gain given to SetNext is already applied by the player.
+        OnStarted(expected);
         SchedulePrepareNext();
     }
 
     private void OnTrackEnded()
     {
+        if (IsLoading) return;
         FinishHistoryEntry();
         IsPlaying = false;
         var next = Queue.Advance(auto: true);
         if (next != null) _ = StartAsync(next);
-        else _ = AutoplayOrStopAsync();
+        else _ = AutoplayOrStopAsync(Queue.Count);
     }
 
     private void OnNextTrackFailed(string path)
     {
-        if (_preparedNext is { } t && string.Equals(t.FilePath, path, StringComparison.OrdinalIgnoreCase))
+        if (_preparedNext is { } t && SamePath(t.FilePath, path))
         {
             t.State = TrackState.Error;
             t.StateMessage = "Fichier illisible";
@@ -552,14 +576,16 @@ public partial class MusicViewModel : ObservableObject
     /// <summary>Makes sure the next track is on disk and hands it to the player for a seamless transition.</summary>
     private async Task PrepareNextAsync()
     {
-        if (CurrentTrack == null || !Player.HasTrack) return;
+        if (CurrentTrack == null || !Player.HasTrack || IsLoading || IsExternalPlayback) return;
+        var current = CurrentTrack;
         var next = Queue.PeekNext();
-        if (next == null && Settings.Autoplay && Repeat == RepeatMode.Off && !_fetchingAutoplay)
+        if (next == null && Settings.Autoplay && Repeat == RepeatMode.Off)
         {
             // End of the queue in sight: fetch similar tracks now so the transition stays seamless.
             await AppendAutoplayAsync();
             next = Queue.PeekNext();
         }
+        if (CurrentTrack != current || IsLoading) return;
 
         if (next == null)
         {
@@ -567,24 +593,36 @@ public partial class MusicViewModel : ObservableObject
             Player.SetNext(null, 1f);
             return;
         }
-        if (next == _preparedNext && string.Equals(Player.NextFile, next.FilePath, StringComparison.OrdinalIgnoreCase)) return;
+        if (next == _preparedNext && SamePath(Player.NextFile, next.FilePath)) return;
 
         if (!next.IsDownloaded && !await EnsureLocalAsync(next)) return;
-        if (Queue.PeekNext() != next) return;
+        if (Queue.PeekNext() != next || CurrentTrack != current || IsLoading || IsExternalPlayback) return;
         _preparedNext = next;
         Player.SetNext(next.FilePath, _main.NormalizationGain(next.NormalizationDb));
     }
 
-    private async Task AutoplayOrStopAsync()
+    /// <param name="endCount">Queue length when it ran out: the appended tracks start at this index.</param>
+    private async Task AutoplayOrStopAsync(int endCount)
     {
-        if (Settings.Autoplay && await AppendAutoplayAsync() && Queue.Advance(auto: false) is { } next)
+        if (Settings.Autoplay)
         {
-            _ = StartAsync(next);
-            return;
+            await AppendAutoplayAsync();
+            if (Queue.Count > endCount && Queue.JumpTo(endCount) is { } next)
+            {
+                _ = StartAsync(next);
+                return;
+            }
         }
         Stop();
         SetCurrent(null);
         NowPlayingChanged?.Invoke(null);
+    }
+
+    /// <summary>Appends similar tracks; concurrent callers share the same request.</summary>
+    private Task<bool> AppendAutoplayAsync()
+    {
+        if (_autoplayTask is { IsCompleted: false }) return _autoplayTask;
+        return _autoplayTask = AppendAutoplayCoreAsync();
     }
 
     // ---- Downloads -------------------------------------------------------------------------------------------
@@ -621,6 +659,11 @@ public partial class MusicViewModel : ObservableObject
         });
         try
         {
+            if (string.IsNullOrEmpty(track.SourceUrl) && !string.IsNullOrEmpty(track.FilePath) && track.SearchQuery == null)
+            {
+                // A local file that is missing (unplugged drive…): never replace it by a download.
+                throw new DownloadException("fichier introuvable : " + track.FilePath);
+            }
             if (string.IsNullOrEmpty(track.SourceUrl))
             {
                 var found = await Resolver.ResolveAsync(track.Artist, track.DisplayTitle ?? track.SearchQuery ?? track.Title,
@@ -722,9 +765,12 @@ public partial class MusicViewModel : ObservableObject
     public void RestoreState()
     {
         foreach (var t in Library.Tracks) t.IsCurrent = false;
-        var tracks = Library.Data.SavedQueue.Select(Library.Find).OfType<TrackItem>().ToList();
+        var saved = Library.Data.SavedQueue;
+        var tracks = saved.Select(Library.Find).OfType<TrackItem>().ToList();
         if (tracks.Count == 0) return;
-        Queue.Restore(tracks, Library.Data.SavedQueueIndex);
+        var savedIndex = Library.Data.SavedQueueIndex;
+        var current = savedIndex >= 0 && savedIndex < saved.Count ? Library.Find(saved[savedIndex]) : null;
+        Queue.Restore(tracks, current != null ? tracks.IndexOf(current) : 0);
         SetCurrent(Queue.Current);
         _resumePosition = Library.Data.SavedPositionSeconds;
         if (CurrentTrack != null)
@@ -748,12 +794,11 @@ public partial class MusicViewModel : ObservableObject
         try
         {
             var data = Library.Data;
-            data.SavedQueue = Queue?.Items.Select(t => t.Id).ToList() ?? data.SavedQueue;
-            data.SavedQueueIndex = Queue?.CurrentIndex ?? -1;
+            if (_libraryStore.LoadFailed) return;
+            // Queue entries must exist in the library to be restored: save the ids of the library instances.
+            data.SavedQueue = Queue.Items.Select(t => Library.AddOrGet(t).Id).ToList();
+            data.SavedQueueIndex = Queue.CurrentIndex;
             data.SavedPositionSeconds = Player.HasTrack ? Player.Position.TotalSeconds : _resumePosition;
-            // Queue entries must exist in the library to be restored.
-            if (Queue != null)
-                foreach (var t in Queue.Items) Library.AddOrGet(t);
             _libraryStore.Save(data);
         }
         catch (Exception ex)
