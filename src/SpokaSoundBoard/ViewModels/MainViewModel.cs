@@ -261,6 +261,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void Navigate(string page) => CurrentPage = page;
 
+    /// <summary>Shrinks the main sidebar to icons only (or expands it back), remembered across launches.</summary>
+    [RelayCommand]
+    private void ToggleSidebar()
+    {
+        Settings.Appearance.SidebarCollapsed = !Settings.Appearance.SidebarCollapsed;
+        Save();
+    }
+
     [RelayCommand]
     public void RestartEngine() =>
         Engine.Start(Settings.MicDeviceId, Settings.VirtualOutputDeviceId, Settings.DiscordOutputDeviceId, Settings.MonitorDeviceId);

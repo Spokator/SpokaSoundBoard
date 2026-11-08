@@ -279,6 +279,9 @@ public partial class AppearanceSettings : ObservableObject
     [ObservableProperty] private PadSize _padSize = PadSize.Medium;
     [ObservableProperty] private bool _showSidebarMeters = true;
     [ObservableProperty] private bool _showPadHotkeys = true;
+
+    /// <summary>Main sidebar reduced to icons, to leave more room to the pages.</summary>
+    [ObservableProperty] private bool _sidebarCollapsed;
 }
 
 public class AppSettings

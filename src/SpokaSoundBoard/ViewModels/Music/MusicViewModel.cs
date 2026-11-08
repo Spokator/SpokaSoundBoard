@@ -189,6 +189,9 @@ public partial class MusicViewModel : ObservableObject
     [RelayCommand]
     private void ShowPanel(string panel) => SidePanel = SidePanel == panel ? "" : panel;
 
+    [RelayCommand]
+    private void ClosePanel() => SidePanel = "";
+
     // ---- Transport ---------------------------------------------------------------------------------------
 
     [RelayCommand]

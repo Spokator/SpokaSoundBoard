@@ -18,12 +18,57 @@ public partial class MusicView : UserControl
         InitializeComponent();
         DataContextChanged += (_, e) =>
         {
-            if (e.OldValue is MusicViewModel old) old.Lyrics.CurrentLineChanged -= OnLyricLine;
-            if (e.NewValue is MusicViewModel vm) vm.Lyrics.CurrentLineChanged += OnLyricLine;
+            if (e.OldValue is MusicViewModel old)
+            {
+                old.Lyrics.CurrentLineChanged -= OnLyricLine;
+                old.PropertyChanged -= OnViewModelChanged;
+            }
+            if (e.NewValue is MusicViewModel vm)
+            {
+                vm.Lyrics.CurrentLineChanged += OnLyricLine;
+                vm.PropertyChanged += OnViewModelChanged;
+            }
+            UpdateLayoutMode();
         };
     }
 
     private MusicViewModel? Vm => DataContext as MusicViewModel;
+
+    // ---- Responsive layout ------------------------------------------------------------------------------------
+
+    private const double LibraryWidth = 210;
+    private const double CompactLibraryWidth = 64;
+    private const double SidePanelWidth = 340;
+    private const double NarrowSidePanelWidth = 300;
+    /// <summary>Below this centre width the library sidebar shrinks to icons.</summary>
+    private const double MinCentreWidth = 640;
+    private const double CentreMargins = 48;
+
+    private void OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (e.WidthChanged) UpdateLayoutMode();
+    }
+
+    private void OnViewModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MusicViewModel.SidePanel)) UpdateLayoutMode();
+    }
+
+    /// <summary>
+    /// Gives the centre column as much room as possible on small windows (or with a high interface zoom):
+    /// narrower side panel first, then a library sidebar reduced to icons.
+    /// </summary>
+    private void UpdateLayoutMode()
+    {
+        var width = ActualWidth;
+        if (width <= 0) return;
+        var sideWidth = width < 1100 ? NarrowSidePanelWidth : SidePanelWidth;
+        SidePanelPane.Width = sideWidth;
+        var sideVisible = !string.IsNullOrEmpty(Vm?.SidePanel);
+        var compact = width - LibraryWidth - (sideVisible ? sideWidth : 0) - CentreMargins < MinCentreWidth;
+        LayoutAssist.SetCompact(LibraryPane, compact);
+        LibraryColumn.Width = new GridLength(compact ? CompactLibraryWidth : LibraryWidth);
+    }
 
     // ---- External drops: files, folders, web links ----------------------------------------------------------
 

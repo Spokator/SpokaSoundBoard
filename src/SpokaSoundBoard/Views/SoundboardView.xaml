@@ -19,7 +19,7 @@
                             <TextBlock Text="Packs" />
                         </StackPanel>
                         <Button.ContextMenu>
-                            <ContextMenu>
+                            <ContextMenu FontFamily="{StaticResource UiFont}">
                                 <MenuItem Header="Exporter ma soundboard (.spokapack)…" Command="{Binding ExportPackCommand}" />
                                 <MenuItem Header="Importer une soundboard…" Command="{Binding ImportPackCommand}" />
                             </ContextMenu>
@@ -95,7 +95,7 @@
                                         Command="{Binding DataContext.PlayPadCommand, ElementName=PadList}" CommandParameter="{Binding}"
                                         Tag="{Binding DataContext, ElementName=PadList}" ToolTip="{Binding FilePath}">
                                     <Button.ContextMenu>
-                                        <ContextMenu DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                                        <ContextMenu FontFamily="{StaticResource UiFont}" DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
                                             <MenuItem Header="Lire / arrêter" Command="{Binding PlayPadCommand}"
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                             <MenuItem Header="Modifier…" Command="{Binding EditPadCommand}"

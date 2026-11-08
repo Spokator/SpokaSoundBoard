@@ -6,7 +6,7 @@ namespace SpokaSoundBoard;
 
 public partial class App : Application
 {
-    private const string ShowEventName = "SpokaSoundBoard.ShowWindow";
+    private static readonly string ShowEventName = "SpokaSoundBoard.ShowWindow" + Core.AppEnvironment.InstanceSuffix;
     private Mutex? _singleInstance;
     private EventWaitHandle? _showEvent;
 
@@ -19,7 +19,7 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
-        _singleInstance = new Mutex(true, "SpokaSoundBoard.SingleInstance", out var isFirst);
+        _singleInstance = new Mutex(true, "SpokaSoundBoard.SingleInstance" + Core.AppEnvironment.InstanceSuffix, out var isFirst);
         var startArgs = e.Args.Select(a => a.ToLowerInvariant()).ToHashSet();
         // Double-click on a .spokapack (file association of the MSIX manifest) or "Ouvrir avec".
         var packToImport = e.Args.FirstOrDefault(a =>

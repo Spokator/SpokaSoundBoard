@@ -29,6 +29,20 @@ public static class AppEnvironment
             ? custom
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SpokaSoundBoard");
 
+    /// <summary>
+    /// Suffix for machine-wide names (single-instance mutex, show event): empty for the real data folder, a stable
+    /// hash of the folder when SPOKA_DATA_DIR is set, so a development build can run next to the installed app.
+    /// </summary>
+    public static string InstanceSuffix => InstanceSuffixFor(Environment.GetEnvironmentVariable("SPOKA_DATA_DIR"));
+
+    public static string InstanceSuffixFor(string? customDataDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(customDataDirectory)) return "";
+        var normalized = Path.GetFullPath(customDataDirectory).TrimEnd('\\', '/').ToUpperInvariant();
+        var hash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(normalized));
+        return "." + Convert.ToHexString(hash, 0, 6);
+    }
+
     /// <summary>Folder of the running executable (read-only when packaged).</summary>
     public static string InstallDirectory => AppContext.BaseDirectory;
 
