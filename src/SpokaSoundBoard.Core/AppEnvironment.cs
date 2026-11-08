@@ -20,6 +20,15 @@ public static class AppEnvironment
     public static bool? ForcePackaged { get; set; } =
         Environment.GetEnvironmentVariable("SPOKA_FORCE_PACKAGED") == "1" ? true : null;
 
+    /// <summary>
+    /// Writable data folder: %AppData%\SpokaSoundBoard, or SPOKA_DATA_DIR when set (development / tests, so a
+    /// debug build never touches the real soundboard and library).
+    /// </summary>
+    public static string DataDirectory =>
+        Environment.GetEnvironmentVariable("SPOKA_DATA_DIR") is { Length: > 0 } custom
+            ? custom
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SpokaSoundBoard");
+
     /// <summary>Folder of the running executable (read-only when packaged).</summary>
     public static string InstallDirectory => AppContext.BaseDirectory;
 

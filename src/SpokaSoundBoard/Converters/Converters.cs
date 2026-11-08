@@ -140,3 +140,107 @@ public sealed class MultiEqualsConverter : IMultiValueConverter
     public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }
+
+/// <summary>
+/// Cover / thumbnail (http URL or local file) to a downscaled, cached, frozen image. Returns null (no image)
+/// instead of throwing for missing files or bad URLs.
+/// </summary>
+public sealed class CoverConverter : IValueConverter
+{
+    private static readonly Dictionary<string, System.Windows.Media.Imaging.BitmapImage> Cache = [];
+    private static readonly LinkedList<string> Order = new();
+    private const int MaxCached = 400;
+
+    /// <summary>Decode width in pixels (keeps memory low for list thumbnails).</summary>
+    public int DecodeWidth { get; set; } = 96;
+
+    public object? Convert(object? value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is not string source || source.Length == 0) return null;
+        var key = DecodeWidth + "|" + source;
+        if (Cache.TryGetValue(key, out var cached)) return cached;
+        try
+        {
+            Uri uri;
+            if (Uri.TryCreate(source, UriKind.Absolute, out var u) && (u.Scheme == Uri.UriSchemeHttp || u.Scheme == Uri.UriSchemeHttps)) uri = u;
+            else if (System.IO.File.Exists(source)) uri = new Uri(source);
+            else return null;
+
+            var image = new System.Windows.Media.Imaging.BitmapImage();
+            image.BeginInit();
+            image.UriSource = uri;
+            image.DecodePixelWidth = DecodeWidth;
+            image.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            image.CreateOptions = System.Windows.Media.Imaging.BitmapCreateOptions.IgnoreColorProfile;
+            image.EndInit();
+            if (!image.IsDownloading) image.Freeze();
+            Cache[key] = image;
+            Order.AddLast(key);
+            if (Order.Count > MaxCached)
+            {
+                Cache.Remove(Order.First!.Value);
+                Order.RemoveFirst();
+            }
+            return image;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>Packs several bound values into an object[] (command parameters with two arguments).</summary>
+public sealed class ArrayConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture) => values.ToArray();
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>Ratio (0..1) times the parameter (a size in pixels), for bar charts.</summary>
+public sealed class ScaleConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var ratio = System.Convert.ToDouble(value, CultureInfo.InvariantCulture);
+        var size = System.Convert.ToDouble(parameter, CultureInfo.InvariantCulture);
+        return Math.Max(2, ratio * size);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>Visible when the bound count is greater than zero.</summary>
+public sealed class CountToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is int n && n > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>True when the value is not null / empty.</summary>
+public sealed class NullToBoolConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object parameter, CultureInfo culture) => value != null && value is not "";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>0-based alternation index to a "1." rank label.</summary>
+public sealed class RankConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is int i ? $"{i + 1}." : "";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}

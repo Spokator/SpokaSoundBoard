@@ -61,6 +61,13 @@
     <conv:InverseBoolConverter x:Key="InverseBool" />
     <conv:MultiEqualsConverter x:Key="MultiEquals" />
     <conv:AllTrueToVisibilityConverter x:Key="AllTrueToVis" />
+    <conv:CoverConverter x:Key="Cover" DecodeWidth="96" />
+    <conv:CoverConverter x:Key="CoverLarge" DecodeWidth="480" />
+    <conv:ArrayConverter x:Key="ArrayConv" />
+    <conv:ScaleConverter x:Key="Scale" />
+    <conv:CountToVisibilityConverter x:Key="CountToVis" />
+    <conv:NullToBoolConverter x:Key="NullToBool" />
+    <conv:RankConverter x:Key="RankConv" />
 
     <!-- Text -->
     <Style x:Key="PageTitle" TargetType="TextBlock">

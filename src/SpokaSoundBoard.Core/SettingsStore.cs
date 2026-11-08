@@ -14,8 +14,7 @@ public sealed class SettingsStore
 
     public SettingsStore(string? directory = null)
     {
-        Directory = directory ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SpokaSoundBoard");
+        Directory = directory ?? AppEnvironment.DataDirectory;
         FilePath = Path.Combine(Directory, "settings.json");
     }
 

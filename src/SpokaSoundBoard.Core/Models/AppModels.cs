@@ -125,6 +125,13 @@ public partial class TrackItem : ObservableObject
     [ObservableProperty] private bool _isFavorite;
 
     public DateTime AddedAt { get; set; } = DateTime.Now;
+
+    /// <summary>
+    /// Played without being added to the library (autoplay, a search result played directly): hidden from
+    /// « Toutes les musiques » but kept for the history. Favouriting it or adding it to a playlist makes it permanent.
+    /// </summary>
+    [ObservableProperty] private bool _isTransient;
+
     public int PlayCount { get; set; }
     public DateTime? LastPlayedAt { get; set; }
 

@@ -59,9 +59,11 @@ public sealed class MusicLibrary
             existing.ThumbnailUrl ??= track.ThumbnailUrl;
             existing.DurationSeconds ??= track.DurationSeconds;
             if (string.IsNullOrWhiteSpace(existing.DisplayTitle)) existing.DisplayTitle = track.DisplayTitle;
+            if (!track.IsTransient) existing.IsTransient = false;
             Changed?.Invoke();
             return existing;
         }
+        CompleteWebMetadata(track);
         Tracks.Add(track);
         Changed?.Invoke();
         return track;
@@ -83,7 +85,11 @@ public sealed class MusicLibrary
         var playlist = new MusicPlaylist { Name = UniquePlaylistName(name), SourceUrl = sourceUrl, Color = NextColor() };
         if (tracks != null)
             foreach (var t in tracks)
-                playlist.TrackIds.Add(AddOrGet(t).Id);
+            {
+                var item = AddOrGet(t);
+                item.IsTransient = false;
+                if (!playlist.TrackIds.Contains(item.Id)) playlist.TrackIds.Add(item.Id);
+            }
         Playlists.Add(playlist);
         Changed?.Invoke();
         return playlist;
@@ -109,7 +115,9 @@ public sealed class MusicLibrary
         var added = 0;
         foreach (var t in tracks)
         {
-            var id = AddOrGet(t).Id;
+            var item = AddOrGet(t);
+            item.IsTransient = false;
+            var id = item.Id;
             if (playlist.TrackIds.Contains(id)) continue;
             playlist.TrackIds.Add(id);
             added++;
@@ -147,6 +155,7 @@ public sealed class MusicLibrary
     {
         track = AddOrGet(track);
         track.IsFavorite = !track.IsFavorite;
+        if (track.IsFavorite) track.IsTransient = false;
         Changed?.Invoke();
     }
 
@@ -216,7 +225,22 @@ public sealed class MusicLibrary
     public List<TrackItem> MostPlayed(int count) =>
         Tracks.Where(t => t.PlayCount > 0).OrderByDescending(t => t.PlayCount).ThenByDescending(t => t.LastPlayedAt).Take(count).ToList();
 
-    public List<TrackItem> RecentlyAdded(int count) => Tracks.OrderByDescending(t => t.AddedAt).Take(count).ToList();
+    public List<TrackItem> RecentlyAdded(int count) => LibraryTracks.OrderByDescending(t => t.AddedAt).Take(count).ToList();
+
+    /// <summary>Tracks the user added (excludes transient autoplay / direct-play tracks).</summary>
+    public IEnumerable<TrackItem> LibraryTracks => Tracks.Where(t => !t.IsTransient);
+
+    /// <summary>Forgets transient tracks that are in no playlist, not favourite and not played for <paramref name="days"/> days.</summary>
+    public int PruneTransient(int days, IReadOnlyCollection<Guid> keep, DateTime? now = null)
+    {
+        var limit = (now ?? DateTime.Now).AddDays(-days);
+        var inPlaylists = Playlists.SelectMany(p => p.TrackIds).ToHashSet();
+        var stale = Tracks.Where(t => t.IsTransient && !t.IsFavorite && !inPlaylists.Contains(t.Id) && !keep.Contains(t.Id)
+                                      && (t.LastPlayedAt ?? t.AddedAt) < limit).ToList();
+        foreach (var t in stale) Tracks.Remove(t);
+        if (stale.Count > 0) Changed?.Invoke();
+        return stale.Count;
+    }
 
     // ---- Search ----------------------------------------------------------------------------------------------
 
@@ -228,7 +252,7 @@ public sealed class MusicLibrary
         return Normalize(query).Split(' ', StringSplitOptions.RemoveEmptyEntries).All(haystack.Contains);
     }
 
-    public IEnumerable<TrackItem> Search(string query) => Tracks.Where(t => Matches(t, query));
+    public IEnumerable<TrackItem> Search(string query) => LibraryTracks.Where(t => Matches(t, query));
 
     /// <summary>Lowercase, no accents, punctuation turned into spaces.</summary>
     public static string Normalize(string? text)
@@ -311,6 +335,29 @@ public sealed class MusicLibrary
                 if (!ids.Contains(p.TrackIds[i])) p.TrackIds.RemoveAt(i);
         }
         foreach (var t in data.Tracks)
+        {
             t.State = t.IsDownloaded ? TrackState.Ready : TrackState.Remote;
+            CompleteWebMetadata(t);
+        }
+    }
+
+    /// <summary>
+    /// Fills what can be derived offline for web tracks imported by 1.x (or downloaded from a cache hit):
+    /// the YouTube thumbnail from the video id, and the artist from titles like « Artiste - Titre (Clip officiel) ».
+    /// </summary>
+    public static void CompleteWebMetadata(TrackItem t)
+    {
+        if (t.SourceUrl == null) return;
+        if (string.IsNullOrEmpty(t.ThumbnailUrl) && Online.RecommendationService.YouTubeId(t.SourceUrl) is { } id)
+            t.ThumbnailUrl = $"https://i.ytimg.com/vi/{id}/hqdefault.jpg";
+        if (string.IsNullOrWhiteSpace(t.Artist) && !string.IsNullOrWhiteSpace(t.DisplayTitle))
+        {
+            var (artist, title) = Online.ArtistTitle.Split(t.DisplayTitle, null);
+            if (!string.IsNullOrWhiteSpace(artist) && !string.IsNullOrWhiteSpace(title))
+            {
+                t.Artist = artist;
+                t.DisplayTitle = title;
+            }
+        }
     }
 }

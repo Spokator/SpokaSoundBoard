@@ -262,6 +262,20 @@ public class MusicLibraryTests
     }
 
     [Fact]
+    public void CompletesArtistAndThumbnailOfMigratedWebTracks()
+    {
+        var data = new MusicLibraryData();
+        data.Tracks.Add(new TrackItem { DisplayTitle = "SDM - Yakalelo (Clip officiel)", SourceUrl = "https://www.youtube.com/watch?v=abc123XYZ_0" });
+        data.Tracks.Add(new TrackItem { DisplayTitle = "Mr. Ocho", SourceUrl = "https://youtu.be/def456" });
+        var lib = new MusicLibrary(data);
+        Assert.Equal("SDM", lib.Tracks[0].Artist);
+        Assert.Equal("Yakalelo", lib.Tracks[0].Title);
+        Assert.Equal("https://i.ytimg.com/vi/abc123XYZ_0/hqdefault.jpg", lib.Tracks[0].ThumbnailUrl);
+        Assert.Null(lib.Tracks[1].Artist);
+        Assert.Equal("Mr. Ocho", lib.Tracks[1].Title);
+    }
+
+    [Fact]
     public void SanitizeFixesDuplicateIdsAndDanglingPlaylistEntries()
     {
         var id = Guid.NewGuid();

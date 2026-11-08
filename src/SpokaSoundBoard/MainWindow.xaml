@@ -225,20 +225,45 @@
                 BorderThickness="0,1,0,0" Padding="20,12" DataContext="{Binding Music}">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="260" />
+                    <ColumnDefinition Width="300" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="230" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="46" Height="46" CornerRadius="8" Background="{DynamicResource AccentSoftBrush}">
-                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8D6;" FontSize="20" Foreground="{DynamicResource Accent2Brush}" />
-                    </Border>
-                    <StackPanel Margin="12,0,0,0" VerticalAlignment="Center" MaxWidth="190">
+                <DockPanel VerticalAlignment="Center" LastChildFill="True">
+                    <Button DockPanel.Dock="Left" Style="{StaticResource IconButton}" Padding="0" Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="music" ToolTip="Ouvrir la musique">
+                        <Border Width="50" Height="50" CornerRadius="8" Background="{DynamicResource AccentSoftBrush}" ClipToBounds="True">
+                            <Grid>
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE8D6;" FontSize="20" Foreground="{DynamicResource Accent2Brush}" />
+                                <Image Source="{Binding CurrentTrack.ThumbnailUrl, Converter={StaticResource Cover}}" Stretch="UniformToFill" />
+                                <ProgressBar IsIndeterminate="True" VerticalAlignment="Bottom" Height="3" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}" />
+                            </Grid>
+                        </Border>
+                    </Button>
+                    <ToggleButton DockPanel.Dock="Right" Style="{StaticResource ToggleIconButton}" FontSize="14" ToolTip="Favori"
+                                  IsChecked="{Binding CurrentTrack.IsFavorite, Mode=OneWay}" Command="{Binding ToggleFavoriteCurrentCommand}"
+                                  Visibility="{Binding HasTrack, Converter={StaticResource BoolToVis}}">
+                        <TextBlock>
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="&#xEB51;" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CurrentTrack.IsFavorite}" Value="True">
+                                            <Setter Property="Text" Value="&#xEB52;" />
+                                            <Setter Property="Foreground" Value="#F472B6" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </ToggleButton>
+                    <StackPanel Margin="12,0,4,0" VerticalAlignment="Center">
                         <TextBlock Text="{Binding CurrentTitle}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding CurrentTitle}" />
-                        <TextBlock Style="{StaticResource Caption}" Text="{Binding CurrentTrack.Folder}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Style="{StaticResource Caption}" Text="{Binding CurrentSubtitle}" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
-                </StackPanel>
+                </DockPanel>
 
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="20,0">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -284,7 +309,15 @@
                     </Grid>
                 </StackPanel>
 
-                <StackPanel Grid.Column="2" VerticalAlignment="Center"
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <views:SpectrumBars Width="64" Height="28" BarCount="12" Margin="0,0,10,0" Player="{Binding DataContext.Engine.Music, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        BarBrush="{StaticResource BrandBrush}" Opacity="0.85" />
+                    <Button Style="{StaticResource IconButton}" Content="&#xE90B;" ToolTip="File d'attente" Click="OnShowMusicPanel" Tag="queue" />
+                    <Button Style="{StaticResource IconButton}" Content="&#xE8BD;" ToolTip="Paroles" Click="OnShowMusicPanel" Tag="lyrics" />
+                    <Button Style="{StaticResource IconButton}" Content="&#xE9E9;" ToolTip="Effets musique (basses, nightcore, 8D, karaoké…)" Click="OnShowMusicPanel" Tag="effects" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="3" VerticalAlignment="Center"
                             DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}">
                     <Grid Margin="0,0,0,2">
                         <TextBlock Style="{StaticResource Icon}" Text="&#xE767;" HorizontalAlignment="Left" FontSize="14" ToolTip="Volume de la musique" />

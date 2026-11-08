@@ -100,7 +100,7 @@ public sealed class MixerCore
 
         Music.Read(_music, 0, frames * 2);
         Pads.Read(_pads, 0, frames * 2);
-        var preview = Preview is { IsPlaying: true } && !monitor.IsEmpty;
+        var preview = Preview is { IsActive: true } && !monitor.IsEmpty;
         if (preview) Preview!.Read(_preview, 0, frames * 2);
 
         var duckActive = mix.DuckingEnabled && _voice.VoiceActive && _voice.Transmitting;

@@ -11,11 +11,11 @@ public partial class App : Application
     private EventWaitHandle? _showEvent;
 
     public static string LogPath { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SpokaSoundBoard", "error.log");
+        Core.AppEnvironment.DataDirectory, "error.log");
 
     /// <summary>.spokapack files handed to a second instance (double-click while the app runs), imported by the first one.</summary>
     private static string PendingPacksPath { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SpokaSoundBoard", "pending-packs.txt");
+        Core.AppEnvironment.DataDirectory, "pending-packs.txt");
 
     protected override void OnStartup(StartupEventArgs e)
     {

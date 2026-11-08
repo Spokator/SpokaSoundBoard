@@ -7,6 +7,7 @@ using SpokaSoundBoard.Core.Dsp;
 using SpokaSoundBoard.Core.Models;
 using SpokaSoundBoard.Core.Online;
 using SpokaSoundBoard.Services;
+using SpokaSoundBoard.ViewModels.Music;
 
 namespace SpokaSoundBoard.ViewModels;
 
@@ -144,6 +145,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     public SoundboardViewModel Soundboard { get; }
     public MusicViewModel Music { get; }
+
+    /// <summary>Writable data folder (%AppData%\SpokaSoundBoard, or the package's private copy).</summary>
+    public string DataDirectory => _store.Directory;
     public VoiceViewModel Voice { get; }
     public DevicesViewModel Devices { get; }
     public SetupWizardViewModel Setup { get; }
@@ -240,6 +244,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Music.RestoreState();
         Soundboard.AnalyzeMissingLoudness();
         Music.AnalyzeMissingLoudness();
+        Music.ReadMissingMetadata();
         // Store edition: the Store updates the app, never check GitHub nor run an installer.
         if (Settings.CheckForUpdates && !IsStoreEdition) _ = CheckForUpdateAsync(silent: true);
         _ = RefreshAutostartAsync();
@@ -477,6 +482,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _meterTimer.Stop();
         _saveTimer.Stop();
         Save();
+        Music.Shutdown();
         Hotkeys.Dispose();
         Loudness.Dispose();
         Engine.Dispose();

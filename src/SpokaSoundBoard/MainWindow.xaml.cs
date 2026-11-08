@@ -62,6 +62,14 @@ public partial class MainWindow : Window
         _vm.Initialize(_openSetup);
         _initialized = true;
         foreach (var pack in _pendingPacks) ImportPack(pack);
+        try
+        {
+            _vm.Music.MediaControls = new MediaControlsService(_vm.Music, Dispatcher);
+        }
+        catch (Exception ex)
+        {
+            App.Log(ex);
+        }
         _pendingPacks.Clear();
         if (_startInTray)
         {
@@ -150,5 +158,18 @@ public partial class MainWindow : Window
         if (_dragging) return;
         _vm.Music.SeekTo(SeekSlider.Value);
         _vm.Music.IsSeeking = false;
+    }
+
+    /// <summary>Player bar buttons: open the music page on the queue / lyrics / effects panel.</summary>
+    private void OnShowMusicPanel(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: string panel }) return;
+        if (_vm.CurrentPage == "music" && _vm.Music.SidePanel == panel)
+        {
+            _vm.Music.SidePanel = "";
+            return;
+        }
+        _vm.CurrentPage = "music";
+        _vm.Music.SidePanel = panel;
     }
 }
