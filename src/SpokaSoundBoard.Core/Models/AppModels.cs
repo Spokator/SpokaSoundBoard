@@ -303,6 +303,9 @@ public class AppSettings
 
     public MusicSettings Music { get; set; } = new();
 
+    public BlindTestSettings BlindTest { get; set; } = new();
+    public TextToSpeechSettings TextToSpeech { get; set; } = new();
+
     public string? SelectedPresetName { get; set; } = "Voix normale";
     public RepeatMode Repeat { get; set; } = RepeatMode.All;
     public bool Shuffle { get; set; }

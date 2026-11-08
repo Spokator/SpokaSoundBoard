@@ -44,6 +44,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         Soundboard = new SoundboardViewModel(this);
         Music = new MusicViewModel(this);
+        BlindTest = new BlindTestViewModel(this);
         Voice = new VoiceViewModel(this);
         Devices = new DevicesViewModel(this);
         Setup = new SetupWizardViewModel(this);
@@ -145,6 +146,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     public SoundboardViewModel Soundboard { get; }
     public MusicViewModel Music { get; }
+    public BlindTestViewModel BlindTest { get; }
 
     /// <summary>Writable data folder (%AppData%\SpokaSoundBoard, or the package's private copy).</summary>
     public string DataDirectory => _store.Directory;
@@ -482,6 +484,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _meterTimer.Stop();
         _saveTimer.Stop();
         Save();
+        BlindTest.Shutdown();
         Music.Shutdown();
         Hotkeys.Dispose();
         Loudness.Dispose();

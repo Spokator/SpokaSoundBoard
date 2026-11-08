@@ -26,6 +26,7 @@ public partial class SoundboardViewModel : ObservableObject
             "Rechercher un son (ex. « vine boom », « sirène ») ou coller un lien…",
             [new(SearchSource.MyInstants, "Bruitages (MyInstants)", "\uE8A9"), new(SearchSource.YouTube, "YouTube", "\uE714")],
             AddFromLink);
+        Tts = new TextToSpeechViewModel(main, this);
         PadsView = CollectionViewSource.GetDefaultView(Pads);
         PadsView.Filter = o => o is SoundPad p && (string.IsNullOrWhiteSpace(Filter) || p.Name.Contains(Filter.Trim(), StringComparison.CurrentCultureIgnoreCase));
         foreach (var pad in Pads) pad.PropertyChanged += OnPadChanged;
@@ -46,6 +47,9 @@ public partial class SoundboardViewModel : ObservableObject
     public ObservableCollection<SoundPad> Pads => _main.Settings.Pads;
 
     public LinkImporter Link { get; }
+
+    /// <summary>« Synthèse vocale » panel at the top of the page.</summary>
+    public TextToSpeechViewModel Tts { get; }
 
     public bool ShowHotkeys => _main.Settings.Appearance.ShowPadHotkeys;
 

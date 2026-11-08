@@ -1,0 +1,569 @@
+<UserControl x:Class="SpokaSoundBoard.Views.BlindTestView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:SpokaSoundBoard.Views"
+             x:Name="Root" Background="Transparent">
+    <!-- DataContext: BlindTestViewModel -->
+    <UserControl.Resources>
+        <Style x:Key="ScoreToggle" TargetType="ToggleButton" BasedOn="{StaticResource FlatButton}">
+            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Style.Triggers>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                    <Setter Property="Foreground" Value="White" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ListItem" TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+            <Setter Property="Padding" Value="10,7" />
+            <Setter Property="Margin" Value="0,1" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+
+        <!-- Rank badge: gold, silver, bronze, then neutral. -->
+        <Style x:Key="RankBadge" TargetType="Border">
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Background" Value="{DynamicResource ControlBrush}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Rank}" Value="1">
+                    <Setter Property="Background" Value="#FBBF24" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Rank}" Value="2">
+                    <Setter Property="Background" Value="#A8B3C7" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Rank}" Value="3">
+                    <Setter Property="Background" Value="#D97706" />
+                </DataTrigger>
+                <!-- Nobody has scored yet: no medal. -->
+                <DataTrigger Binding="{Binding Score}" Value="0">
+                    <Setter Property="Background" Value="{DynamicResource ControlBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- One step of the podium. DataContext: BlindTestPlayer. -->
+        <DataTemplate x:Key="PodiumStep">
+            <StackPanel Width="170" Margin="8,0" VerticalAlignment="Bottom">
+                <TextBlock Text="{Binding Name}" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding Score, StringFormat={}{0} pts}" Style="{StaticResource Caption}" FontSize="14" HorizontalAlignment="Center" Margin="0,2,0,8" />
+                <Border CornerRadius="10,10,0,0" Height="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContentPresenter}}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="{DynamicResource ControlBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Rank}" Value="1">
+                                    <Setter Property="Background" Value="#FBBF24" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Rank}" Value="2">
+                                    <Setter Property="Background" Value="#A8B3C7" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Rank}" Value="3">
+                                    <Setter Property="Background" Value="#D97706" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Score}" Value="0">
+                                    <Setter Property="Background" Value="{DynamicResource ControlBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="{Binding Rank}" FontSize="40" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- ======================= Setup ======================= -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding IsSetup, Converter={StaticResource BoolToVis}}">
+            <StackPanel Margin="28,24,28,24">
+                <DockPanel Margin="0,0,0,20">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Command="{Binding StartCommand}" Padding="22,11" FontSize="15"
+                            VerticalAlignment="Top" ToolTip="Il faut au moins un joueur et une source qui contient des morceaux">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE768;" FontSize="14" Margin="0,0,10,0" />
+                            <TextBlock Text="Lancer le blind test" />
+                        </StackPanel>
+                    </Button>
+                    <StackPanel Margin="0,0,20,0">
+                        <TextBlock Text="Blind test" Style="{StaticResource PageTitle}" />
+                        <TextBlock Style="{StaticResource PageSubtitle}"
+                                   Text="Faites deviner des musiques à vos amis : les extraits passent dans votre micro (sur Discord ou en jeu) et vous comptez les points ici." />
+                    </StackPanel>
+                </DockPanel>
+
+                <!-- Routing warning -->
+                <Border Background="{DynamicResource WarningSoftBrush}" BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1" CornerRadius="10"
+                        Padding="16,12" Margin="0,0,0,14" Visibility="{Binding Mix.MediaToMicEnabled, Converter={StaticResource InverseBoolToVis}}">
+                    <DockPanel>
+                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Mix.MediaToMicEnabled}" VerticalAlignment="Center">
+                            <TextBlock Text="Diffuser dans le micro" Style="{StaticResource Label}" />
+                        </CheckBox>
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE7BA;" Foreground="{DynamicResource WarningBrush}" Margin="0,0,12,0" />
+                        <TextBlock VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,16,0"
+                                   Text="La musique n'est pas envoyée dans le micro : vos amis n'entendront pas les extraits." />
+                    </DockPanel>
+                </Border>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="18" />
+                        <ColumnDefinition Width="360" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Songs and options -->
+                    <StackPanel>
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE8D6;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
+                                    <TextBlock Text="Les musiques" Style="{StaticResource SectionTitle}" />
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,10"
+                                           Text="Tirées au hasard, sans doublon. Les morceaux déjà téléchargés passent en premier ; les autres sont téléchargés pendant la manche précédente." />
+                                <ListBox ItemsSource="{Binding Sources}" SelectedItem="{Binding SelectedSource}" MaxHeight="260"
+                                         Background="Transparent" BorderThickness="0" ItemContainerStyle="{StaticResource ListItem}"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel>
+                                                <TextBlock Style="{StaticResource Icon}" Text="{Binding Icon}" FontSize="14" Margin="0,0,12,0" DockPanel.Dock="Left" />
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding CountText}" Style="{StaticResource Caption}" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE713;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
+                                    <TextBlock Text="Réglages de la partie" Style="{StaticResource SectionTitle}" />
+                                </StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="24" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <local:SliderRow Label="Nombre de manches" Minimum="5" Maximum="50" Step="1" Format="{}{0:0}" Value="{Binding RoundsValue}" />
+                                    <local:SliderRow Grid.Column="2" Label="Durée des extraits" Minimum="10" Maximum="45" Step="1" Format="{}{0:0} s"
+                                                     Value="{Binding ExcerptValue}" />
+                                </Grid>
+                                <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.AnnounceAnswer}" Margin="0,12,0,0"
+                                          IsEnabled="{Binding SpeechAvailable}">
+                                    <StackPanel>
+                                        <TextBlock Text="Annoncer la réponse avec la synthèse vocale" Style="{StaticResource Label}" />
+                                        <TextBlock Text="« C'était … de … » dit dans le micro quand vous révélez, et le gagnant à la fin" Style="{StaticResource Caption}" />
+                                    </StackPanel>
+                                </CheckBox>
+                                <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Mix.DiscordMusic}" Margin="0,12,0,0"
+                                          Visibility="{Binding Main.Devices.HasDiscordOutput, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel>
+                                        <TextBlock Text="Discord entend les extraits" Style="{StaticResource Label}" />
+                                        <TextBlock Text="La musique passe aussi dans votre micro Discord" Style="{StaticResource Caption}" />
+                                    </StackPanel>
+                                </CheckBox>
+                                <Border Background="{DynamicResource InsetBrush}" CornerRadius="8" Padding="12,10" Margin="0,14,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE946;" FontSize="13" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
+                                        <TextBlock Style="{StaticResource Caption}" Foreground="{DynamicResource TextBrush}"
+                                                   Text="Points : titre +2 · artiste +1 · les deux +1 bonus · trouvé en moins de 10 s +1" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Players and all-time scores -->
+                    <StackPanel Grid.Column="2">
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE716;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
+                                    <TextBlock Text="Joueurs" Style="{StaticResource SectionTitle}" />
+                                </StackPanel>
+                                <DockPanel Margin="0,0,0,10">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Command="{Binding AddPlayerCommand}" Padding="10,6" Margin="8,0,0,0"
+                                            ToolTip="Ajouter le joueur (Entrée)" AutomationProperties.Name="Ajouter le joueur">
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" FontSize="13" />
+                                    </Button>
+                                    <Grid>
+                                        <TextBox Text="{Binding NewPlayerName, UpdateSourceTrigger=PropertyChanged}" Padding="10,6" VerticalContentAlignment="Center" MaxLength="24">
+                                            <TextBox.InputBindings>
+                                                <KeyBinding Key="Return" Command="{Binding AddPlayerCommand}" />
+                                            </TextBox.InputBindings>
+                                        </TextBox>
+                                        <TextBlock Text="Pseudo du joueur…" Style="{StaticResource Caption}" Margin="12,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
+                                            <TextBlock.Visibility>
+                                                <Binding Path="NewPlayerName" Converter="{StaticResource InverseNullToVis}" />
+                                            </TextBlock.Visibility>
+                                        </TextBlock>
+                                    </Grid>
+                                </DockPanel>
+                                <TextBlock Style="{StaticResource Caption}" Text="Ajoutez au moins un joueur. La liste est gardée pour les prochaines parties."
+                                           Visibility="{Binding HasNoPlayers, Converter={StaticResource BoolToVis}}" />
+                                <ItemsControl ItemsSource="{Binding Settings.Players}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource SubCardBrush}" CornerRadius="8" Padding="12,4,4,4" Margin="0,0,0,6">
+                                                <DockPanel>
+                                                    <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE711;" FontSize="11" Padding="7"
+                                                            ToolTip="Retirer" AutomationProperties.Name="Retirer le joueur" Command="{Binding DataContext.RemovePlayerCommand, ElementName=Root}" CommandParameter="{Binding}" />
+                                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE77B;" FontSize="13" Foreground="{DynamicResource SubtleTextBrush}" Margin="0,0,10,0" />
+                                                    <TextBlock Text="{Binding}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                </DockPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}" Visibility="{Binding HasRecords, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,10">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE74D;" FontSize="12" Padding="6"
+                                            ToolTip="Effacer le classement" AutomationProperties.Name="Effacer le classement" Command="{Binding ClearRecordsCommand}" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE734;" Foreground="#FBBF24" Margin="0,0,10,0" />
+                                        <TextBlock Text="Classement de tous les temps" Style="{StaticResource SectionTitle}" />
+                                    </StackPanel>
+                                </DockPanel>
+                                <ItemsControl ItemsSource="{Binding Records}" AlternationCount="100">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel Margin="0,4">
+                                                <TextBlock DockPanel.Dock="Left" Width="26" Style="{StaticResource Caption}" VerticalAlignment="Center"
+                                                           Text="{Binding (ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}, Converter={StaticResource RankConv}}" />
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding TotalPoints, StringFormat={}{0} pts}" Style="{StaticResource ValueText}" />
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Style="{StaticResource Caption}">
+                                                        <Run Text="{Binding GamesPlayed, Mode=OneWay}" /><Run Text=" partie(s) · " /><Run Text="{Binding Wins, Mode=OneWay}" /><Run Text=" victoire(s) · record " /><Run Text="{Binding BestScore, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ======================= Game ======================= -->
+        <Grid Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="280" />
+            </Grid.ColumnDefinitions>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="28,24,24,24">
+                    <DockPanel Margin="0,0,0,18">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Command="{Binding EndGameCommand}" VerticalAlignment="Top"
+                                ToolTip="Arrêter maintenant et afficher le podium (les points donnés comptent)">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE71A;" FontSize="12" Margin="0,0,8,0" />
+                                <TextBlock Text="Terminer la partie" />
+                            </StackPanel>
+                        </Button>
+                        <StackPanel>
+                            <TextBlock Text="Blind test" Style="{StaticResource PageTitle}" />
+                            <TextBlock Text="{Binding RoundText}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Accent2Brush}" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Stage -->
+                    <Border Style="{StaticResource Card}" Padding="22">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Width="220" Height="220" CornerRadius="14" ClipToBounds="True" Background="{DynamicResource BrandBrush}">
+                                <Grid>
+                                    <TextBlock Text="?" FontSize="120" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Visibility="{Binding IsRevealed, Converter={StaticResource InverseBoolToVis}}" />
+                                    <Grid Visibility="{Binding IsRevealed, Converter={StaticResource BoolToVis}}" Background="{DynamicResource ControlBrush}">
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8D6;" FontSize="56" Foreground="{DynamicResource SubtleTextBrush}" />
+                                        <Image Source="{Binding CurrentTrack.ThumbnailUrl, Converter={StaticResource CoverLarge}}" Stretch="UniformToFill" />
+                                    </Grid>
+                                </Grid>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" Margin="28,0,0,0" VerticalAlignment="Center">
+                                <!-- Hidden answer: countdown -->
+                                <StackPanel Visibility="{Binding IsRevealed, Converter={StaticResource InverseBoolToVis}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Countdown}" FontSize="72" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Bottom" />
+                                        <TextBlock Text="s" FontSize="24" Foreground="{DynamicResource SubtleTextBrush}" VerticalAlignment="Bottom" Margin="6,0,0,16" />
+                                    </StackPanel>
+                                    <ProgressBar Style="{StaticResource Meter}" Height="6" Value="{Binding CountdownProgress, Mode=OneWay}"
+                                                 Foreground="{DynamicResource BrandBrush}" Margin="0,0,0,10" />
+                                    <ProgressBar IsIndeterminate="True" Height="3" Margin="0,0,0,8"
+                                                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}" />
+                                    <TextBlock FontSize="16" FontWeight="SemiBold">
+                                        <Run Text="{Binding StatusText, Mode=OneWay}" />
+                                        <Run Text="{Binding CurrentTrack.StateMessage, Mode=OneWay}" FontWeight="Normal" Foreground="{DynamicResource SubtleTextBrush}" />
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <!-- Revealed answer -->
+                                <StackPanel Visibility="{Binding IsRevealed, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="C'ÉTAIT…" Style="{StaticResource Caption}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding AnswerTitle}" FontSize="28" FontWeight="Bold" TextWrapping="Wrap" Margin="0,4,0,2" />
+                                    <TextBlock Text="{Binding AnswerArtist}" FontSize="18" Foreground="{DynamicResource Accent2Brush}" TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <WrapPanel Margin="0,20,0,0">
+                                    <Button Style="{StaticResource AccentButton}" Command="{Binding RevealCommand}" Margin="0,0,10,8" Padding="16,9"
+                                            Visibility="{Binding IsRevealed, Converter={StaticResource InverseBoolToVis}}" IsEnabled="{Binding CanReplay}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE7B3;" FontSize="13" Margin="0,0,8,0" />
+                                            <TextBlock Text="Révéler" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource AccentButton}" Command="{Binding NextRoundCommand}" Margin="0,0,10,8" Padding="16,9"
+                                            Visibility="{Binding IsRevealed, Converter={StaticResource BoolToVis}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE893;" FontSize="13" Margin="0,0,8,0" />
+                                            <TextBlock Text="{Binding NextRoundText}" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Command="{Binding TogglePauseCommand}" Margin="0,0,10,8" Padding="14,9"
+                                            Visibility="{Binding IsListening, Converter={StaticResource BoolToVis}}"
+                                            ToolTip="Quelqu'un a trouvé ? Mettez en pause le temps de vérifier">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource FlatButton}">
+                                                <Setter Property="Content" Value="Pause" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsPausedByHost}" Value="True">
+                                                        <Setter Property="Content" Value="Reprendre" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Style="{StaticResource FlatButton}" Command="{Binding ReplayCommand}" Margin="0,0,10,8" Padding="14,9"
+                                            IsEnabled="{Binding CanReplay}" ToolTip="Réécouter l'extrait depuis le début">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" FontSize="12" Margin="0,0,8,0" />
+                                            <TextBlock Text="Rejouer l'extrait" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource FlatButton}" Command="{Binding SkipCommand}" Margin="0,0,10,8" Padding="14,9"
+                                            Visibility="{Binding IsRevealed, Converter={StaticResource InverseBoolToVis}}"
+                                            ToolTip="Changer de morceau (introuvable, trop facile…) : la manche est rejouée avec un autre">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE8AB;" FontSize="12" Margin="0,0,8,0" />
+                                            <TextBlock Text="Passer" />
+                                        </StackPanel>
+                                    </Button>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Scoring -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,12">
+                                <TextBlock DockPanel.Dock="Right" Style="{StaticResource Caption}" VerticalAlignment="Center"
+                                           Text="Trouvé dans les 10 premières secondes : « Rapide » est coché tout seul" />
+                                <TextBlock Text="Qui a trouvé ?" Style="{StaticResource SectionTitle}" />
+                            </DockPanel>
+                            <ItemsControl ItemsSource="{Binding Players}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,0,1" Padding="0,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="56" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Text="{Binding Score, StringFormat=Total : {0} pts}" Style="{StaticResource Caption}" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                    <ToggleButton Style="{StaticResource ScoreToggle}" Content="Titre +2" IsChecked="{Binding Answer.Title}" />
+                                                    <ToggleButton Style="{StaticResource ScoreToggle}" Content="Artiste +1" IsChecked="{Binding Answer.Artist}" />
+                                                    <ToggleButton Style="{StaticResource ScoreToggle}" Content="Rapide +1" IsChecked="{Binding Answer.Fast}"
+                                                                  ToolTip="Trouvé en moins de 10 secondes (compte avec un titre ou un artiste)" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="2" Text="{Binding Answer.Points, StringFormat=+{0}}" Style="{StaticResource ValueText}" FontSize="15" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Grid Margin="0,14,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid>
+                                    <TextBox Text="{Binding GuessText, UpdateSourceTrigger=PropertyChanged}" Padding="30,6,8,6" VerticalContentAlignment="Center" />
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE8FB;" FontSize="13" HorizontalAlignment="Left" Margin="10,0,0,0"
+                                               Foreground="{DynamicResource SubtleTextBrush}" IsHitTestVisible="False" />
+                                    <TextBlock Text="Vérifier une réponse écrite dans le chat (sans dévoiler la solution)…" Style="{StaticResource Caption}"
+                                               Margin="32,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
+                                        <TextBlock.Visibility>
+                                            <Binding Path="GuessText" Converter="{StaticResource InverseNullToVis}" />
+                                        </TextBlock.Visibility>
+                                    </TextBlock>
+                                </Grid>
+                                <TextBlock Grid.Column="1" Text="{Binding GuessResult}" FontWeight="SemiBold" Foreground="{DynamicResource Accent2Brush}"
+                                           VerticalAlignment="Center" Margin="14,0,0,0" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Live leaderboard -->
+            <Border Grid.Column="1" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1,0,0,0">
+                <DockPanel Margin="18,24,18,18">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,16">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE734;" Foreground="#FBBF24" Margin="0,0,10,0" />
+                        <TextBlock Text="Classement" Style="{StaticResource SectionTitle}" />
+                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Leaderboard}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                                            CornerRadius="10" Padding="10,8" Margin="0,0,0,8">
+                                        <DockPanel>
+                                            <Border DockPanel.Dock="Left" Style="{StaticResource RankBadge}" Margin="0,0,12,0">
+                                                <TextBlock Text="{Binding Rank}" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Score}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource Accent2Brush}"
+                                                       VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0" />
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- Left the page during the game -->
+            <Grid Grid.ColumnSpan="2" Background="#B307080C" Visibility="{Binding IsSuspended, Converter={StaticResource BoolToVis}}">
+                <Border Style="{StaticResource Card}" Width="420" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="28">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE769;" FontSize="38" Foreground="{DynamicResource Accent2Brush}" />
+                        <TextBlock Text="Partie en pause" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,14,0,6" />
+                        <TextBlock Style="{StaticResource Caption}" TextAlignment="Center" Margin="0,0,0,18"
+                                   Text="Vous avez quitté la page : le lecteur de musique a été rendu. Reprenez quand vous voulez, les scores sont gardés." />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Style="{StaticResource AccentButton}" Command="{Binding ResumeGameCommand}" Margin="0,0,10,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE768;" FontSize="12" Margin="0,0,8,0" />
+                                    <TextBlock Text="Reprendre la partie" />
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource FlatButton}" Content="Terminer" Command="{Binding EndGameCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- ======================= Podium ======================= -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding IsPodium, Converter={StaticResource BoolToVis}}">
+            <StackPanel Margin="28,24,28,24">
+                <DockPanel Margin="0,0,0,24">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                        <Button Style="{StaticResource FlatButton}" Command="{Binding NewGameCommand}" Margin="0,0,10,0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE713;" FontSize="12" Margin="0,0,8,0" />
+                                <TextBlock Text="Nouvelle partie" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource AccentButton}" Command="{Binding PlayAgainCommand}" ToolTip="Mêmes joueurs, mêmes réglages, nouvelles musiques">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" FontSize="12" Margin="0,0,8,0" />
+                                <TextBlock Text="Rejouer" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Podium" Style="{StaticResource PageTitle}" />
+                        <TextBlock Style="{StaticResource PageSubtitle}" Text="{Binding RoundNumber, StringFormat=Partie terminée après {0} manche(s). Bravo à tous !}" />
+                    </StackPanel>
+                </DockPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,24">
+                    <ContentPresenter Content="{Binding Podium2}" ContentTemplate="{StaticResource PodiumStep}" Tag="120" VerticalAlignment="Bottom"
+                                      Visibility="{Binding Podium2, Converter={StaticResource NullToVis}}" />
+                    <ContentPresenter Content="{Binding Podium1}" ContentTemplate="{StaticResource PodiumStep}" Tag="170" VerticalAlignment="Bottom"
+                                      Visibility="{Binding Podium1, Converter={StaticResource NullToVis}}" />
+                    <ContentPresenter Content="{Binding Podium3}" ContentTemplate="{StaticResource PodiumStep}" Tag="85" VerticalAlignment="Bottom"
+                                      Visibility="{Binding Podium3, Converter={StaticResource NullToVis}}" />
+                </StackPanel>
+
+                <WrapPanel HorizontalAlignment="Center">
+                    <Border Style="{StaticResource Card}" VerticalAlignment="Top" Width="400" Margin="9,0,9,14"
+                            Visibility="{Binding OthersOnPodium.Count, Converter={StaticResource CountToVis}}">
+                        <StackPanel>
+                            <TextBlock Text="Les autres joueurs" Style="{StaticResource SectionTitle}" Margin="0,0,0,10" />
+                            <ItemsControl ItemsSource="{Binding OthersOnPodium}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,4">
+                                            <Border DockPanel.Dock="Left" Style="{StaticResource RankBadge}" Margin="0,0,12,0">
+                                                <TextBlock Text="{Binding Rank}" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Score, StringFormat={}{0} pts}" Style="{StaticResource ValueText}" />
+                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}" VerticalAlignment="Top" Width="400" Margin="9,0,9,14"
+                            Visibility="{Binding HasRecords, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE734;" Foreground="#FBBF24" Margin="0,0,10,0" />
+                                <TextBlock Text="Classement de tous les temps" Style="{StaticResource SectionTitle}" />
+                            </StackPanel>
+                            <ItemsControl ItemsSource="{Binding Records}" AlternationCount="100">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,4">
+                                            <TextBlock DockPanel.Dock="Left" Width="26" Style="{StaticResource Caption}" VerticalAlignment="Center"
+                                                       Text="{Binding (ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}, Converter={StaticResource RankConv}}" />
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding TotalPoints, StringFormat={}{0} pts}" Style="{StaticResource ValueText}" />
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </WrapPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
