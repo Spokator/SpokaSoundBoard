@@ -146,6 +146,11 @@ public sealed partial class BlindTestViewModel : ObservableObject
         {
             if (e.PropertyName == nameof(MainViewModel.CurrentPage)) OnPageChanged(main.CurrentPage);
         };
+        // Natural voices downloaded or deleted while the page is open.
+        Tts.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(TextToSpeechViewModel.IsAvailable)) OnPropertyChanged(nameof(SpeechAvailable));
+        };
         Settings.Players.CollectionChanged += (_, _) =>
         {
             OnPropertyChanged(nameof(HasNoPlayers));
@@ -394,6 +399,8 @@ public sealed partial class BlindTestViewModel : ObservableObject
 
         _main.Save();
         IsSuspended = false;
+        // A natural voice takes about a second to load: do it now rather than at the first reveal.
+        if (Settings.AnnounceAnswer) Tts.WarmUp();
         Borrow();
         Phase = BlindTestPhase.Playing;
         NextRound();

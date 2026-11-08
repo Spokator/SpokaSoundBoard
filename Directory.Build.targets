@@ -1,0 +1,15 @@
+<Project>
+
+  <!--
+    sherpa-onnx (neural text-to-speech) depends on its native runtime packages for every platform. A build without
+    a RuntimeIdentifier copies all of them (about 250 MB under bin\runtimes); the app only runs on win-x64, so the
+    other platforms' native files are dropped. RID-specific publishes (dist, Store) only take win-x64 anyway.
+  -->
+  <Target Name="SpokaDropForeignSherpaRuntimes" AfterTargets="ResolvePackageAssets" Condition="'$(RuntimeIdentifier)' == ''">
+    <ItemGroup>
+      <RuntimeTargetsCopyLocalItems Remove="@(RuntimeTargetsCopyLocalItems)"
+                                    Condition="$([System.String]::Copy('%(RuntimeTargetsCopyLocalItems.NuGetPackageId)').StartsWith('org.k2fsa.sherpa.onnx.runtime.')) And '%(RuntimeTargetsCopyLocalItems.RuntimeIdentifier)' != 'win-x64'" />
+    </ItemGroup>
+  </Target>
+
+</Project>

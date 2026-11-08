@@ -11,6 +11,8 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
+    <!-- Offline neural text-to-speech (Apache-2.0; GPL-free since 2.0: espeak-ng is no longer inside). -->
+    <PackageReference Include="org.k2fsa.sherpa.onnx" Version="2.0.1" />
   </ItemGroup>
 
   <ItemGroup>
