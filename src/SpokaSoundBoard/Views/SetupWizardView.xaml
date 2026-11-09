@@ -95,6 +95,12 @@
 
                         <!-- 2. Virtual microphones -->
                         <StackPanel Visibility="{Binding Step, Converter={StaticResource EqualsToVis}, ConverterParameter=2}">
+                            <!-- Our own driver is already there: nothing to install for the main microphone. -->
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,16" LineHeight="20"
+                                       Visibility="{Binding Devices.HasSpokaCable, Converter={StaticResource BoolToVis}}"
+                                       Text="Pour que les autres vous entendent avec la musique et les effets, Windows a besoin d'un « micro virtuel ». Spoka Cable, le micro virtuel de SpokaSoundBoard, est déjà installé : il n'y a rien à faire ici, vous pouvez passer à la suite." />
+
+                            <StackPanel Visibility="{Binding Devices.HasSpokaCable, Converter={StaticResource InverseBoolToVis}}">
                             <TextBlock TextWrapping="Wrap" Margin="0,0,0,16" LineHeight="20"
                                        Visibility="{Binding IsStoreEdition, Converter={StaticResource InverseBoolToVis}}"
                                        Text="Pour que les autres vous entendent avec la musique et les effets, Windows a besoin d'un « micro virtuel ». Cliquez sur Installer : la fenêtre officielle s'ouvre, acceptez l'autorisation administrateur puis cliquez sur « Install Driver » (ou « Install »)." />
@@ -110,6 +116,7 @@
                                     4. Redémarrez le PC, puis rouvrez SpokaSoundBoard : l'assistant reprendra ici et affichera « Installé ».
                                 </TextBlock>
                             </StackPanel>
+                            </StackPanel>
 
                             <Border Style="{StaticResource Card}" Background="{DynamicResource SubCardBrush}" Padding="16" Margin="0,0,0,12">
                                 <DockPanel>
@@ -123,8 +130,8 @@
                                                 IsEnabled="{Binding Devices.IsInstalling, Converter={StaticResource InverseBool}}" />
                                     </Grid>
                                     <StackPanel Margin="0,0,16,0">
-                                        <TextBlock Text="Micro virtuel principal (VB-CABLE)" FontWeight="SemiBold" />
-                                        <TextBlock Style="{StaticResource Caption}" Text="Indispensable. Gratuit (donationware), par VB-Audio." />
+                                        <TextBlock Text="{Binding Devices.MainCableTitle}" FontWeight="SemiBold" />
+                                        <TextBlock Style="{StaticResource Caption}" Text="{Binding Devices.MainCableCaption}" />
                                         <TextBlock Style="{StaticResource Caption}" Text="{Binding Devices.InstallStatus}" Foreground="{DynamicResource Accent2Brush}" Margin="0,4,0,0"
                                                    Visibility="{Binding Devices.InstallStatus, Converter={StaticResource NullToVis}}" />
                                     </StackPanel>

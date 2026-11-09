@@ -78,12 +78,47 @@ public partial class DevicesViewModel : ObservableObject
 
     public string DiscordMicName => SelectedDiscordOutput is not { IsVirtualCable: true }
         ? "votre vrai micro"
-        : SelectedDiscordOutput.Name.Replace("Input", "Output", StringComparison.OrdinalIgnoreCase);
+        : DeviceService.CableMicName(SelectedDiscordOutput, Inputs);
+
+    /// <summary>The cable that carries the game mix: the selected one, or the one the app would pick.</summary>
+    private AudioDevice? GameCable => SelectedVirtualOutput is { IsVirtualCable: true } selected
+        ? selected
+        : DeviceService.FindVirtualCableOutput(Outputs);
 
     /// <summary>Name to select in Discord / games.</summary>
-    public string VirtualMicName => SelectedVirtualOutput is { IsVirtualCable: true } output
-        ? output.Name.Replace("Input", "Output", StringComparison.OrdinalIgnoreCase)
-        : HasVirtualCable ? "CABLE Output" : "CABLE Output (après installation du micro virtuel)";
+    public string VirtualMicName => GameCable is { } cable
+        ? DeviceService.CableMicName(cable, Inputs)
+        : "CABLE Output (après installation du micro virtuel)";
+
+    /// <summary>Microphone name quoted in the setup guide, short when no cable is installed yet.</summary>
+    public string GuideMicName => GameCable is { } cable ? DeviceService.CableMicName(cable, Inputs) : "CABLE Output";
+
+    public string GuideDiscordMicName => SelectedDiscordOutput is { IsVirtualCable: true } ? DiscordMicName : "Line 1";
+
+    /// <summary>« Spoka Cable détecté et prêt. » / « VB-CABLE détecté et prêt. »</summary>
+    public string VirtualCableStatus => GameCable is { } cable
+        ? DeviceService.CableBrand(cable) + " détecté et prêt."
+        : "Micro virtuel détecté et prêt.";
+
+    public string VirtualOutputHint => DeviceService.FindSpokaCableOutput(Outputs) is { } spoka
+        ? $"Recommandé : « {spoka.Name} »"
+        : "Généralement « CABLE Input »";
+
+    /// <summary>Our own driver is installed.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SpokaCableUnused), nameof(MainCableTitle), nameof(MainCableCaption))]
+    private bool _hasSpokaCable;
+
+    /// <summary>Spoka Cable is installed but neither the game nor Discord output uses it (set up before it existed).</summary>
+    public bool SpokaCableUnused => HasSpokaCable
+                                    && !DeviceService.IsSpokaCable(SelectedVirtualOutput)
+                                    && !DeviceService.IsSpokaCable(SelectedDiscordOutput);
+
+    public string MainCableTitle => HasSpokaCable ? "Micro virtuel principal (Spoka Cable)" : "Micro virtuel principal (VB-CABLE)";
+
+    public string MainCableCaption => HasSpokaCable
+        ? "Le pilote audio de SpokaSoundBoard, déjà installé sur ce PC."
+        : "Indispensable. Gratuit (donationware), par VB-Audio.";
 
     public void InitializeSelection()
     {
@@ -105,6 +140,7 @@ public partial class DevicesViewModel : ObservableObject
     {
         var hadCable = HasVirtualCable;
         var hadSecond = HasSecondCable;
+        var hadSpoka = HasSpokaCable;
         _suppressApply = true;
         var mic = SelectedMic?.Id;
         var virt = SelectedVirtualOutput?.Id;
@@ -120,8 +156,18 @@ public partial class DevicesViewModel : ObservableObject
         SelectedMonitor = Outputs.FirstOrDefault(d => d.Id == mon) ?? DeviceService.FindDefaultMonitor(Outputs);
         _suppressApply = false;
         Apply();
-        if (!hadCable && HasVirtualCable) _main.ShowToast("Micro virtuel détecté !");
+        if (!hadCable && HasVirtualCable) _main.ShowToast(VirtualCableStatus.Replace(" et prêt.", " !"));
+        else if (!hadSpoka && SpokaCableUnused) _main.ShowToast("Spoka Cable détecté : activez-le dans Configuration.");
         else if (!hadSecond && HasSecondCable) _main.ShowToast("Deuxième micro virtuel détecté : sortie Discord configurée !");
+    }
+
+    /// <summary>Switches the game output to Spoka Cable; the other cable stays available for Discord.</summary>
+    [RelayCommand]
+    private void UseSpokaCable()
+    {
+        if (DeviceService.FindSpokaCableOutput(Outputs) is not { } spoka) return;
+        SelectedVirtualOutput = spoka;
+        _main.ShowToast($"Spoka Cable activé : dans Discord et vos jeux, choisissez « {VirtualMicName} » comme micro.");
     }
 
     [RelayCommand]
@@ -219,6 +265,7 @@ public partial class DevicesViewModel : ObservableObject
         }
         HasVirtualCable = Outputs.Any(o => o.IsVirtualCable);
         HasSecondCable = DeviceService.CountDistinctCables(Outputs) >= 2;
+        HasSpokaCable = DeviceService.FindSpokaCableOutput(Outputs) != null;
     }
 
     private void StoreSelection()
@@ -228,8 +275,10 @@ public partial class DevicesViewModel : ObservableObject
         s.VirtualOutputDeviceId = SelectedVirtualOutput?.Id;
         s.DiscordOutputDeviceId = SelectedDiscordOutput?.Id;
         s.MonitorDeviceId = SelectedMonitor?.Id;
-        OnPropertyChanged(nameof(VirtualMicName));
-        OnPropertyChanged(nameof(DiscordSameCableWarning));
+        // Names derived from the device lists, which change without a property notification.
+        foreach (var name in (string[])[nameof(VirtualMicName), nameof(DiscordMicName), nameof(GuideMicName), nameof(GuideDiscordMicName),
+                     nameof(VirtualCableStatus), nameof(VirtualOutputHint), nameof(SpokaCableUnused), nameof(DiscordSameCableWarning)])
+            OnPropertyChanged(name);
     }
 
     partial void OnSelectedMicChanged(AudioDevice? value) => AutoApply();

@@ -15,18 +15,32 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                         <TextBlock Style="{StaticResource Icon}" Text="&#xE7F5;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
-                        <TextBlock Text="Micro virtuel (VB-CABLE)" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="Micro virtuel" Style="{StaticResource SectionTitle}" />
                     </StackPanel>
 
                     <StackPanel Visibility="{Binding HasVirtualCable, Converter={StaticResource BoolToVis}}">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                             <TextBlock Style="{StaticResource Icon}" Text="&#xE73E;" Foreground="{StaticResource SuccessBrush}" Margin="0,0,8,0" />
-                            <TextBlock Text="Micro virtuel détecté et prêt." Foreground="{StaticResource SuccessBrush}" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding VirtualCableStatus}" Foreground="{StaticResource SuccessBrush}" FontWeight="SemiBold" />
                         </StackPanel>
-                        <TextBlock Style="{StaticResource Caption}" FontSize="13">
+                        <TextBlock Style="{StaticResource Caption}" FontSize="13" TextWrapping="Wrap">
                             <Run Text="Dans Discord et dans vos jeux, choisissez comme micro :" />
                             <Run Text="{Binding VirtualMicName, Mode=OneWay}" Foreground="{DynamicResource Accent2Brush}" FontWeight="SemiBold" />
                         </TextBlock>
+
+                        <!-- Spoka Cable installed after the user set things up with another cable. -->
+                        <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="8" Padding="14,10" Margin="0,12,0,0"
+                                Visibility="{Binding SpokaCableUnused, Converter={StaticResource BoolToVis}}">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Content="Utiliser Spoka Cable"
+                                        Command="{Binding UseSpokaCableCommand}" VerticalAlignment="Center" Margin="12,0,0,0" />
+                                <StackPanel>
+                                    <TextBlock Text="Spoka Cable est installé" FontWeight="SemiBold" />
+                                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
+                                               Text="Notre propre câble virtuel : le son passe sans conversion ni coupure. Pensez ensuite à changer le micro dans Discord et dans vos jeux." />
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
                     </StackPanel>
 
                     <StackPanel Visibility="{Binding HasVirtualCable, Converter={StaticResource InverseBoolToVis}}">
@@ -146,7 +160,7 @@
 
                         <StackPanel Grid.Row="2" VerticalAlignment="Center" Margin="0,10,0,0">
                             <TextBlock Text="Sortie Jeu (micro virtuel)" Style="{StaticResource Label}" />
-                            <TextBlock Text="Généralement « CABLE Input »" Style="{StaticResource Caption}" />
+                            <TextBlock Text="{Binding VirtualOutputHint}" Style="{StaticResource Caption}" TextWrapping="Wrap" />
                         </StackPanel>
                         <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Outputs}" SelectedItem="{Binding SelectedVirtualOutput}"
                                   DisplayMemberPath="Name" Margin="0,14,0,4" />
@@ -235,8 +249,8 @@
                     </StackPanel>
                     <TextBlock Text="Discord" FontWeight="SemiBold" Margin="0,0,0,4" />
                     <TextBlock Style="{StaticResource Caption}" FontSize="13" Margin="0,0,0,12" LineHeight="21">
-                        1. Paramètres utilisateur → Voix et vidéo → Périphérique d'entrée : <Run Text="CABLE Output" Foreground="{DynamicResource Accent2Brush}" />
-                        (ou <Run Text="Line 1" Foreground="{DynamicResource Accent2Brush}" /> si vous avez séparé Discord du jeu)<LineBreak />
+                        1. Paramètres utilisateur → Voix et vidéo → Périphérique d'entrée : <Run Text="{Binding Devices.GuideMicName, Mode=OneWay}" Foreground="{DynamicResource Accent2Brush}" />
+                        (ou <Run Text="{Binding Devices.GuideDiscordMicName, Mode=OneWay}" Foreground="{DynamicResource Accent2Brush}" /> si vous avez séparé Discord du jeu)<LineBreak />
                         2. Traitement de la voix : Suppression du bruit = <Bold>Aucune</Bold>, et désactivez Annulation de l'écho, Activité vocale avancée et Contrôle automatique du gain. Ces filtres prennent la musique pour du bruit et la coupent.<LineBreak />
                         3. Sensibilité d'entrée : désactivez « Déterminer automatiquement » et mettez le curseur <Bold>tout à gauche</Bold>, sinon Discord coupe le micro dans les passages calmes.<LineBreak />
                         4. Atténuation (en bas de la page) : mettez-la à <Bold>0 %</Bold>. SpokaSoundBoard rétablit aussi automatiquement le volume si Discord ou Windows le baissent.<LineBreak />
@@ -244,8 +258,8 @@
                     </TextBlock>
                     <TextBlock Text="Jeux (hélico, simulateurs, FiveM, Arma, DCS…)" FontWeight="SemiBold" Margin="0,0,0,4" />
                     <TextBlock Style="{StaticResource Caption}" FontSize="13" LineHeight="21">
-                        1. Dans les options audio du jeu, choisissez <Run Text="CABLE Output" Foreground="{DynamicResource Accent2Brush}" /> comme micro.<LineBreak />
-                        2. Si le jeu ne propose pas de choix, définissez « CABLE Output » comme micro par défaut dans les paramètres son de Windows.<LineBreak />
+                        1. Dans les options audio du jeu, choisissez <Run Text="{Binding Devices.GuideMicName, Mode=OneWay}" Foreground="{DynamicResource Accent2Brush}" /> comme micro.<LineBreak />
+                        2. Si le jeu ne propose pas de choix, définissez ce micro comme micro par défaut dans les paramètres son de Windows.<LineBreak />
                         3. Gardez la touche « parler » du jeu : SpokaSoundBoard envoie la musique en continu, le jeu décide quand transmettre.<LineBreak />
                         4. Pour un effet pilote : preset « Pilote d'hélico » + mode radio avec la même touche que le push-to-talk du jeu.
                     </TextBlock>

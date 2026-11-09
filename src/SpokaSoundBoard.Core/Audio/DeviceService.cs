@@ -33,6 +33,42 @@ public static class DeviceService
     public static bool SameCable(AudioDevice? a, AudioDevice? b) =>
         a != null && b != null && string.Equals(CableFamily(a.Name), CableFamily(b.Name), StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>Adapter name of our own driver: endpoints read "Spoka Cable (lecture) (Spoka Cable)" and "Micro Spoka Cable (Spoka Cable)".</summary>
+    public const string SpokaCableFamily = "Spoka Cable";
+
+    /// <summary>
+    /// True for an endpoint of the Spoka Cable driver. Matched on the adapter part of the name, which survives the user
+    /// renaming the endpoint in the Windows sound settings.
+    /// </summary>
+    public static bool IsSpokaCable(AudioDevice? device) =>
+        device != null && string.Equals(CableFamily(device.Name), SpokaCableFamily, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The playback side of Spoka Cable, when the driver is installed.</summary>
+    public static AudioDevice? FindSpokaCableOutput(IEnumerable<AudioDevice> outputs) => outputs.FirstOrDefault(IsSpokaCable);
+
+    /// <summary>
+    /// The microphone other apps must select to hear what is played into <paramref name="output"/>: the capture endpoint
+    /// of the same cable ("CABLE Input" → "CABLE Output", "Spoka Cable (lecture)" → "Micro Spoka Cable").
+    /// </summary>
+    public static string CableMicName(AudioDevice output, IEnumerable<AudioDevice> inputs)
+    {
+        var guess = output.Name.Replace("Input", "Output", StringComparison.OrdinalIgnoreCase);
+        var sameCable = inputs.Where(i => i.IsVirtualCable && SameCable(i, output)).ToList();
+        return (sameCable.FirstOrDefault(i => string.Equals(i.Name, guess, StringComparison.OrdinalIgnoreCase))
+                ?? sameCable.FirstOrDefault())?.Name ?? guess;
+    }
+
+    /// <summary>Short product name of a virtual cable, for messages such as « Spoka Cable détecté ».</summary>
+    public static string CableBrand(AudioDevice device)
+    {
+        if (IsSpokaCable(device)) return SpokaCableFamily;
+        var family = CableFamily(device.Name);
+        if (family.Contains("VoiceMeeter", StringComparison.OrdinalIgnoreCase)) return "Voicemeeter";
+        if (family.Contains("VB-Audio", StringComparison.OrdinalIgnoreCase)) return "VB-CABLE";
+        if (family.Contains("Virtual Audio Cable", StringComparison.OrdinalIgnoreCase)) return "Virtual Audio Cable";
+        return family;
+    }
+
     /// <summary>A virtual cable different from the game one, to be used as Discord's microphone.</summary>
     public static AudioDevice? FindSecondCableOutput(IEnumerable<AudioDevice> outputs, AudioDevice? gameOutput) =>
         outputs.Where(o => o.IsVirtualCable && !SameCable(o, gameOutput))
@@ -83,11 +119,15 @@ public static class DeviceService
         }
     }
 
-    /// <summary>Finds the playback side of a virtual cable ("CABLE Input"), which becomes the mic for other apps.</summary>
+    /// <summary>
+    /// Finds the playback side of a virtual cable, which becomes the mic for other apps: Spoka Cable first (our own
+    /// driver), then VB-CABLE ("CABLE Input"), then any other cable.
+    /// </summary>
     public static AudioDevice? FindVirtualCableOutput(IEnumerable<AudioDevice> outputs)
     {
         var list = outputs.Where(o => o.IsVirtualCable).ToList();
-        return list.FirstOrDefault(o => o.Name.Contains("CABLE Input", StringComparison.OrdinalIgnoreCase))
+        return list.FirstOrDefault(IsSpokaCable)
+               ?? list.FirstOrDefault(o => o.Name.Contains("CABLE Input", StringComparison.OrdinalIgnoreCase))
                ?? list.FirstOrDefault();
     }
 

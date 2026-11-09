@@ -209,6 +209,70 @@ public class RoutingTests
         Assert.True(DeviceService.LooksVirtual(vac.Name));
     }
 
+    // Endpoint names exactly as Windows 11 reported them for the Spoka Cable driver in the test VM.
+    private const string SpokaPlayback = "Spoka Cable (lecture) (Spoka Cable)";
+    private const string SpokaMic = "Micro Spoka Cable (Spoka Cable)";
+
+    [Fact]
+    public void SpokaCable_IsDetectedAndPreferred()
+    {
+        var vb = new AudioDevice("1", "CABLE Input (VB-Audio Virtual Cable)", true);
+        var spoka = new AudioDevice("2", SpokaPlayback, DeviceService.LooksVirtual(SpokaPlayback));
+        var speakers = new AudioDevice("3", "Haut-parleurs (Realtek(R) Audio)", false);
+        var renamed = new AudioDevice("4", "Mon câble (Spoka Cable)", true);
+
+        Assert.True(spoka.IsVirtualCable);
+        Assert.True(DeviceService.LooksVirtual(SpokaMic));
+        Assert.True(DeviceService.IsSpokaCable(spoka));
+        Assert.True(DeviceService.IsSpokaCable(renamed));
+        Assert.False(DeviceService.IsSpokaCable(vb));
+        Assert.False(DeviceService.IsSpokaCable(null));
+
+        // Our driver wins over VB-CABLE, whatever the list order.
+        Assert.Equal("2", DeviceService.FindVirtualCableOutput([vb, spoka, speakers])?.Id);
+        Assert.Equal("1", DeviceService.FindVirtualCableOutput([vb, speakers])?.Id);
+        Assert.Equal("2", DeviceService.FindSpokaCableOutput([speakers, vb, spoka])?.Id);
+        Assert.Null(DeviceService.FindSpokaCableOutput([speakers, vb]));
+
+        // Spoka Cable and VB-CABLE are two separate cables: one for the game, the other for Discord.
+        Assert.False(DeviceService.SameCable(spoka, vb));
+        Assert.Equal(2, DeviceService.CountDistinctCables([vb, spoka, speakers]));
+        Assert.Equal("1", DeviceService.FindSecondCableOutput([vb, spoka, speakers], spoka)?.Id);
+        Assert.Equal("2", DeviceService.FindSecondCableOutput([vb, spoka, speakers], vb)?.Id);
+    }
+
+    [Fact]
+    public void CableMicName_PairsPlaybackWithCapture()
+    {
+        var inputs = new List<AudioDevice>
+        {
+            new("a", "Micro (Realtek(R) Audio)", false),
+            new("b", "CABLE Output (VB-Audio Virtual Cable)", true),
+            new("c", SpokaMic, true),
+            new("d", "Line 1 (Virtual Audio Cable)", true),
+        };
+
+        Assert.Equal(SpokaMic, DeviceService.CableMicName(new AudioDevice("1", SpokaPlayback, true), inputs));
+        Assert.Equal("CABLE Output (VB-Audio Virtual Cable)",
+            DeviceService.CableMicName(new AudioDevice("2", "CABLE Input (VB-Audio Virtual Cable)", true), inputs));
+        Assert.Equal("CABLE Output (VB-Audio Virtual Cable)",
+            DeviceService.CableMicName(new AudioDevice("3", "CABLE In 16ch (VB-Audio Virtual Cable)", true), inputs));
+        Assert.Equal("Line 1 (Virtual Audio Cable)",
+            DeviceService.CableMicName(new AudioDevice("4", "Line 1 (Virtual Audio Cable)", true), inputs));
+        // Capture side not listed (disabled in Windows): fall back to the usual naming.
+        Assert.Equal("CABLE-A Output (VB-Audio Cable A)",
+            DeviceService.CableMicName(new AudioDevice("5", "CABLE-A Input (VB-Audio Cable A)", true), inputs));
+    }
+
+    [Fact]
+    public void CableBrand_GivesProductNames()
+    {
+        Assert.Equal("Spoka Cable", DeviceService.CableBrand(new AudioDevice("1", SpokaPlayback, true)));
+        Assert.Equal("VB-CABLE", DeviceService.CableBrand(new AudioDevice("2", "CABLE Input (VB-Audio Virtual Cable)", true)));
+        Assert.Equal("Voicemeeter", DeviceService.CableBrand(new AudioDevice("3", "VoiceMeeter Input (VB-Audio VoiceMeeter VAIO)", true)));
+        Assert.Equal("Virtual Audio Cable", DeviceService.CableBrand(new AudioDevice("4", "Line 1 (Virtual Audio Cable)", true)));
+    }
+
     [Fact]
     public void Downloader_ParsesProgressAndErrors()
     {
