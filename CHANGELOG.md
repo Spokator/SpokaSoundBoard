@@ -1,5 +1,12 @@
 # Journal des versions
 
+## 2.1.0
+
+- **Voix naturelles** pour la synthèse vocale : 10 voix neuronales (5 femmes, 5 hommes), bien plus réalistes que les voix Windows, en français et dans 30 autres langues. Elles fonctionnent hors ligne après un téléchargement unique de 139 Mo depuis les options de la synthèse vocale, avec aperçu au casque ; les voix Windows restent disponibles. Le blind test annonce les réponses avec la voix choisie.
+- **Menu de gauche rétractable** : le bouton ☰ à côté du logo le réduit aux icônes pour laisser plus de place aux pages (le choix est mémorisé).
+- **Page Musique adaptée aux petites fenêtres** : le panneau de droite se resserre, puis la bibliothèque passe en icônes quand la place manque. Le panneau (file d'attente, paroles, effets) a maintenant un bouton pour le fermer.
+- **Correction** : les bulles d'aide des boutons affichaient des carrés au lieu du texte.
+
 ## 2.0.0
 
 Le grand saut de l'onglet **Musique**, qui devient un vrai lecteur, toujours diffusé dans votre micro.
@@ -17,7 +24,6 @@ Le grand saut de l'onglet **Musique**, qui devient un vrai lecteur, toujours dif
 - **Touches multimédia** du clavier et carte « en cours de lecture » de Windows, visualiseur dans la barre de lecture.
 - **Blind test** : nouvel onglet pour animer un blind test dans Discord ou en jeu. Extraits joués dans votre micro (playlist, favoris, bibliothèque ou historique), compte à rebours, révélation avec pochette et annonce vocale, scores par joueur (titre, artiste, rapidité), podium et classement de tous les temps.
 - **Synthèse vocale** : tapez une phrase, elle est dite dans votre micro (vitesse, hauteur, volume), phrases rapides, historique et « Enregistrer comme son » pour lui donner un raccourci.
-- **Voix naturelles** : 10 voix neuronales (5 femmes, 5 hommes) bien plus réalistes que les voix Windows, en français et dans 30 autres langues, qui fonctionnent hors ligne. Téléchargement unique de 139 Mo depuis les options de la synthèse vocale, aperçu au casque ; les voix Windows restent disponibles. Le blind test annonce les réponses avec la voix choisie.
 - **Microsoft Store** : SpokaSoundBoard est prêt à être publié sur le Store (mises à jour par le Store, lancement au démarrage via Windows, ouverture des `.spokapack` en double-clic).
 
 ## 1.4.0
