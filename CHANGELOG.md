@@ -1,5 +1,11 @@
 # Journal des versions
 
+## 2.2.0
+
+- **Synthèse vocale dans son propre onglet** : elle a maintenant sa place dans le menu de gauche, juste sous Soundboard, au lieu d'être cachée dans la page Soundboard.
+- **« Trouver des sons » toujours visible** : la recherche de sons n'est plus cachée derrière un bouton. Un clic sur son titre la replie sur une seule ligne pour garder toute la place pour vos sons et leurs raccourcis (le choix est mémorisé).
+- **Le bon nom de micro, partout** : la page Configuration, le guide Discord et l'assistant affichent le nom exact du micro virtuel à choisir, lu depuis Windows. C'est plus fiable avec VB-CABLE 16 canaux, Voicemeeter ou un câble renommé.
+
 ## 2.1.0
 
 - **Voix naturelles** pour la synthèse vocale : 10 voix neuronales (5 femmes, 5 hommes), bien plus réalistes que les voix Windows, en français et dans 30 autres langues. Elles fonctionnent hors ligne après un téléchargement unique de 139 Mo depuis les options de la synthèse vocale, avec aperçu au casque ; les voix Windows restent disponibles. Le blind test annonce les réponses avec la voix choisie.
