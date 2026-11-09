@@ -30,6 +30,10 @@ public partial class SoundboardView : UserControl
     {
         if (DataContext is not SoundboardViewModel vm) return;
         if (e.Data.GetData(DataFormats.FileDrop) is string[] files) vm.AddFiles(files);
-        else if (LinkBar.GetDroppedUrl(e.Data) is { } url) _ = vm.Link.ImportAsync(url);
+        else if (LinkBar.GetDroppedUrl(e.Data) is { } url)
+        {
+            vm.ShowSoundSearch();
+            _ = vm.Link.ImportAsync(url);
+        }
     }
 }

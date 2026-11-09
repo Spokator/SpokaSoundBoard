@@ -282,6 +282,9 @@ public partial class AppearanceSettings : ObservableObject
 
     /// <summary>Main sidebar reduced to icons, to leave more room to the pages.</summary>
     [ObservableProperty] private bool _sidebarCollapsed;
+
+    /// <summary>« Trouver des sons » folded to one line on the Soundboard page.</summary>
+    [ObservableProperty] private bool _soundSearchCollapsed;
 }
 
 public class AppSettings

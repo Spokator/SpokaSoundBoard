@@ -46,8 +46,44 @@
             </DockPanel>
 
             <!-- Find new sounds online (always visible) -->
-            <TextBlock DockPanel.Dock="Top" Text="Trouver des sons" Style="{StaticResource SectionTitle}" Margin="0,0,0,10" />
-            <local:LinkBar DockPanel.Dock="Top" DataContext="{Binding Link}" />
+            <!-- Clickable header: folds the search card to keep the pads in view -->
+            <Button DockPanel.Dock="Top" Command="{Binding ToggleSoundSearchCommand}" HorizontalAlignment="Left" Margin="-8,0,0,6"
+                    Padding="8,4" Background="Transparent" BorderBrush="Transparent" Style="{StaticResource FlatButton}"
+                    AutomationProperties.Name="Trouver des sons : afficher ou replier">
+                <Button.ToolTip>
+                    <TextBlock>
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="Replier la recherche pour garder vos sons à l'écran" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Appearance.SoundSearchCollapsed}" Value="True">
+                                        <Setter Property="Text" Value="Afficher la recherche (MyInstants, YouTube, liens)" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Button.ToolTip>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock FontSize="12" Margin="0,0,10,0" VerticalAlignment="Center" Foreground="{DynamicResource SubtleTextBrush}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource Icon}">
+                                <Setter Property="Text" Value="&#xE70D;" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Appearance.SoundSearchCollapsed}" Value="True">
+                                        <Setter Property="Text" Value="&#xE76C;" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Text="Trouver des sons" Style="{StaticResource SectionTitle}" />
+                    <TextBlock Text="MyInstants, YouTube ou un lien" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,2,0,0"
+                               Visibility="{Binding Appearance.SoundSearchCollapsed, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+            </Button>
+            <local:LinkBar DockPanel.Dock="Top" DataContext="{Binding Link}"
+                           Visibility="{Binding DataContext.Appearance.SoundSearchCollapsed, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBoolToVis}}" />
 
             <!-- My sounds: title and local filter -->
             <DockPanel DockPanel.Dock="Top" Margin="0,6,0,12" Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVis}}">

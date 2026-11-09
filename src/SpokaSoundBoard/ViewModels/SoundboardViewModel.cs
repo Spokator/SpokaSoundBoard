@@ -48,8 +48,27 @@ public partial class SoundboardViewModel : ObservableObject
 
     public LinkImporter Link { get; }
 
-    /// <summary>« Synthèse vocale » panel at the top of the page.</summary>
+    /// <summary>« Synthèse vocale » page (its own menu entry, it shares the soundboard to save phrases as sounds).</summary>
     public TextToSpeechViewModel Tts { get; }
+
+    /// <summary>Appearance settings, for the folding state of « Trouver des sons ».</summary>
+    public AppearanceSettings Appearance => _main.Settings.Appearance;
+
+    /// <summary>Folds or unfolds « Trouver des sons » (remembered), to keep the pads in view.</summary>
+    [RelayCommand]
+    private void ToggleSoundSearch()
+    {
+        Appearance.SoundSearchCollapsed = !Appearance.SoundSearchCollapsed;
+        _main.Save();
+    }
+
+    /// <summary>A link dropped on the page imports into the search card: make sure its progress is visible.</summary>
+    public void ShowSoundSearch()
+    {
+        if (!Appearance.SoundSearchCollapsed) return;
+        Appearance.SoundSearchCollapsed = false;
+        _main.Save();
+    }
 
     public bool ShowHotkeys => _main.Settings.Appearance.ShowPadHotkeys;
 
