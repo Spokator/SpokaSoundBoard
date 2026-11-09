@@ -54,10 +54,6 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
         _selectedVoice = Voices.FirstOrDefault(v => v.Id == Settings.VoiceId) ?? AutomaticVoice();
         _selectedLanguage = Languages.FirstOrDefault(l => l.Code == Settings.Language) ?? Languages[0];
         Speech.Models.Changed += _ => _dispatcher.BeginInvoke(RefreshInstalled);
-        Settings.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(TextToSpeechSettings.IsExpanded)) OnPropertyChanged(nameof(ShowCollapsedHint));
-        };
 
         foreach (var h in Settings.History) History.Add(h);
         _playingTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(150), DispatcherPriority.Background, (_, _) => RefreshPlaying(),
@@ -124,12 +120,12 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
     [ObservableProperty] private SpeechLanguage? _selectedLanguage;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsAvailable), nameof(HasNoFrenchVoice), nameof(ShowNaturalOffer), nameof(ShowCollapsedHint), nameof(SelectedNeedsDownload))]
+    [NotifyPropertyChangedFor(nameof(IsAvailable), nameof(HasNoFrenchVoice), nameof(ShowNaturalOffer), nameof(SelectedNeedsDownload))]
     [NotifyCanExecuteChangedFor(nameof(DownloadNaturalCommand), nameof(DeleteNaturalCommand))]
     private bool _isNaturalInstalled;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ShowNaturalOffer), nameof(ShowCollapsedHint))]
+    [NotifyPropertyChangedFor(nameof(ShowNaturalOffer))]
     [NotifyCanExecuteChangedFor(nameof(DownloadNaturalCommand), nameof(DeleteNaturalCommand))]
     private bool _isDownloading;
 
@@ -146,18 +142,12 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
     /// <summary>« Télécharger les voix naturelles » block (until they are installed).</summary>
     public bool ShowNaturalOffer => !IsNaturalInstalled && !IsDownloading;
 
-    /// <summary>One-line invitation under the text box while the options are folded.</summary>
-    public bool ShowCollapsedHint => ShowNaturalOffer && !Settings.IsExpanded;
-
     partial void OnSelectedVoiceChanged(TtsVoiceOption? value) => Settings.VoiceId = value?.Id;
 
     partial void OnSelectedLanguageChanged(SpeechLanguage? value)
     {
         if (value != null) Settings.Language = value.Code;
     }
-
-    [RelayCommand]
-    private void ToggleExpanded() => Settings.IsExpanded = !Settings.IsExpanded;
 
     private bool CanSpeak() => !string.IsNullOrWhiteSpace(Text);
 

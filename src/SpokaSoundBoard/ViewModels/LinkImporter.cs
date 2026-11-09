@@ -51,7 +51,11 @@ public partial class LinkImporter : ObservableObject
         Placeholder = placeholder;
         Sources = sources;
         _selectedSource = sources[0];
-        Results.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasResults));
+        Results.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(HasResults));
+            OnPropertyChanged(nameof(CanClear));
+        };
         main.Engine.Preview.TrackEnded += () => System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
         {
             if (_previewItem != null) _previewItem.IsPreviewing = false;
@@ -72,15 +76,14 @@ public partial class LinkImporter : ObservableObject
         if (option != null) SelectedSource = option;
     }
 
-    [ObservableProperty] private bool _isOpen;
-
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SubmitCommand))]
-    [NotifyPropertyChangedFor(nameof(IsUrl), nameof(ShowPlaylistOption), nameof(SubmitLabel), nameof(SubmitIcon))]
+    [NotifyPropertyChangedFor(nameof(IsUrl), nameof(ShowPlaylistOption), nameof(SubmitLabel), nameof(SubmitIcon), nameof(CanClear))]
     private string _url = "";
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SubmitCommand))]
+    [NotifyPropertyChangedFor(nameof(CanClear))]
     private bool _isBusy;
 
     [ObservableProperty] private SourceOption _selectedSource;
@@ -88,7 +91,9 @@ public partial class LinkImporter : ObservableObject
     [ObservableProperty] private bool _importPlaylist;
     [ObservableProperty] private double _progress;
     [ObservableProperty] private bool _isIndeterminate;
-    [ObservableProperty] private string? _status;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanClear))]
+    private string? _status;
     [ObservableProperty] private bool _hasError;
 
     public bool IsUrl => MediaDownloader.LooksLikeUrl(Url);
@@ -96,28 +101,21 @@ public partial class LinkImporter : ObservableObject
     public string SubmitLabel => IsUrl ? "Importer" : "Rechercher";
     public string SubmitIcon => IsUrl ? "\uE896" : "\uE721";
 
+    /// <summary>The search bar is always visible: "✕" only appears when there is something to clear.</summary>
+    public bool CanClear => !IsBusy && (HasResults || !string.IsNullOrEmpty(Status) || !string.IsNullOrWhiteSpace(Url));
+
+    /// <summary>Empties the search field and its results (an import in progress has its own "Annuler").</summary>
     [RelayCommand]
-    private void Toggle()
+    private void Clear()
     {
-        IsOpen = !IsOpen;
-        if (!IsOpen)
-        {
-            StopPreview();
-            return;
-        }
-        if (string.IsNullOrWhiteSpace(Url))
-        {
-            // Pre-fill with a link from the clipboard, the most common way to share one.
-            try
-            {
-                var clip = System.Windows.Clipboard.ContainsText() ? System.Windows.Clipboard.GetText().Trim() : null;
-                if (MediaDownloader.LooksLikeUrl(clip)) Url = clip!;
-            }
-            catch
-            {
-                // Clipboard can be locked by another app.
-            }
-        }
+        if (IsBusy) return;
+        _searchCts?.Cancel();
+        StopPreview();
+        Results.Clear();
+        Url = "";
+        Status = null;
+        HasError = false;
+        IsSearching = false;
     }
 
     private bool CanSubmit() => !IsBusy && !string.IsNullOrWhiteSpace(Url);
@@ -135,7 +133,6 @@ public partial class LinkImporter : ObservableObject
         _searchCts?.Cancel();
         _searchCts = new CancellationTokenSource();
         var ct = _searchCts.Token;
-        IsOpen = true;
         IsSearching = true;
         HasError = false;
         Status = $"Recherche de « {query.Trim()} »…";
@@ -288,7 +285,6 @@ public partial class LinkImporter : ObservableObject
     public async Task ImportAsync(string url)
     {
         if (IsBusy) return;
-        IsOpen = true;
         Url = url.Trim();
         IsBusy = true;
         HasError = false;

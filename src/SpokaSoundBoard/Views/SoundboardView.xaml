@@ -31,14 +31,7 @@
                             <TextBlock Text="Tout arrêter" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource FlatButton}" Command="{Binding Link.ToggleCommand}" Margin="0,0,10,0"
-                            ToolTip="Rechercher un bruitage (MyInstants) ou sur YouTube, ou coller un lien. Vous pouvez aussi glisser un lien depuis votre navigateur.">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Style="{StaticResource Icon}" Text="&#xE721;" FontSize="13" Margin="0,0,8,0" />
-                            <TextBlock Text="Rechercher / lien" />
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource AccentButton}" Command="{Binding AddSoundsCommand}">
+                    <Button Style="{StaticResource AccentButton}" Command="{Binding AddSoundsCommand}" ToolTip="Ajouter des fichiers audio de votre PC (MP3, WAV, OGG…)">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" FontSize="13" Margin="0,0,8,0" />
                             <TextBlock Text="Ajouter des sons" />
@@ -52,21 +45,27 @@
                 </StackPanel>
             </DockPanel>
 
+            <!-- Find new sounds online (always visible) -->
+            <TextBlock DockPanel.Dock="Top" Text="Trouver des sons" Style="{StaticResource SectionTitle}" Margin="0,0,0,10" />
             <local:LinkBar DockPanel.Dock="Top" DataContext="{Binding Link}" />
 
-            <local:TextToSpeechPanel DockPanel.Dock="Top" DataContext="{Binding Tts}" />
-
-            <Grid DockPanel.Dock="Top" Margin="0,0,0,14" Width="320" HorizontalAlignment="Left"
-                  Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVis}}">
-                <TextBox Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged}" Padding="30,6,8,6" VerticalContentAlignment="Center" />
-                <TextBlock Style="{StaticResource Icon}" Text="&#xE71C;" FontSize="13" HorizontalAlignment="Left" Margin="10,0,0,0"
-                           Foreground="{DynamicResource SubtleTextBrush}" IsHitTestVisible="False" />
-                <TextBlock Text="Filtrer mes sons…" Style="{StaticResource Caption}" Margin="32,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
-                    <TextBlock.Visibility>
-                        <Binding Path="Filter" Converter="{StaticResource InverseNullToVis}" />
-                    </TextBlock.Visibility>
+            <!-- My sounds: title and local filter -->
+            <DockPanel DockPanel.Dock="Top" Margin="0,6,0,12" Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVis}}">
+                <Grid DockPanel.Dock="Right" Width="280">
+                    <TextBox Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged}" Padding="30,6,8,6" VerticalContentAlignment="Center"
+                             AutomationProperties.Name="Filtrer mes sons" />
+                    <TextBlock Style="{StaticResource Icon}" Text="&#xE71C;" FontSize="13" HorizontalAlignment="Left" Margin="10,0,0,0"
+                               Foreground="{DynamicResource SubtleTextBrush}" IsHitTestVisible="False" />
+                    <TextBlock Text="Filtrer mes sons…" Style="{StaticResource Caption}" Margin="32,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
+                        <TextBlock.Visibility>
+                            <Binding Path="Filter" Converter="{StaticResource InverseNullToVis}" />
+                        </TextBlock.Visibility>
+                    </TextBlock>
+                </Grid>
+                <TextBlock Style="{StaticResource SectionTitle}">
+                    <Run Text="Mes sons" /><Run Text="{Binding Pads.Count, Mode=OneWay, StringFormat=' ({0})'}" Foreground="{DynamicResource SubtleTextBrush}" FontWeight="Normal" />
                 </TextBlock>
-            </Grid>
+            </DockPanel>
 
             <Grid>
                 <!-- Empty state -->

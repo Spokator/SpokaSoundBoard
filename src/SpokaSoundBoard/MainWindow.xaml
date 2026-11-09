@@ -273,6 +273,8 @@
                 <StackPanel>
                     <RadioButton Style="{StaticResource NavButton}" GroupName="Nav" Tag="&#xE8A9;" Content="Soundboard"
                                  IsChecked="{Binding CurrentPage, Converter={StaticResource EqualsConv}, ConverterParameter=soundboard}" />
+                    <RadioButton Style="{StaticResource NavButton}" GroupName="Nav" Tag="&#xE8BD;" Content="Synthèse vocale"
+                                 IsChecked="{Binding CurrentPage, Converter={StaticResource EqualsConv}, ConverterParameter=tts}" />
                     <RadioButton Style="{StaticResource NavButton}" GroupName="Nav" Tag="&#xE8D6;" Content="Musique"
                                  IsChecked="{Binding CurrentPage, Converter={StaticResource EqualsConv}, ConverterParameter=music}" />
                     <RadioButton Style="{StaticResource NavButton}" GroupName="Nav" Tag="&#xE7FC;" Content="Blind test"
@@ -336,6 +338,8 @@
             <Grid Grid.Row="2">
                 <views:SoundboardView DataContext="{Binding Soundboard}"
                                       Visibility="{Binding DataContext.CurrentPage, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqualsToVis}, ConverterParameter=soundboard}" />
+                <views:TextToSpeechView DataContext="{Binding Soundboard.Tts}"
+                                        Visibility="{Binding DataContext.CurrentPage, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqualsToVis}, ConverterParameter=tts}" />
                 <views:MusicView DataContext="{Binding Music}"
                                  Visibility="{Binding DataContext.CurrentPage, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqualsToVis}, ConverterParameter=music}" />
                 <views:BlindTestView DataContext="{Binding BlindTest}"

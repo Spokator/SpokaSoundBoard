@@ -25,7 +25,7 @@ public partial class LinkBar : UserControl
     {
         if (DataContext is not LinkImporter vm) return;
         if (e.Key == Key.Enter && vm.SubmitCommand.CanExecute(null)) vm.SubmitCommand.Execute(null);
-        else if (e.Key == Key.Escape) vm.ToggleCommand.Execute(null);
+        else if (e.Key == Key.Escape) vm.ClearCommand.Execute(null);
     }
 
     private void OnResultMouseDown(object sender, MouseButtonEventArgs e)

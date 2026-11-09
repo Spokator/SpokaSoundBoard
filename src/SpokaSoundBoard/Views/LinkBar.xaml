@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Name="Root">
     <!-- DataContext: LinkImporter -->
-    <Border Style="{StaticResource Card}" Padding="16" Visibility="{Binding IsOpen, Converter={StaticResource BoolToVis}}">
+    <Border Style="{StaticResource Card}" Padding="16">
         <StackPanel>
             <!-- Sources -->
             <ItemsControl ItemsSource="{Binding Sources}" Margin="30,0,0,10"
@@ -46,8 +46,9 @@
             </ItemsControl>
 
             <DockPanel>
-                <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE711;" ToolTip="Fermer"
-                        Command="{Binding ToggleCommand}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE711;" ToolTip="Effacer la recherche"
+                        AutomationProperties.Name="Effacer la recherche" Command="{Binding ClearCommand}" Margin="8,0,0,0" VerticalAlignment="Center"
+                        Visibility="{Binding CanClear, Converter={StaticResource BoolToVis}}" />
                 <Button DockPanel.Dock="Right" Style="{StaticResource DangerButton}" Content="Annuler" Margin="8,0,0,0"
                         Command="{Binding CancelCommand}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
                 <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Margin="8,0,0,0" Command="{Binding SubmitCommand}" MinWidth="120"
