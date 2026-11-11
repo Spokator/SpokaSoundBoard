@@ -40,13 +40,16 @@ public sealed class MixerCore
     private float[] _music = new float[4096];
     private float[] _pads = new float[4096];
     private float[] _preview = new float[4096];
+    private float[] _privatePads = new float[4096];
 
-    public MixerCore(VoiceEffectSettings voice, MixSettings mix, MusicPlayer music, SoundPadPlayer pads, MusicPlayer? preview = null)
+    public MixerCore(VoiceEffectSettings voice, MixSettings mix, MusicPlayer music, SoundPadPlayer pads, MusicPlayer? preview = null,
+                     SoundPadPlayer? privatePads = null)
     {
         _mix = mix;
         Music = music;
         Pads = pads;
         Preview = preview;
+        PrivatePads = privatePads;
         _voice = new VoiceProcessor(SampleRate, voice);
     }
 
@@ -55,6 +58,18 @@ public sealed class MixerCore
 
     /// <summary>Headphones-only player used to listen to search results before adding them.</summary>
     public MusicPlayer? Preview { get; }
+
+    /// <summary>Soundboard sounds for the headphones only (« Moi seulement », « Tester » in the pad editor).</summary>
+    public SoundPadPlayer? PrivatePads { get; }
+
+    /// <summary>Receives the raw microphone while a sound is being recorded (null otherwise).</summary>
+    public VoiceRecorder? Recorder
+    {
+        get => Volatile.Read(ref _recorder);
+        set => Volatile.Write(ref _recorder, value);
+    }
+
+    private VoiceRecorder? _recorder;
     public EngineMeters Meters { get; } = new();
 
     /// <summary>Radio-mode key state, set by the hotkey service.</summary>
@@ -91,6 +106,8 @@ public sealed class MixerCore
             micSpan.Clear();
         }
 
+        Recorder?.Write(micSpan);
+
         // The natural voice is only needed when some bus actually uses it.
         var needDry = !game.IsEmpty && mix.GameVoice && !mix.GameVoiceEffects
                       || !discord.IsEmpty && mix.DiscordVoice && !mix.DiscordVoiceEffects;
@@ -102,6 +119,9 @@ public sealed class MixerCore
         Pads.Read(_pads, 0, frames * 2);
         var preview = Preview is { IsActive: true } && !monitor.IsEmpty;
         if (preview) Preview!.Read(_preview, 0, frames * 2);
+        // Always read, so these sounds end on time even without headphones.
+        var privatePads = PrivatePads != null;
+        if (privatePads) PrivatePads!.Read(_privatePads, 0, frames * 2);
 
         var duckActive = mix.DuckingEnabled && _voice.VoiceActive && _voice.Transmitting;
         var duckLevel = DspUtil.DbToLinear(mix.DuckingAmountDb);
@@ -113,6 +133,7 @@ public sealed class MixerCore
         var monitorVol = mix.MonitorVolume;
         var selfMonitor = mix.ListenToSelf ? monitorVol : 0f;
         var previewVol = preview ? MathF.Max(monitorVol, 0.4f) : 0f;
+        var privateVol = MathF.Max(monitorVol, 0.4f);
 
         var gameMusic = mix.GameMusic ? toMic : 0f;
         var gameSounds = mix.GameSounds ? toMic : 0f;
@@ -157,6 +178,11 @@ public sealed class MixerCore
                     monitor[f * 2] += _preview[f * 2] * previewVol;
                     monitor[f * 2 + 1] += _preview[f * 2 + 1] * previewVol;
                 }
+                if (privatePads)
+                {
+                    monitor[f * 2] += _privatePads[f * 2] * padsVol * privateVol;
+                    monitor[f * 2 + 1] += _privatePads[f * 2 + 1] * padsVol * privateVol;
+                }
             }
         }
 
@@ -194,6 +220,7 @@ public sealed class MixerCore
             _music = new float[frames * 2];
             _pads = new float[frames * 2];
             _preview = new float[frames * 2];
+            _privatePads = new float[frames * 2];
         }
     }
 }

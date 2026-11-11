@@ -27,4 +27,13 @@ public static class HotkeyMatching
         }
         return result;
     }
+
+    /// <summary>Other bindings set to exactly the same key and modifiers as <paramref name="binding"/>.</summary>
+    public static IEnumerable<T> Conflicts<T>(HotkeyBinding binding, IEnumerable<(HotkeyBinding Binding, T Owner)> others)
+    {
+        if (!binding.IsSet) yield break;
+        foreach (var (other, owner) in others)
+            if (!ReferenceEquals(other, binding) && other.IsSet && other.VirtualKey == binding.VirtualKey && other.Modifiers == binding.Modifiers)
+                yield return owner;
+    }
 }

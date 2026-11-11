@@ -24,7 +24,8 @@ Diffusez votre playlist et vos sons **dans votre micro**, parlez par-dessus (la 
 
 | | |
 | --- | --- |
-| 🎛️ **Soundboard** | Tuiles colorées, glisser-déposer, volume, boucle et extrait (début / fin) par son, raccourci clavier ou souris (boutons 4 / 5, molette) utilisable en pleine partie, filtre pour retrouver un son. |
+| 🎛️ **Soundboard** | Tuiles colorées rangées en onglets (catégories), réorganisables par glisser-déposer. Volume, boucle et extrait par son, raccourci clavier ou souris (boutons 4 / 5, molette) utilisable en pleine partie, même en courant avec Maj. Au choix pour chaque son : l'arrêter, le relancer ou le superposer quand on rappuie, couper les autres sons, ou le jouer pour vous seul dans le casque. |
+| ⏺️ **Enregistrement** | Enregistrez un son avec votre micro en un clic : le silence au début et à la fin est coupé, il devient un son de la soundboard. |
 | 🔎 **Recherche intégrée** | Tapez « booba mona lisa » ou « vine boom » : résultats YouTube et MyInstants, ▶ pour écouter dans votre casque seulement, « Ajouter » en un clic. Les liens (YouTube, SoundCloud, TikTok, Twitch, MP3…) et les playlists fonctionnent aussi. |
 | 🎵 **Lecteur de musique** | Bibliothèque, playlists, file d'attente façon Spotify, fondu enchaîné ou enchaînement sans blanc, favoris, historique, pochettes, volume égalisé automatiquement. |
 | 📥 **Import de playlists** | Collez un lien Spotify, Deezer, Apple Music, YouTube ou SoundCloud : la playlist est recréée, chaque morceau est téléchargé au moment de l'écouter. |
@@ -35,12 +36,12 @@ Diffusez votre playlist et vos sons **dans votre micro**, parlez par-dessus (la 
 | 🗨️ **Synthèse vocale** | Tapez une phrase, elle est dite dans votre micro, et devient un son de la soundboard en un clic. Voix naturelles neuronales hors ligne (téléchargement unique de 139 Mo) ou voix Windows. |
 | 📊 **Statistiques** | Top morceaux et artistes, heures d'écoute, séries, rétrospective de l'année. |
 | 🗣️ **Ducking** | Quand vous parlez, la musique baisse pour que votre voix passe par-dessus, puis remonte doucement. |
-| 🎙️ **23 effets de voix** | Pilote d'hélico, tour de contrôle, talkie-walkie, astronaute NASA, pilote de chasse, téléphone, vieille radio, mégaphone, robot, Dark Vador, démon, fantôme, alien, sous l'eau, lo-fi 8 bits… Chaque réglage est modifiable et vous pouvez enregistrer vos propres presets. |
+| 🎙️ **22 effets de voix** | Pilote d'hélico, tour de contrôle, talkie-walkie, astronaute NASA, pilote de chasse, téléphone, vieille radio, mégaphone, robot, Dark Vador, démon, fantôme, alien, sous l'eau, lo-fi 8 bits… Chaque réglage est modifiable et vous pouvez enregistrer vos propres presets. |
 | 📻 **Mode radio** | Votre voix ne passe que quand vous maintenez la touche, avec le grésillement et le bip de fin (roger, NASA « Quindar »…). |
 | 🔀 **Jeu et Discord séparés** | Tableau « Qui entend quoi ? » : par exemple, la musique et l'effet pilote pour les passagers de l'hélico, et seulement votre voix naturelle sur Discord. |
 | 📦 **Packs de soundboard** | Exportez votre soundboard (sons inclus) en `.spokapack` et envoyez-la à vos amis. |
 | 🎨 **Personnalisation** | Thèmes Sombre / Noir OLED / Clair, couleur d'accent, zoom, taille des tuiles. |
-| 🛡️ **Son stable** | Compensation de la dérive d'horloge entre cartes son, protection contre l'atténuation de Windows et de Discord, diagnostic audio intégré. |
+| 🛡️ **Son stable** | Compensation de la dérive d'horloge entre cartes son, protection contre l'atténuation de Windows et de Discord, casque ou câble débranché suivi automatiquement, diagnostic audio intégré. |
 | 🧩 **Pratique** | Installeur sans droits administrateur, assistant de configuration, zone de notification, lancement au démarrage de Windows, mises à jour automatiques. |
 
 <div align="center">

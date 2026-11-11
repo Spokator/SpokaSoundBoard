@@ -188,16 +188,28 @@ public partial class DevicesViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public void Refresh()
+    public void Refresh() => Refresh(restartAlways: true);
+
+    /// <summary>Windows reported a device change: reload the lists, restart the engine only if a device it uses changed.</summary>
+    public void OnDevicesChanged() => Refresh(restartAlways: false);
+
+    private (string?, string?, string?, string?) EffectiveIds() =>
+        (SelectedMic?.Id, SelectedVirtualOutput?.Id, SelectedDiscordOutput?.Id, SelectedMonitor?.Id);
+
+    private void Refresh(bool restartAlways)
     {
         var hadCable = HasVirtualCable;
         var hadSecond = HasSecondCable;
         var hadSpoka = HasSpokaCable;
+        var before = EffectiveIds();
         _suppressApply = true;
         LoadDevices();
         SelectFromSettings();
         _suppressApply = false;
-        Apply();
+        if (!restartAlways && EffectiveIds() == before && _main.EngineRunning)
+            StoreSelection();
+        else
+            Apply();
         if (!hadCable && HasVirtualCable) _main.ShowToast(VirtualCableStatus.Replace(" et prêt.", " !"));
         else if (!hadSpoka && SpokaCableUnused) _main.ShowToast("Spoka Cable détecté : activez-le dans Configuration.");
         else if (!hadSecond && HasSecondCable && SelectedDiscordOutput != null)

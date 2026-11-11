@@ -66,9 +66,36 @@ public partial class MainViewModel : ObservableObject, IDisposable
             Devices.Refresh();
         }, _dispatcher);
         _restartTimer.Stop();
+        _deviceChangeTimer = new DispatcherTimer(TimeSpan.FromSeconds(1.5), DispatcherPriority.Background, (_, _) =>
+        {
+            _deviceChangeTimer!.Stop();
+            Devices.OnDevicesChanged();
+        }, _dispatcher);
+        _deviceChangeTimer.Stop();
     }
 
     private readonly DispatcherTimer _restartTimer;
+
+    // Plugging a headset raises several notifications in a row: wait for them to settle.
+    private readonly DispatcherTimer _deviceChangeTimer;
+    private DeviceWatcher? _deviceWatcher;
+
+    private void WatchDevices()
+    {
+        try
+        {
+            _deviceWatcher = new DeviceWatcher(() => _dispatcher.BeginInvoke(() =>
+            {
+                _deviceChangeTimer.Stop();
+                _deviceChangeTimer.Start();
+            }));
+        }
+        catch (Exception ex)
+        {
+            // Not critical: « Actualiser » still works.
+            App.Log(ex);
+        }
+    }
 
     public AppSettings Settings { get; }
     public MixSettings Mix => Settings.Mix;
@@ -243,6 +270,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         LinkImporter.CleanPreviewCache(Downloader);
         Devices.InitializeSelection();
         RestartEngine();
+        WatchDevices();
         Music.RestoreState();
         Soundboard.AnalyzeMissingLoudness();
         Music.AnalyzeMissingLoudness();
@@ -301,8 +329,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    public void RestartEngine() =>
-        Engine.Start(Settings.MicDeviceId, Settings.VirtualOutputDeviceId, Settings.DiscordOutputDeviceId, Settings.MonitorDeviceId);
+    public void RestartEngine()
+    {
+        // The selected devices, not the saved ones: while a device is unplugged, its stand-in must actually play.
+        var d = Devices;
+        Engine.Start(d.SelectedMic?.Id, d.SelectedVirtualOutput?.Id, d.SelectedDiscordOutput?.Id, d.SelectedMonitor?.Id);
+    }
 
     [RelayCommand]
     private void OpenSetup() => Setup.Open();
@@ -341,11 +373,27 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (parameter is not HotkeyBinding binding) return;
         RecordingTarget = binding.IsSet ? $"Actuel : {binding.Display}" : "Aucun raccourci défini";
         IsRecordingHotkey = true;
-        Hotkeys.BeginRecording(binding, _ =>
+        Hotkeys.BeginRecording(binding, changed =>
         {
             IsRecordingHotkey = false;
+            if (changed) WarnHotkeyConflicts(binding);
             Save();
         });
+    }
+
+    /// <summary>The same key does two things at once: say so right away rather than let the user find out in game.</summary>
+    private void WarnHotkeyConflicts(HotkeyBinding binding)
+    {
+        var owners = HotkeyMatching.Conflicts(binding, NamedHotkeys()).Distinct().ToList();
+        if (owners.Count == 0) return;
+        ShowToast($"Attention : « {binding.Display} » sert déjà à {string.Join(", ", owners.Select(o => $"« {o} »"))}. " +
+                  "Les deux se déclencheront ensemble.", 8);
+    }
+
+    private IEnumerable<(HotkeyBinding Binding, string Owner)> NamedHotkeys()
+    {
+        foreach (var row in Devices.HotkeyRows) yield return (row.Binding, row.Label);
+        foreach (var pad in Settings.Pads) yield return (pad.Hotkey, pad.Name);
     }
 
     [RelayCommand]
@@ -521,6 +569,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         _meterTimer.Stop();
+        _deviceWatcher?.Dispose();
         _saveTimer.Stop();
         Save();
         BlindTest.Shutdown();

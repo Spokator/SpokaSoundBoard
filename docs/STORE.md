@@ -102,7 +102,7 @@ Microsoft relit la soumission, en général en quelques jours. S'il y a un refus
 >
 > Lancez un son d'une touche, même en pleine partie : la touche n'est pas bloquée, le jeu la reçoit aussi. Mettez votre playlist, parlez par-dessus : la musique baisse toute seule quand vous parlez, puis remonte doucement.
 >
-> Transformez votre voix avec 23 effets en temps réel, de la radio de pilote d'hélico au robot, en passant par la tour de contrôle et le démon. Le mode radio ne transmet votre voix que quand vous maintenez la touche, avec le grésillement et le bip de fin.
+> Transformez votre voix avec 22 effets en temps réel, de la radio de pilote d'hélico au robot, en passant par la tour de contrôle et le démon. Le mode radio ne transmet votre voix que quand vous maintenez la touche, avec le grésillement et le bip de fin.
 >
 > Décidez qui entend quoi : la musique et l'effet pilote pour les joueurs en jeu, votre voix naturelle sur Discord.
 >
@@ -110,11 +110,16 @@ Microsoft relit la soumission, en général en quelques jours. S'il y a un refus
 
 **Fonctionnalités** (une par ligne dans Partner Center)
 
-- Soundboard avec raccourcis clavier et souris utilisables en jeu
+- Soundboard en onglets, avec raccourcis clavier et souris utilisables en jeu
+- Sons « moi seulement » joués dans votre casque, écoute avant diffusion
+- Enregistrement d'un son avec votre micro
 - Recherche intégrée : sons MyInstants, musiques YouTube et SoundCloud
-- Lecteur de musique avec fondu enchaîné, paroles et volume égalisé
+- Lecteur de musique avec file d'attente, fondu enchaîné, paroles et volume égalisé
+- Import de playlists Spotify, Deezer, Apple Music, YouTube et SoundCloud
+- Blind test à animer dans Discord, avec scores et podium
+- Synthèse vocale dans le micro, avec des voix naturelles hors ligne
 - La musique baisse automatiquement quand vous parlez
-- 23 effets de voix en temps réel, et vos propres presets
+- 22 effets de voix en temps réel, et vos propres presets
 - Mode radio : parler en maintenant une touche, avec bip de fin
 - Routage séparé pour le jeu et pour Discord
 - Packs de soundboard à partager avec vos amis (.spokapack)

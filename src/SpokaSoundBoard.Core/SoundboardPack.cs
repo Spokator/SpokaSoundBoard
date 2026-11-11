@@ -14,8 +14,10 @@ public static class SoundboardPack
     public const string DialogFilter = "Pack SpokaSoundBoard (*.spokapack)|*.spokapack";
     private const string ManifestName = "pack.json";
 
+    // Fields added after version 1 have defaults, so older packs still load.
     private sealed record PackPad(string Name, string File, float Volume, string Color, bool Loop, double StartSeconds,
-        double EndSeconds, string? SourceUrl, double? NormalizationDb);
+        double EndSeconds, string? SourceUrl, double? NormalizationDb, string? Category = null,
+        PadPlayMode PlayMode = PadPlayMode.Toggle, bool StopOthers = false);
 
     private sealed record PackManifest(int Version, string Name, List<PackPad> Pads, List<EffectPreset> Presets);
 
@@ -31,10 +33,10 @@ public static class SoundboardPack
             var fileName = UniqueName(used, Path.GetFileName(pad.FilePath));
             zip.CreateEntryFromFile(pad.FilePath, "sounds/" + fileName, CompressionLevel.Fastest);
             entries.Add(new PackPad(pad.Name, fileName, pad.Volume, pad.Color, pad.Loop, pad.StartSeconds, pad.EndSeconds,
-                pad.SourceUrl, pad.NormalizationDb));
+                pad.SourceUrl, pad.NormalizationDb, pad.Category, pad.PlayMode, pad.StopOthers));
         }
 
-        var manifest = new PackManifest(1, name, entries, presets.ToList());
+        var manifest = new PackManifest(2, name, entries, presets.ToList());
         var entry = zip.CreateEntry(ManifestName);
         using var stream = entry.Open();
         JsonSerializer.Serialize(stream, manifest, new JsonSerializerOptions { WriteIndented = true });
@@ -75,6 +77,10 @@ public static class SoundboardPack
                 EndSeconds = Math.Max(0, p.EndSeconds),
                 SourceUrl = p.SourceUrl,
                 NormalizationDb = p.NormalizationDb,
+                // Packs without categories land in a tab named after the pack.
+                Category = string.IsNullOrWhiteSpace(p.Category) ? folderName : p.Category.Trim(),
+                PlayMode = Enum.IsDefined(p.PlayMode) ? p.PlayMode : PadPlayMode.Toggle,
+                StopOthers = p.StopOthers,
             });
         }
 

@@ -1,5 +1,19 @@
 # Journal des versions
 
+## 2.3.0
+
+La soundboard s'organise.
+
+- **Catégories en onglets** : rangez vos sons dans des onglets (« Réactions », « Bruitages »…) au-dessus de la soundboard. « Tous » les montre tous. Créez un onglet avec « + Catégorie », renommez-le ou supprimez-le d'un clic droit (les sons restent), et glissez un son sur un onglet pour l'y ranger. Les nouveaux sons vont dans l'onglet affiché.
+- **Réorganiser par glisser-déposer** : déplacez un son sur un autre pour changer l'ordre.
+- **Options de lecture par son** : quand on rappuie pendant la lecture, l'arrêter, le relancer depuis le début, ou le superposer. « Arrêter les autres sons » coupe tout ce qui joue quand il démarre.
+- **Moi seulement** : un son peut être joué uniquement dans votre casque, sans que personne d'autre l'entende (repérable à l'icône de casque sur sa tuile).
+- **Écouter avant de diffuser** : dans l'éditeur d'un son, « Écouter » le joue dans votre casque seulement, « Diffuser » l'envoie dans le micro. Aussi dans le clic droit : « Écouter dans mon casque ».
+- **Enregistrer un son avec le micro** : bouton « Enregistrer » en haut de la soundboard, jusqu'à 2 minutes. Le silence au début et à la fin est coupé automatiquement.
+- **Raccourcis en double signalés** : si la touche choisie sert déjà à autre chose, un message le dit tout de suite.
+- **Périphériques suivis automatiquement** : brancher ou débrancher un casque, un micro ou un câble virtuel est détecté sans cliquer sur « Actualiser ». Pendant qu'un périphérique est débranché, le son passe vraiment par celui de secours.
+- **Packs** : les catégories et options de lecture sont incluses dans les `.spokapack`. Un pack plus ancien arrive dans un onglet à son nom, et réimporter le même pack ne double plus ses sons.
+
 ## 2.2.2
 
 Corrections issues d'une relecture complète de l'application.

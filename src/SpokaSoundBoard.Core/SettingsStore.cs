@@ -146,6 +146,7 @@ public sealed class SettingsStore
         s.Hotkeys ??= new HotkeySettings();
         s.Hotkeys.Sanitize();
         s.Pads ??= [];
+        s.PadCategories ??= [];
         s.Playlist ??= [];
         s.Music ??= new MusicSettings();
         s.Music.Effects ??= new MusicEffectSettings();
@@ -164,7 +165,13 @@ public sealed class SettingsStore
         }
         for (var i = s.Pads.Count - 1; i >= 0; i--)
             if (s.Pads[i] is null) s.Pads.RemoveAt(i);
-        foreach (var pad in s.Pads) pad.Hotkey ??= new HotkeyBinding();
+        foreach (var pad in s.Pads)
+        {
+            pad.Hotkey ??= new HotkeyBinding();
+            pad.Category = PadCategories.Clean(pad.Category);
+            if (!Enum.IsDefined(pad.PlayMode)) pad.PlayMode = PadPlayMode.Toggle;
+        }
+        PadCategories.Merge(s.PadCategories, s.Pads);
         return s;
     }
 }

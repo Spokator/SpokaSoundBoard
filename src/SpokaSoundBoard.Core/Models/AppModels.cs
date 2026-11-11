@@ -39,6 +39,19 @@ public partial class HotkeyBinding : ObservableObject
     public void Clear() => Set(0, HotkeyModifiers.None);
 }
 
+/// <summary>What pressing a sound that is already playing does.</summary>
+public enum PadPlayMode
+{
+    /// <summary>A second press stops it.</summary>
+    Toggle,
+
+    /// <summary>A second press starts it again from the beginning.</summary>
+    Restart,
+
+    /// <summary>Each press adds one more playback on top of the others.</summary>
+    Overlap,
+}
+
 public partial class SoundPad : ObservableObject
 {
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -49,6 +62,17 @@ public partial class SoundPad : ObservableObject
     [ObservableProperty] private string _color = "#7C5CFF";
     [ObservableProperty] private bool _loop;
     [ObservableProperty] private HotkeyBinding _hotkey = new();
+
+    /// <summary>Tab the sound is shown in ("" = no category, only under « Tous »).</summary>
+    [ObservableProperty] private string _category = "";
+
+    [ObservableProperty] private PadPlayMode _playMode;
+
+    /// <summary>Starting this sound stops every other soundboard sound first.</summary>
+    [ObservableProperty] private bool _stopOthers;
+
+    /// <summary>Played in the headphones only, never in the virtual microphone (« Moi seulement »).</summary>
+    [ObservableProperty] private bool _headphonesOnly;
 
     /// <summary>Web page the sound was imported from (YouTube, MyInstants…), if any.</summary>
     [ObservableProperty]
@@ -300,6 +324,9 @@ public partial class AppearanceSettings : ObservableObject
 
     /// <summary>« Trouver des sons » folded to one line on the Soundboard page.</summary>
     [ObservableProperty] private bool _soundSearchCollapsed;
+
+    /// <summary>Soundboard tab shown ("" = « Tous »).</summary>
+    [ObservableProperty] private string _padCategory = "";
 }
 
 public class AppSettings
@@ -318,6 +345,9 @@ public class AppSettings
     public HotkeySettings Hotkeys { get; set; } = new();
 
     public ObservableCollection<SoundPad> Pads { get; set; } = [];
+
+    /// <summary>Soundboard tabs, in display order.</summary>
+    public List<string> PadCategories { get; set; } = [];
     /// <summary>Pre-2.0 single playlist. Migrated once into library.json, then left empty.</summary>
     public ObservableCollection<TrackItem> Playlist { get; set; } = [];
     public List<EffectPreset> CustomPresets { get; set; } = [];

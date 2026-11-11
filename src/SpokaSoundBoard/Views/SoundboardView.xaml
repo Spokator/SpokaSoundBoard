@@ -31,6 +31,29 @@
                             <TextBlock Text="Tout arrêter" />
                         </StackPanel>
                     </Button>
+                    <Button Command="{Binding ToggleRecordingCommand}" Margin="0,0,10,0"
+                            ToolTip="Enregistrer un son avec votre micro : il est ajouté à la soundboard quand vous arrêtez (2 minutes maximum)">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource FlatButton}">
+                                <Setter Property="AutomationProperties.Name" Value="Enregistrer un son avec le micro" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                                        <Setter Property="AutomationProperties.Name" Value="Arrêter l'enregistrement" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="10" Height="10" Fill="{DynamicResource DangerBrush}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Enregistrer" Visibility="{Binding IsRecording, Converter={StaticResource InverseBoolToVis}}" />
+                            <StackPanel Orientation="Horizontal" Visibility="{Binding IsRecording, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Arrêter" />
+                                <TextBlock Text="{Binding RecordingTime}" Margin="8,0,0,0" Foreground="{DynamicResource DangerBrush}" />
+                                <ProgressBar Width="40" Height="4" Margin="8,0,0,0" VerticalAlignment="Center" Minimum="0" Maximum="1"
+                                             Value="{Binding RecordingLevel, Mode=OneWay}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
                     <Button Style="{StaticResource AccentButton}" Command="{Binding AddSoundsCommand}" ToolTip="Ajouter des fichiers audio de votre PC (MP3, WAV, OGG…)">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" FontSize="13" Margin="0,0,8,0" />
@@ -103,6 +126,85 @@
                 </TextBlock>
             </DockPanel>
 
+            <!-- Tabs: « Tous » and one per category. Drop a sound on a tab to move it there. -->
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,14" Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVis}}">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
+                            Visibility="{Binding IsEditingCategory, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding CategoryEditTitle}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBox x:Name="CategoryBox" Width="170" Text="{Binding CategoryDraft, UpdateSourceTrigger=PropertyChanged}" MaxLength="30"
+                             VerticalContentAlignment="Center" AutomationProperties.Name="Nom de la catégorie" IsVisibleChanged="OnCategoryBoxVisible">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding ConfirmCategoryCommand}" />
+                            <KeyBinding Key="Escape" Command="{Binding CancelCategoryCommand}" />
+                        </TextBox.InputBindings>
+                    </TextBox>
+                    <Button Style="{StaticResource IconButton}" Content="&#xE73E;" Margin="4,0,0,0" ToolTip="Valider"
+                            AutomationProperties.Name="Valider le nom" Command="{Binding ConfirmCategoryCommand}" />
+                    <Button Style="{StaticResource IconButton}" Content="&#xE711;" ToolTip="Annuler"
+                            AutomationProperties.Name="Annuler" Command="{Binding CancelCategoryCommand}" />
+                </StackPanel>
+                <WrapPanel>
+                    <ItemsControl x:Name="TabList" ItemsSource="{Binding Tabs}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <RadioButton GroupName="PadTabs" Margin="0,0,8,6" Cursor="Hand" AllowDrop="True"
+                                             DragOver="OnTabDragOver" Drop="OnTabDrop" Tag="{Binding DataContext, ElementName=TabList}"
+                                             Checked="OnTabChecked" AutomationProperties.Name="{Binding Label}">
+                                    <RadioButton.IsChecked>
+                                        <MultiBinding Converter="{StaticResource MultiEquals}" Mode="OneWay">
+                                            <Binding Path="Key" />
+                                            <Binding Path="DataContext.SelectedCategory" ElementName="TabList" />
+                                        </MultiBinding>
+                                    </RadioButton.IsChecked>
+                                    <RadioButton.ContextMenu>
+                                        <ContextMenu FontFamily="{StaticResource UiFont}" DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                                            <MenuItem Header="Renommer…" Command="{Binding RenameCategoryCommand}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext.Key, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            <MenuItem Header="Supprimer la catégorie (les sons restent)" Command="{Binding DeleteCategoryCommand}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext.Key, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                        </ContextMenu>
+                                    </RadioButton.ContextMenu>
+                                    <RadioButton.Template>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Border x:Name="Chip" CornerRadius="14" Padding="12,5" BorderThickness="1"
+                                                    Background="{DynamicResource ControlBrush}" BorderBrush="{DynamicResource ControlBorderBrush}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding Label}" FontSize="12" />
+                                                    <TextBlock Text="{Binding Count}" FontSize="11" Margin="6,0,0,0" VerticalAlignment="Center"
+                                                               Foreground="{DynamicResource SubtleTextBrush}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="Chip" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                                                    <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource ControlBorderHoverBrush}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </RadioButton.Template>
+                                </RadioButton>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Style="{StaticResource FlatButton}" Padding="10,4" Margin="0,0,0,6" Command="{Binding NewCategoryCommand}"
+                            ToolTip="Créer un onglet pour ranger vos sons (glissez ensuite un son sur un onglet pour l'y ranger)"
+                            AutomationProperties.Name="Nouvelle catégorie">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" FontSize="11" Margin="0,0,6,0" />
+                            <TextBlock Text="Catégorie" FontSize="12" />
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+            </DockPanel>
+
             <Grid>
                 <!-- Empty state -->
                 <Border BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="2" CornerRadius="14" Margin="0,0,0,24"
@@ -117,6 +219,14 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Empty tab -->
+                <StackPanel VerticalAlignment="Top" HorizontalAlignment="Left" Margin="2,8,0,0" MaxWidth="520"
+                            Visibility="{Binding CategoryIsEmpty, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="Cette catégorie est vide" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,4" />
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
+                               Text="Glissez un son depuis « Tous » sur cet onglet, choisissez la catégorie dans l'éditeur d'un son, ou ajoutez de nouveaux sons : ils arrivent dans l'onglet affiché." />
+                </StackPanel>
+
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVis}}">
                     <ItemsControl x:Name="PadList" ItemsSource="{Binding PadsView}" Margin="0,0,0,20">
                         <ItemsControl.ItemsPanel>
@@ -127,11 +237,15 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Button Width="{DynamicResource PadWidth}" Height="{DynamicResource PadHeight}" Margin="0,0,14,14" Cursor="Hand" FocusVisualStyle="{x:Null}"
+                                        AllowDrop="True" PreviewMouseLeftButtonDown="OnPadMouseDown" PreviewMouseMove="OnPadMouseMove"
+                                        DragOver="OnPadDragOver" Drop="OnPadDrop" AutomationProperties.Name="{Binding Name}"
                                         Command="{Binding DataContext.PlayPadCommand, ElementName=PadList}" CommandParameter="{Binding}"
                                         Tag="{Binding DataContext, ElementName=PadList}" ToolTip="{Binding FilePath}">
                                     <Button.ContextMenu>
                                         <ContextMenu FontFamily="{StaticResource UiFont}" DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
                                             <MenuItem Header="Lire / arrêter" Command="{Binding PlayPadCommand}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            <MenuItem Header="Écouter dans mon casque" Command="{Binding PreviewPadCommand}"
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                             <MenuItem Header="Modifier…" Command="{Binding EditPadCommand}"
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
@@ -165,6 +279,9 @@
                                                     <TextBlock Grid.Row="1" Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" TextWrapping="Wrap"
                                                                TextTrimming="CharacterEllipsis" Margin="0,8,0,0" Foreground="{DynamicResource TextBrush}" />
                                                     <DockPanel Grid.Row="2">
+                                                        <TextBlock DockPanel.Dock="Right" Style="{StaticResource Icon}" Text="&#xE7F6;" FontSize="11" Margin="6,0,0,0"
+                                                                   Foreground="{DynamicResource SubtleTextBrush}" ToolTip="Moi seulement : joué dans votre casque, pas dans le micro"
+                                                                   Visibility="{Binding HeadphonesOnly, Converter={StaticResource BoolToVis}}" />
                                                         <TextBlock DockPanel.Dock="Right" Style="{StaticResource Icon}" Text="&#xE8EE;" FontSize="11"
                                                                    Foreground="{DynamicResource SubtleTextBrush}" ToolTip="En boucle"
                                                                    Visibility="{Binding Loop, Converter={StaticResource BoolToVis}}" />
@@ -219,7 +336,12 @@
                     </DockPanel>
 
                     <TextBlock Text="Nom" Style="{StaticResource Caption}" Margin="0,0,0,4" />
-                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14" />
+                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14" AutomationProperties.Name="Nom du son" />
+
+                    <TextBlock Text="Catégorie (vide = aucune)" Style="{StaticResource Caption}" Margin="0,0,0,4" />
+                    <ComboBox IsEditable="True" Margin="0,0,0,14" Text="{Binding Category, UpdateSourceTrigger=LostFocus}"
+                              ItemsSource="{Binding DataContext.CategoryNames, RelativeSource={RelativeSource AncestorType=local:SoundboardView}}"
+                              AutomationProperties.Name="Catégorie du son" />
 
                     <TextBlock Text="Fichier" Style="{StaticResource Caption}" Margin="0,0,0,4" />
                     <DockPanel Margin="0,0,0,14">
@@ -289,6 +411,25 @@
                         </StackPanel>
                     </CheckBox>
 
+                    <TextBlock Text="Quand on rappuie pendant la lecture" Style="{StaticResource Caption}" Margin="0,0,0,4" />
+                    <ComboBox Margin="0,0,0,14" SelectedValue="{Binding PlayMode}" SelectedValuePath="Mode" DisplayMemberPath="Label"
+                              ItemsSource="{Binding DataContext.PlayModes, RelativeSource={RelativeSource AncestorType=local:SoundboardView}}"
+                              AutomationProperties.Name="Quand on rappuie pendant la lecture" />
+
+                    <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding StopOthers}" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="Arrêter les autres sons" Style="{StaticResource Label}" />
+                            <TextBlock Text="Coupe les sons en cours quand celui-ci démarre" Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </CheckBox>
+
+                    <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding HeadphonesOnly}" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="Moi seulement" Style="{StaticResource Label}" />
+                            <TextBlock Text="Joué dans votre casque uniquement, personne d'autre ne l'entend" Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </CheckBox>
+
                     <TextBlock Text="Raccourci global (fonctionne en jeu)" Style="{StaticResource Caption}" Margin="0,0,0,6" />
                     <DockPanel Margin="0,0,0,22">
                         <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE74D;" ToolTip="Effacer le raccourci"
@@ -304,16 +445,26 @@
                         </Button>
                     </DockPanel>
 
-                    <UniformGrid Columns="2">
-                        <Button Style="{StaticResource AccentButton}" Margin="0,0,6,0"
+                    <UniformGrid Columns="2" Margin="0,0,0,10">
+                        <Button Style="{StaticResource FlatButton}" Margin="0,0,6,0" ToolTip="Écouter dans votre casque, sans le diffuser dans le micro"
+                                Command="{Binding DataContext.PreviewPadCommand, RelativeSource={RelativeSource AncestorType=local:SoundboardView}}"
+                                CommandParameter="{Binding}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE7F6;" FontSize="12" Margin="0,0,8,0" />
+                                <TextBlock Text="Écouter" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource AccentButton}" Margin="6,0,0,0" ToolTip="Diffuser dans le micro, comme un clic sur le son"
                                 Command="{Binding DataContext.PlayPadCommand, RelativeSource={RelativeSource AncestorType=local:SoundboardView}}"
                                 CommandParameter="{Binding}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource Icon}" Text="&#xE768;" FontSize="12" Margin="0,0,8,0" />
-                                <TextBlock Text="Tester" />
+                                <TextBlock Text="Diffuser" />
                             </StackPanel>
                         </Button>
-                        <Button Style="{StaticResource DangerButton}" Margin="6,0,0,0"
+                    </UniformGrid>
+                    <UniformGrid Columns="1">
+                        <Button Style="{StaticResource DangerButton}"
                                 Command="{Binding DataContext.DeletePadCommand, RelativeSource={RelativeSource AncestorType=local:SoundboardView}}"
                                 CommandParameter="{Binding}">
                             <StackPanel Orientation="Horizontal">

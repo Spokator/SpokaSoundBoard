@@ -34,7 +34,8 @@ public sealed class AudioEngine : IDisposable
         Music = new MusicPlayer(MixerCore.SampleRate);
         Pads = new SoundPadPlayer(MixerCore.SampleRate);
         Preview = new MusicPlayer(MixerCore.SampleRate);
-        Core = new MixerCore(voice, mix, Music, Pads, Preview);
+        PrivatePads = new SoundPadPlayer(MixerCore.SampleRate);
+        Core = new MixerCore(voice, mix, Music, Pads, Preview, PrivatePads);
         _guardTimer = new Timer(_ => GuardSessions(), null, Timeout.Infinite, Timeout.Infinite);
     }
 
@@ -58,6 +59,9 @@ public sealed class AudioEngine : IDisposable
     public MixerCore Core { get; }
     public MusicPlayer Music { get; }
     public SoundPadPlayer Pads { get; }
+
+    /// <summary>Soundboard sounds heard in the headphones only.</summary>
+    public SoundPadPlayer PrivatePads { get; }
 
     public EngineState State { get; private set; } = EngineState.Stopped;
     public string StatusMessage { get; private set; } = "Arrêté";
@@ -247,6 +251,7 @@ public sealed class AudioEngine : IDisposable
         _guardTimer.Dispose();
         Music.Dispose();
         Pads.Dispose();
+        PrivatePads.Dispose();
         Preview.Dispose();
     }
 

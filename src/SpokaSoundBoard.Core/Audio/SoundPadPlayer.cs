@@ -110,9 +110,9 @@ public sealed class SoundPadPlayer : ISampleProvider, IDisposable
     }
 
     /// <summary>Allocation-free variant for the UI refresh timer.</summary>
-    public void FillPlayingIds(HashSet<Guid> ids)
+    public void FillPlayingIds(HashSet<Guid> ids, bool clear = true)
     {
-        ids.Clear();
+        if (clear) ids.Clear();
         lock (_lock)
             foreach (var v in _voices)
                 if (!v.Stopping) ids.Add(v.Id);
