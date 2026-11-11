@@ -219,6 +219,22 @@ public partial class SoundboardViewModel : ObservableObject
         if (pad == null) return;
         var player = _main.Engine.Pads;
 
+        // A second press while the file is still opening must not start it twice.
+        if (!_opening.Add(pad.Id)) return;
+        try
+        {
+            await PlayOrStopAsync(pad, player);
+        }
+        finally
+        {
+            _opening.Remove(pad.Id);
+        }
+    }
+
+    private readonly HashSet<Guid> _opening = [];
+
+    private async Task PlayOrStopAsync(SoundPad pad, SoundPadPlayer player)
+    {
         // Clicking a sound that is already playing stops it.
         if (player.IsPlaying(pad.Id))
         {
@@ -280,13 +296,24 @@ public partial class SoundboardViewModel : ObservableObject
     {
         if (SelectedPad == null) return;
         var dialog = new OpenFileDialog { Title = "Choisir le fichier du son", Filter = AudioFileLoader.DialogFilter };
-        if (dialog.ShowDialog() == true) SelectedPad.FilePath = dialog.FileName;
+        if (dialog.ShowDialog() != true) return;
+        var pad = SelectedPad;
+        _main.Engine.Pads.Stop(pad.Id);
+        pad.FilePath = dialog.FileName;
+        // The excerpt and the loudness correction belonged to the old file.
+        pad.StartSeconds = 0;
+        pad.EndSeconds = 0;
+        pad.NormalizationDb = null;
+        pad.SourceUrl = null;
+        Analyze(pad);
+        _main.Save();
     }
 
     public void RefreshPlayingState()
     {
         if (Pads.Count == 0) return;
-        var playing = _main.Engine.Pads.PlayingIds();
+        var playing = _playingIds;
+        _main.Engine.Pads.FillPlayingIds(playing);
         foreach (var pad in Pads)
         {
             var isPlaying = playing.Contains(pad.Id);
@@ -298,6 +325,7 @@ public partial class SoundboardViewModel : ObservableObject
     }
 
     private readonly Dictionary<Guid, DateTime> _startGrace = [];
+    private readonly HashSet<Guid> _playingIds = [];
 
     private void OnPadChanged(object? sender, PropertyChangedEventArgs e)
     {

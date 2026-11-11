@@ -26,6 +26,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         _vm = new MainViewModel();
         DataContext = _vm;
+        IsVisibleChanged += (_, e) => _vm.SetWindowVisible((bool)e.NewValue);
         _openSetup = openSetup;
         _startInTray = startInTray && !openSetup;
         if (_startInTray)

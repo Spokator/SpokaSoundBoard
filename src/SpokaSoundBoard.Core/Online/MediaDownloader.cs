@@ -460,12 +460,16 @@ public sealed partial class MediaDownloader
         Directory.CreateDirectory(outputDir);
         var extension = Path.GetExtension(new Uri(audioUrl).AbsolutePath);
         if (string.IsNullOrEmpty(extension) || extension.Length > 5) extension = ".mp3";
-        var target = Path.Combine(outputDir, SafeFileName(title) + extension);
+        // The link is part of the name: two different sounds with the same title must not share a file.
+        var target = Path.Combine(outputDir, SafeFileName(title) + "-" + ShortHash(audioUrl) + extension);
         if (!File.Exists(target))
             await DownloadFileAsync(audioUrl, target, progress, "Téléchargement", ct);
         target = await EnsurePlayableAsync(target, progress, ct);
         return new DownloadedMedia(target, title, pageUrl);
     }
+
+    internal static string ShortHash(string text) =>
+        Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text)))[..8];
 
     internal static string SafeFileName(string name)
     {

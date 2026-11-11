@@ -256,7 +256,38 @@ public partial class MainViewModel : ObservableObject, IDisposable
             Setup.Open(Settings.SetupResumeStep ?? SetupWizardViewModel.StepWelcome);
         else if (!Devices.HasVirtualCable)
             CurrentPage = "settings";
+        if (_store.LoadProblem is { } problem) ShowToast(problem, 12);
+        CleanDownloadCache();
     }
+
+    /// <summary>
+    /// Deletes downloaded sounds and songs no pad or library track uses any more. Never runs when the settings or the
+    /// library could not be read: their file references would be incomplete.
+    /// </summary>
+    private void CleanDownloadCache()
+    {
+        if (_store.LoadProblem != null || !Music.LibraryLoaded) return;
+        var referenced = Settings.Pads.Select(p => (string?)p.FilePath)
+            .Concat(Music.Library.Tracks.Select(t => t.FilePath))
+            .ToList();
+        var cache = Downloader.CacheDirectory;
+        string[] folders = [MusicViewModel.DownloadFolder, TextToSpeechViewModel.SoundsFolder];
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                Core.Online.DownloadCache.DeleteOrphans(cache, folders, referenced, DateTime.UtcNow);
+            }
+            catch (Exception ex)
+            {
+                App.Log(ex);
+            }
+        });
+    }
+
+    /// <summary>Hidden in the tray during a game: meters refresh twice a second instead of 30 times.</summary>
+    public void SetWindowVisible(bool visible) =>
+        _meterTimer.Interval = TimeSpan.FromMilliseconds(visible ? 33 : 500);
 
     [RelayCommand]
     private void Navigate(string page) => CurrentPage = page;

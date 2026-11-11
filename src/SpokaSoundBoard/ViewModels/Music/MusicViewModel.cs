@@ -118,6 +118,9 @@ public partial class MusicViewModel : ObservableObject
     // ---- Shared services ---------------------------------------------------------------------------------
 
     internal MainViewModel Main => _main;
+
+    /// <summary>library.json was read (or did not exist yet): the track list is complete.</summary>
+    public bool LibraryLoaded => !_libraryStore.LoadFailed;
     internal MusicPlayer Player => _main.Engine.Music;
     internal MediaDownloader Downloader => _main.Downloader;
     public MusicSettings Settings => _main.Settings.Music;
@@ -234,6 +237,8 @@ public partial class MusicViewModel : ObservableObject
     [RelayCommand]
     public void Stop()
     {
+        // The blind test owns the player: only it may stop its excerpt.
+        if (IsExternalPlayback) return;
         _playToken++;
         FinishHistoryEntry();
         Player.Stop();
@@ -413,6 +418,10 @@ public partial class MusicViewModel : ObservableObject
             _preparedNext = null;
             Player.Stop();
             IsPlaying = false;
+            // A download in progress was abandoned by the token change: it will never clear the flag itself.
+            IsLoading = false;
+            // Excerpts play as they are: no nightcore or karaoke borrowed from the music page.
+            Player.Effects = null;
             IsExternalPlayback = true;
         }
         return Player;
@@ -424,6 +433,7 @@ public partial class MusicViewModel : ObservableObject
         if (!IsExternalPlayback) return;
         IsExternalPlayback = false;
         Player.Stop();
+        Player.Effects = Settings.Effects;
         if (_externalResumeTrack != null && _externalWasPlaying) _ = StartAsync(_externalResumeTrack, _externalResumeAt);
         else _resumePosition = _externalResumeAt;
         _externalResumeTrack = null;
@@ -605,9 +615,12 @@ public partial class MusicViewModel : ObservableObject
     /// <param name="endCount">Queue length when it ran out: the appended tracks start at this index.</param>
     private async Task AutoplayOrStopAsync(int endCount)
     {
+        var token = _playToken;
         if (Settings.Autoplay)
         {
             await AppendAutoplayAsync();
+            // The user played something else (or the blind test took the player) during the request: leave it alone.
+            if (token != _playToken || IsExternalPlayback) return;
             if (Queue.Count > endCount && Queue.JumpTo(endCount) is { } next)
             {
                 _ = StartAsync(next);
@@ -799,7 +812,9 @@ public partial class MusicViewModel : ObservableObject
             // Queue entries must exist in the library to be restored: save the ids of the library instances.
             data.SavedQueue = Queue.Items.Select(t => Library.AddOrGet(t).Id).ToList();
             data.SavedQueueIndex = Queue.CurrentIndex;
-            data.SavedPositionSeconds = Player.HasTrack ? Player.Position.TotalSeconds : _resumePosition;
+            // During a blind test the player holds an excerpt: keep the position of the interrupted track.
+            data.SavedPositionSeconds = IsExternalPlayback ? _externalResumeAt
+                : Player.HasTrack ? Player.Position.TotalSeconds : _resumePosition;
             _libraryStore.Save(data);
         }
         catch (Exception ex)

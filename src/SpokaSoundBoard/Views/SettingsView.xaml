@@ -451,7 +451,7 @@
                     </TextBlock>
                     <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding SettingsLocationText}" />
                     <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
-                               Text="Aucun compte, aucune télémétrie : rien n'est envoyé sans une recherche ou un import de votre part." />
+                               Text="Aucun compte, aucune télémétrie : rien ne nous est envoyé. L'application contacte seulement les sites des fonctions en ligne que vous utilisez (recherche, imports, paroles, voix naturelles) et, pour la version installeur, GitHub pour les mises à jour." />
                     <Button Style="{StaticResource FlatButton}" HorizontalAlignment="Left" Margin="0,10,0,0" Command="{Binding OpenPrivacyPolicyCommand}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource Icon}" Text="&#xE72E;" FontSize="13" Margin="0,0,8,0" />

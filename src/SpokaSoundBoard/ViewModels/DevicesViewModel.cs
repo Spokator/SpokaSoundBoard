@@ -124,15 +124,67 @@ public partial class DevicesViewModel : ObservableObject
     {
         _suppressApply = true;
         LoadDevices();
-        var s = _main.Settings;
-
-        SelectedMic = Inputs.FirstOrDefault(d => d.Id == s.MicDeviceId) ?? DeviceService.FindDefaultMicrophone(Inputs);
-        SelectedVirtualOutput = Outputs.FirstOrDefault(d => d.Id == s.VirtualOutputDeviceId) ?? DeviceService.FindVirtualCableOutput(Outputs);
-        SelectedDiscordOutput = Outputs.FirstOrDefault(d => d.Id == s.DiscordOutputDeviceId)
-                                ?? (s.DiscordOutputDisabled ? null : DeviceService.FindSecondCableOutput(Outputs, SelectedVirtualOutput));
-        SelectedMonitor = Outputs.FirstOrDefault(d => d.Id == s.MonitorDeviceId) ?? DeviceService.FindDefaultMonitor(Outputs);
+        SelectFromSettings();
         StoreSelection();
         _suppressApply = false;
+    }
+
+    // A slot showing a stand-in for a saved device that is missing right now: its choice is not overwritten.
+    private bool _micFallback, _virtualFallback, _discordFallback, _monitorFallback;
+
+    /// <summary>Selects each device from the saved choice (not from the current selection, which may be a stand-in).</summary>
+    private void SelectFromSettings()
+    {
+        var s = _main.Settings;
+        (SelectedMic, _micFallback) = DeviceService.Resolve(Inputs, s.MicDeviceId, false,
+            () => DeviceService.FindDefaultMicrophone(Inputs));
+        (SelectedVirtualOutput, _virtualFallback) = DeviceService.Resolve(Outputs, s.VirtualOutputDeviceId, s.VirtualOutputDisabled,
+            () => DeviceService.FindVirtualCableOutput(Outputs));
+        (SelectedDiscordOutput, _discordFallback) = DeviceService.Resolve(Outputs, s.DiscordOutputDeviceId, s.DiscordOutputDisabled,
+            () => DeviceService.FindSecondCableOutput(Outputs, SelectedVirtualOutput));
+        (SelectedMonitor, _monitorFallback) = DeviceService.Resolve(Outputs, s.MonitorDeviceId, s.MonitorDisabled,
+            () => DeviceService.FindDefaultMonitor(Outputs));
+        WatchForReturn();
+    }
+
+    private System.Windows.Threading.DispatcherTimer? _returnWatch;
+
+    /// <summary>While a stand-in is used, checks every few seconds whether the user's own device is back.</summary>
+    private void WatchForReturn()
+    {
+        var waiting = _micFallback || _virtualFallback || _discordFallback || _monitorFallback;
+        if (!waiting)
+        {
+            _returnWatch?.Stop();
+            return;
+        }
+        if (_returnWatch is not { IsEnabled: true })
+            _main.ShowToast("Un périphérique audio que vous avez choisi est débranché : un autre est utilisé en attendant son retour.", 6);
+        _returnWatch ??= new System.Windows.Threading.DispatcherTimer(TimeSpan.FromSeconds(5),
+            System.Windows.Threading.DispatcherPriority.Background, (_, _) => CheckReturn(),
+            System.Windows.Threading.Dispatcher.CurrentDispatcher);
+        _returnWatch.Start();
+    }
+
+    private void CheckReturn()
+    {
+        try
+        {
+            var s = _main.Settings;
+            var inputs = DeviceService.GetInputs();
+            var outputs = DeviceService.GetOutputs();
+            var back = _micFallback && inputs.Any(d => d.Id == s.MicDeviceId)
+                       || _virtualFallback && outputs.Any(d => d.Id == s.VirtualOutputDeviceId)
+                       || _discordFallback && outputs.Any(d => d.Id == s.DiscordOutputDeviceId)
+                       || _monitorFallback && outputs.Any(d => d.Id == s.MonitorDeviceId);
+            if (!back) return;
+            Refresh();
+            _main.ShowToast("Votre périphérique audio est revenu : il est de nouveau utilisé.");
+        }
+        catch (Exception)
+        {
+            // Device enumeration failing for a moment: try again on the next tick.
+        }
     }
 
     [RelayCommand]
@@ -142,26 +194,16 @@ public partial class DevicesViewModel : ObservableObject
         var hadSecond = HasSecondCable;
         var hadSpoka = HasSpokaCable;
         _suppressApply = true;
-        var mic = SelectedMic?.Id;
-        var virt = SelectedVirtualOutput?.Id;
-        var discord = SelectedDiscordOutput?.Id;
-        var mon = SelectedMonitor?.Id;
         LoadDevices();
-        SelectedMic = Inputs.FirstOrDefault(d => d.Id == mic) ?? DeviceService.FindDefaultMicrophone(Inputs);
-        SelectedVirtualOutput = Outputs.FirstOrDefault(d => d.Id == virt) ?? DeviceService.FindVirtualCableOutput(Outputs);
-        SelectedDiscordOutput = Outputs.FirstOrDefault(d => d.Id == discord);
-        // A second cable just appeared: use it for Discord automatically.
-        if (SelectedDiscordOutput == null && !_main.Settings.DiscordOutputDisabled && HasSecondCable)
-            SelectedDiscordOutput = DeviceService.FindSecondCableOutput(Outputs, SelectedVirtualOutput);
-        SelectedMonitor = Outputs.FirstOrDefault(d => d.Id == mon) ?? DeviceService.FindDefaultMonitor(Outputs);
+        SelectFromSettings();
         _suppressApply = false;
         Apply();
         if (!hadCable && HasVirtualCable) _main.ShowToast(VirtualCableStatus.Replace(" et prêt.", " !"));
         else if (!hadSpoka && SpokaCableUnused) _main.ShowToast("Spoka Cable détecté : activez-le dans Configuration.");
-        else if (!hadSecond && HasSecondCable) _main.ShowToast("Deuxième micro virtuel détecté : sortie Discord configurée !");
+        else if (!hadSecond && HasSecondCable && SelectedDiscordOutput != null)
+            _main.ShowToast("Deuxième micro virtuel détecté : sortie Discord configurée !");
     }
 
-    /// <summary>Switches the game output to Spoka Cable; the other cable stays available for Discord.</summary>
     [RelayCommand]
     private void UseSpokaCable()
     {
@@ -178,15 +220,26 @@ public partial class DevicesViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ClearVirtualOutput() => SelectedVirtualOutput = null;
+    private void ClearVirtualOutput()
+    {
+        _main.Settings.VirtualOutputDisabled = true;
+        _virtualFallback = false;
+        SelectedVirtualOutput = null;
+    }
 
     [RelayCommand]
-    private void ClearMonitor() => SelectedMonitor = null;
+    private void ClearMonitor()
+    {
+        _main.Settings.MonitorDisabled = true;
+        _monitorFallback = false;
+        SelectedMonitor = null;
+    }
 
     [RelayCommand]
     private void ClearDiscordOutput()
     {
         _main.Settings.DiscordOutputDisabled = true;
+        _discordFallback = false;
         SelectedDiscordOutput = null;
     }
 
@@ -270,22 +323,42 @@ public partial class DevicesViewModel : ObservableObject
     private void StoreSelection()
     {
         var s = _main.Settings;
-        s.MicDeviceId = SelectedMic?.Id;
-        s.VirtualOutputDeviceId = SelectedVirtualOutput?.Id;
-        s.DiscordOutputDeviceId = SelectedDiscordOutput?.Id;
-        s.MonitorDeviceId = SelectedMonitor?.Id;
+        // A stand-in for a device that is unplugged right now is used but not saved.
+        if (!_micFallback) s.MicDeviceId = SelectedMic?.Id;
+        if (!_virtualFallback) s.VirtualOutputDeviceId = SelectedVirtualOutput?.Id;
+        if (!_discordFallback) s.DiscordOutputDeviceId = SelectedDiscordOutput?.Id;
+        if (!_monitorFallback) s.MonitorDeviceId = SelectedMonitor?.Id;
         // Names derived from the device lists, which change without a property notification.
         foreach (var name in (string[])[nameof(VirtualMicName), nameof(DiscordMicName), nameof(GuideMicName), nameof(GuideDiscordMicName),
                      nameof(VirtualCableStatus), nameof(VirtualOutputHint), nameof(SpokaCableUnused), nameof(DiscordSameCableWarning)])
             OnPropertyChanged(name);
     }
 
-    partial void OnSelectedMicChanged(AudioDevice? value) => AutoApply();
-    partial void OnSelectedVirtualOutputChanged(AudioDevice? value) => AutoApply();
-    partial void OnSelectedMonitorChanged(AudioDevice? value) => AutoApply();
+    // Outside _suppressApply a change comes from the user: it is a real choice, saved as is.
+    partial void OnSelectedMicChanged(AudioDevice? value)
+    {
+        if (!_suppressApply) _micFallback = false;
+        AutoApply();
+    }
+
+    partial void OnSelectedVirtualOutputChanged(AudioDevice? value)
+    {
+        if (!_suppressApply) _virtualFallback = false;
+        if (value != null && !_suppressApply) _main.Settings.VirtualOutputDisabled = false;
+        AutoApply();
+    }
+
+    partial void OnSelectedMonitorChanged(AudioDevice? value)
+    {
+        if (!_suppressApply) _monitorFallback = false;
+        if (value != null && !_suppressApply) _main.Settings.MonitorDisabled = false;
+        AutoApply();
+    }
+
     partial void OnSelectedDiscordOutputChanged(AudioDevice? value)
     {
-        if (value != null) _main.Settings.DiscordOutputDisabled = false;
+        if (!_suppressApply) _discordFallback = false;
+        if (value != null && !_suppressApply) _main.Settings.DiscordOutputDisabled = false;
         AutoApply();
     }
 

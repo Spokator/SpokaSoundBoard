@@ -1,3 +1,7 @@
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Threading;
 using SpokaSoundBoard.Core.Models;
 
@@ -16,6 +20,9 @@ public sealed class HotkeyService : IDisposable
     private Action<bool>? _recordingDone;
     private volatile int _pttKey;
 
+    // True while the user types in one of the app's text boxes: single keys are text there, not shortcuts.
+    private volatile bool _typingInApp;
+
     public HotkeyService(Dispatcher dispatcher)
     {
         _dispatcher = dispatcher;
@@ -29,6 +36,11 @@ public sealed class HotkeyService : IDisposable
     public void Start()
     {
         KeyNames.NameProvider = GlobalInputHook.GetKeyName;
+        // Keyboard focus leaves the text box when the window is deactivated, so these two events are enough.
+        EventManager.RegisterClassHandler(typeof(Window), Keyboard.GotKeyboardFocusEvent,
+            new KeyboardFocusChangedEventHandler((_, e) => _typingInApp = IsTextInput(e.NewFocus)), true);
+        EventManager.RegisterClassHandler(typeof(Window), Keyboard.LostKeyboardFocusEvent,
+            new KeyboardFocusChangedEventHandler((_, e) => _typingInApp = IsTextInput(e.NewFocus)), true);
         _hook.Install();
     }
 
@@ -48,10 +60,17 @@ public sealed class HotkeyService : IDisposable
 
     public void CancelRecording() => FinishRecording(false);
 
+    private static bool IsTextInput(IInputElement? element) =>
+        element is TextBoxBase or PasswordBox || element is ComboBox { IsEditable: true };
+
+    /// <summary>Typing a pad name or a search must not fire « A » or « Espace » bound as a shortcut; Ctrl/Alt combos still work.</summary>
+    private bool SwallowedByTyping(HotkeyModifiers modifiers) =>
+        _typingInApp && (modifiers & (HotkeyModifiers.Ctrl | HotkeyModifiers.Alt)) == 0;
+
     private void OnHookKeyDown(int vk, HotkeyModifiers modifiers)
     {
         // The radio key must react instantly and is handled directly on the hook thread.
-        if (_recording == null && _pttKey == 0)
+        if (_recording == null && _pttKey == 0 && !SwallowedByTyping(modifiers))
         {
             var ptt = _pushToTalk?.Invoke();
             if (ptt is { IsSet: true } && ptt.VirtualKey == vk)
@@ -95,13 +114,11 @@ public sealed class HotkeyService : IDisposable
             return;
         }
 
-        var bindings = BindingsProvider?.Invoke();
+        if (SwallowedByTyping(modifiers)) return;
+        var bindings = BindingsProvider?.Invoke()?.ToList();
         if (bindings == null) return;
-        foreach (var (b, action) in bindings.ToList())
-        {
-            if (b.IsSet && b.VirtualKey == vk && b.Modifiers == modifiers)
-                action();
-        }
+        foreach (var i in HotkeyMatching.Select(bindings.ConvertAll(b => b.Binding), vk, modifiers))
+            bindings[i].Action();
     }
 
     private void FinishRecording(bool changed)

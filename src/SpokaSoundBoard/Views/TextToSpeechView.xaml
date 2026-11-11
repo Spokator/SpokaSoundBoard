@@ -155,7 +155,7 @@
                                        Visibility="{Binding HasNoFrenchVoice, Converter={StaticResource BoolToVis}}"
                                        Text="Pas de voix Windows française : téléchargez les voix naturelles ou installez-la dans Paramètres Windows → Heure et langue → Voix." />
                         </StackPanel>
-                        <local:SliderRow Grid.Column="2" Label="Vitesse" Minimum="0.5" Maximum="3" Step="0.1" Format="{}{0:0.0} ×"
+                        <local:SliderRow Grid.Column="2" Label="Vitesse" Minimum="0.5" Maximum="{Binding MaxRate}" Step="0.1" Format="{}{0:0.0} ×"
                                          Value="{Binding Settings.Rate}" />
                         <Grid Grid.Column="4">
                             <local:SliderRow Label="Hauteur" Minimum="0.3" Maximum="2" Step="0.1" Format="{}{0:0.0}"
@@ -206,7 +206,8 @@
                                 <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE74D;" FontSize="12" Padding="8" Margin="8,0,0,0"
                                         VerticalAlignment="Center" Command="{Binding DeleteNaturalCommand}"
                                         ToolTip="Supprimer les voix naturelles du PC" AutomationProperties.Name="Supprimer les voix naturelles" />
-                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0"
+                                            Visibility="{Binding IsNaturalSelected, Converter={StaticResource BoolToVis}}">
                                     <TextBlock Text="Langue lue" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
                                     <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}" DisplayMemberPath="Name" MinWidth="130"
                                               ToolTip="Langue de vos phrases (le texte n'est pas traduit)" AutomationProperties.Name="Langue lue par les voix naturelles" />

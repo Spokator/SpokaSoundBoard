@@ -44,9 +44,10 @@ public sealed partial class LyricsService
     /// <summary>
     /// Lyrics of a track, or null when lrclib has none. <paramref name="title"/> may be a raw web title
     /// ("Artist - Title (Clip officiel)"); <paramref name="artist"/> may be a channel name. Network failures throw a
-    /// <see cref="DownloadException"/>.
+    /// <see cref="DownloadException"/> and are not remembered. <paramref name="retry"/> asks lrclib again even if the
+    /// song was not found earlier in the session (lyrics are added to lrclib all the time).
     /// </summary>
-    public async Task<Lyrics?> GetAsync(string title, string? artist, TimeSpan? duration, CancellationToken ct)
+    public async Task<Lyrics?> GetAsync(string title, string? artist, TimeSpan? duration, CancellationToken ct, bool retry = false)
     {
         var (cleanArtist, cleanTitle) = ArtistTitle.Split(title ?? "", artist);
         cleanTitle = CleanForLyrics(cleanTitle);
@@ -54,7 +55,7 @@ public sealed partial class LyricsService
         if (cleanTitle.Length == 0) return null;
 
         var key = $"{ArtistTitle.Normalize(cleanArtist)}|{ArtistTitle.Normalize(cleanTitle)}";
-        if (TryGetMemory(key, out var cached)) return cached;
+        if (TryGetMemory(key, out var cached) && !(retry && cached == null)) return cached;
         if (ReadDisk(key) is { } fromDisk)
         {
             Remember(key, fromDisk);
@@ -80,6 +81,9 @@ public sealed partial class LyricsService
         // Looser search (titles read from YouTube are rarely exact).
         var q = ArtistTitle.Normalize($"{artist} {title}");
         var (searchStatus, searchBody) = await GetAsync($"{Api}/search?q={Uri.EscapeDataString(q)}", ct);
+        // A server in trouble is not "no lyrics": report it so the miss is not remembered.
+        if ((int)searchStatus >= 500 || searchStatus == HttpStatusCode.TooManyRequests)
+            throw new DownloadException($"le service de paroles ne répond pas (erreur {(int)searchStatus}), réessayez plus tard");
         if (searchStatus != HttpStatusCode.OK) return null;
         return PickFromSearch(searchBody, title, duration);
     }

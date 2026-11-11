@@ -114,7 +114,7 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
     private bool _hasLastPhrase;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsNaturalSelected), nameof(ShowPitch), nameof(SelectedNeedsDownload))]
+    [NotifyPropertyChangedFor(nameof(IsNaturalSelected), nameof(ShowPitch), nameof(SelectedNeedsDownload), nameof(MaxRate))]
     private TtsVoiceOption? _selectedVoice;
 
     [ObservableProperty] private SpeechLanguage? _selectedLanguage;
@@ -133,6 +133,9 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
     [ObservableProperty] private string _downloadStatus = "";
 
     public bool IsNaturalSelected => SelectedVoice?.IsNatural == true;
+
+    /// <summary>Natural voices cannot speak faster than 2×; Windows voices go up to 3×.</summary>
+    public double MaxRate => IsNaturalSelected ? Core.Speech.NeuralSpeechEngine.MaxSpeed : 3;
 
     /// <summary>Pitch only exists for Windows voices.</summary>
     public bool ShowPitch => !IsNaturalSelected;
@@ -186,7 +189,8 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
                             "ou ajoutez une voix dans Paramètres Windows → Heure et langue → Voix.");
             return null;
         }
-        var path = await RenderAsync(text);
+        // Blind-test announcements (remember: false) must not replace the phrase « Enregistrer comme son » saves.
+        var path = await RenderAsync(text, keepAsLast: remember);
         if (path == null) return null;
         if (remember) Remember(text);
         try
@@ -207,15 +211,18 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
     }
 
     /// <summary>Renders the phrase with the current voice settings (null after a toast on failure).</summary>
-    public async Task<string?> RenderAsync(string text)
+    public async Task<string?> RenderAsync(string text, bool keepAsLast = true)
     {
         IsBusy = true;
         try
         {
             var path = await RenderWithAsync(SelectedVoice, text);
-            _lastPath = path;
-            _lastText = text;
-            HasLastPhrase = true;
+            if (keepAsLast)
+            {
+                _lastPath = path;
+                _lastText = text;
+                HasLastPhrase = true;
+            }
             return path;
         }
         catch (Exception ex)

@@ -30,9 +30,18 @@ public sealed class MusicLibrary
 
     public TrackItem? Find(Guid id) => Tracks.FirstOrDefault(t => t.Id == id);
 
-    /// <summary>Finds a track by file path or source URL (YouTube links are compared by video id).</summary>
-    public TrackItem? FindExisting(string? filePath, string? sourceUrl)
+    /// <summary>
+    /// Finds a track by file path or source URL (YouTube links are compared by video id). A track known only by its
+    /// search text (Spotify, Deezer and Apple imports) is matched on that text, so importing a playlist twice does not
+    /// duplicate its songs.
+    /// </summary>
+    public TrackItem? FindExisting(string? filePath, string? sourceUrl, string? searchQuery = null)
     {
+        if (string.IsNullOrEmpty(filePath) && string.IsNullOrEmpty(sourceUrl))
+        {
+            return string.IsNullOrWhiteSpace(searchQuery) ? null
+                : Tracks.FirstOrDefault(t => string.Equals(t.SearchQuery, searchQuery, StringComparison.OrdinalIgnoreCase));
+        }
         if (!string.IsNullOrEmpty(filePath))
         {
             var byFile = Tracks.FirstOrDefault(t => string.Equals(t.FilePath, filePath, StringComparison.OrdinalIgnoreCase));
@@ -50,7 +59,7 @@ public sealed class MusicLibrary
     public TrackItem AddOrGet(TrackItem track)
     {
         if (Tracks.Contains(track)) return track;
-        var existing = FindExisting(track.FilePath, track.SourceUrl);
+        var existing = FindExisting(track.FilePath, track.SourceUrl, track.SearchQuery);
         if (existing != null)
         {
             // Complete the existing entry with what the new one knows.

@@ -1,5 +1,18 @@
 # Journal des versions
 
+## 2.2.2
+
+Corrections issues d'une relecture complète de l'application.
+
+- **Raccourcis en jeu** : un son sur F1 se déclenche aussi quand vous maintenez Maj, Ctrl ou Alt (pour courir ou vous accroupir). Si vous avez aussi lié « Maj + F1 », c'est celui-là qui joue. Taper du texte dans SpokaSoundBoard (nom d'un son, recherche) ne déclenche plus les raccourcis d'une seule touche.
+- **Périphériques débranchés** : si votre casque ou un câble disparaît un instant, l'application utilise un autre périphérique en attendant, puis reprend le vôtre tout seul dès qu'il revient, au lieu de l'oublier. Choisir « aucun » pour le casque ou le jeu est maintenant mémorisé.
+- **Réglages sauvés** : si le fichier de réglages est abîmé, seule la partie illisible est remise par défaut (vos sons et le reste sont gardés), une copie de l'ancien fichier est conservée et un message vous prévient.
+- **Soundboard** : arrêter ou remplacer un son ne fait plus de clic (fondu de quelques millisecondes). Deux sons MyInstants qui ont le même titre ne partagent plus le même fichier. « Changer le fichier » remet à zéro l'extrait et le volume calculé pour l'ancien. Un double appui très rapide ne lance plus le son deux fois.
+- **Musique** : l'autoplay ne coupe plus le morceau que vous venez de lancer pendant qu'il cherchait la suite. Réimporter une playlist Spotify, Deezer ou Apple Music ne double plus ses morceaux. « Réessayer » sur les paroles interroge vraiment le service à nouveau, et une panne passagère n'est plus prise pour « paroles introuvables ».
+- **Blind test** : les effets musique (nightcore, karaoké…) ne s'appliquent plus aux extraits, le bouton « Stop » de la musique ne coupe plus l'extrait, et la position du morceau interrompu est bien retrouvée au redémarrage.
+- **Synthèse vocale** : « Enregistrer comme son » garde votre phrase même après un blind test. Le curseur de vitesse s'arrête à 2× pour les voix naturelles (leur maximum), et « Langue lue » n'apparaît que pour elles.
+- **Divers** : la couleur d'accent change partout sans redémarrer ; les musiques et sons téléchargés que plus rien n'utilise sont supprimés automatiquement (après 2 jours) pour libérer de la place ; l'application consomme moins quand elle est cachée dans la zone de notification ; le message d'erreur inattendue est en français ; la politique de confidentialité liste tous les sites contactés.
+
 ## 2.2.1
 
 Version de fiabilité, sans nouveauté visible.

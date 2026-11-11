@@ -78,6 +78,20 @@ public static class DeviceService
     public static int CountDistinctCables(IEnumerable<AudioDevice> outputs) =>
         outputs.Where(o => o.IsVirtualCable).Select(o => CableFamily(o.Name)).Distinct(StringComparer.OrdinalIgnoreCase).Count();
 
+    /// <summary>
+    /// Picks the device for one slot from the saved choice. A saved device that is missing (unplugged, driver
+    /// restarting) is replaced by <paramref name="automatic"/> only for now: <c>Fallback</c> tells the caller not to
+    /// save that stand-in, so the user's device comes back by itself when it reappears.
+    /// </summary>
+    public static (AudioDevice? Device, bool Fallback) Resolve(IEnumerable<AudioDevice> devices, string? savedId, bool disabled,
+                                                               Func<AudioDevice?> automatic)
+    {
+        if (disabled) return (null, false);
+        if (string.IsNullOrEmpty(savedId)) return (automatic(), false);
+        var saved = devices.FirstOrDefault(d => d.Id == savedId);
+        return saved != null ? (saved, false) : (automatic(), true);
+    }
+
     public static List<AudioDevice> GetInputs() => List(DataFlow.Capture);
 
     public static List<AudioDevice> GetOutputs() => List(DataFlow.Render);

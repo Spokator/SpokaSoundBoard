@@ -1,6 +1,6 @@
 # Politique de confidentialité de SpokaSoundBoard
 
-*Mise à jour le 8 novembre 2026*
+*Mise à jour le 11 novembre 2026*
 
 Cette politique s'applique à SpokaSoundBoard, dans sa version Microsoft Store comme dans sa version téléchargée depuis GitHub (installeur). Si l'application change sa façon de traiter les données, cette page change aussi, et sa date ci-dessus avec elle.
 
@@ -28,11 +28,15 @@ Pour que vos raccourcis marchent en pleine partie, SpokaSoundBoard observe les t
 
 ## Quand l'application se connecte à Internet
 
-SpokaSoundBoard ne se connecte qu'en réponse à une action de votre part :
+SpokaSoundBoard ne se connecte que pour les fonctions en ligne que vous utilisez, et pour vérifier les mises à jour (version installeur). Voici la liste complète :
 
 - **Recherche et import de liens** : quand vous cherchez un son ou une musique, ou que vous collez un lien, l'application interroge le site concerné, par exemple **YouTube**, **SoundCloud** ou **MyInstants**, et télécharge le fichier choisi. Elle utilise pour cela les outils libres yt-dlp et ffmpeg, livrés avec l'application.
+- **Suggestions de recherche** : pendant que vous tapez une recherche de musique, le texte tapé est envoyé au service de suggestions de **Google** pour proposer des titres.
+- **Pochettes** : les images des musiques et des résultats de recherche YouTube sont chargées depuis les serveurs d'images de YouTube (**i.ytimg.com**).
+- **Autoplay, radio et « Pour vous »** : quand la file d'attente se termine avec l'autoplay activé, ou quand vous lancez une radio ou ouvrez les suggestions, l'application demande à **YouTube** des morceaux proches de ceux que vous écoutez, puis les télécharge pour les jouer. Vous pouvez désactiver l'autoplay dans la page Musique.
+- **Voix naturelles** : si vous choisissez de les télécharger, les fichiers des voix sont récupérés une seule fois sur **Hugging Face** (huggingface.co). Elles fonctionnent ensuite hors ligne : le texte que vous faites lire ne quitte jamais votre PC.
 - **Paroles** : pour afficher les paroles du morceau en cours, l'application envoie son titre, son artiste et sa durée à **lrclib.net**.
-- **Playlists** : si vous importez un lien de playlist **Spotify**, **Deezer** ou **Apple Music**, l'application lit la page publique de cette playlist pour en connaître les titres, puis les cherche comme ci-dessus.
+- **Playlists** : si vous importez un lien de playlist **Spotify**, **Deezer** ou **Apple Music**, l'application lit la page publique de cette playlist (ou l'API publique de Deezer) pour en connaître les titres, puis les cherche comme ci-dessus.
 - **Mises à jour, version installeur uniquement** : au démarrage, l'application demande à **GitHub** s'il existe une nouvelle version. Vous pouvez le désactiver dans Configuration → Mises à jour. La version Microsoft Store ne le fait jamais : c'est le Store qui la met à jour.
 - **Micro virtuel** : les boutons d'installation ouvrent le site officiel de VB-CABLE (**vb-audio.com**) ou de Virtual Audio Cable (**vac.muzychenko.net**). La version installeur peut aussi y télécharger directement l'installeur officiel.
 

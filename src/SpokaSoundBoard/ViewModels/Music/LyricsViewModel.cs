@@ -54,9 +54,9 @@ public partial class LyricsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private Task Retry() => LoadAsync(_track);
+    private Task Retry() => LoadAsync(_track, retry: true);
 
-    private async Task LoadAsync(TrackItem? track)
+    private async Task LoadAsync(TrackItem? track, bool retry = false)
     {
         _cts?.Cancel();
         _cts = new CancellationTokenSource();
@@ -80,7 +80,7 @@ public partial class LyricsViewModel : ObservableObject
                 ? (track.Artist, track.Title)
                 : ArtistTitle.Split(track.Title, null);
             var duration = track.DurationSeconds is > 0 ? TimeSpan.FromSeconds(track.DurationSeconds.Value) : (TimeSpan?)null;
-            var lyrics = await _service.GetAsync(title, artist, duration, ct);
+            var lyrics = await _service.GetAsync(title, artist, duration, ct, retry);
             if (ct.IsCancellationRequested) return;
 
             if (lyrics == null)

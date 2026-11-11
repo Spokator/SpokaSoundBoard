@@ -55,10 +55,10 @@ public partial class SoundPad : ObservableObject
     [NotifyPropertyChangedFor(nameof(HasSource))]
     private string? _sourceUrl;
 
-    /// <summary>Playback window inside the file, in seconds (EndSeconds 0 = until the end).</summary>
     /// <summary>Automatic loudness correction in dB (null = not analysed yet).</summary>
     [ObservableProperty] private double? _normalizationDb;
 
+    /// <summary>Playback window inside the file, in seconds (EndSeconds 0 = until the end).</summary>
     [ObservableProperty] private double _startSeconds;
     [ObservableProperty] private double _endSeconds;
 
@@ -347,4 +347,10 @@ public class AppSettings
 
     /// <summary>The user explicitly removed the Discord output: do not auto-select a second cable.</summary>
     public bool DiscordOutputDisabled { get; set; }
+
+    /// <summary>The user chose « aucune » for the game output: do not pick a cable again by itself.</summary>
+    public bool VirtualOutputDisabled { get; set; }
+
+    /// <summary>The user chose « aucun » for the headphones: do not pick the default device again by itself.</summary>
+    public bool MonitorDisabled { get; set; }
 }

@@ -441,7 +441,7 @@
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
                     <views:SpectrumBars Width="64" Height="28" BarCount="12" Margin="0,0,10,0" Player="{Binding DataContext.Engine.Music, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        BarBrush="{StaticResource BrandBrush}" Opacity="0.85" />
+                                        BarBrush="{DynamicResource BrandBrush}" Opacity="0.85" />
                     <Button Style="{StaticResource IconButton}" Content="&#xE90B;" ToolTip="File d'attente" AutomationProperties.Name="File d'attente" Click="OnShowMusicPanel" Tag="queue" />
                     <Button Style="{StaticResource IconButton}" Content="&#xE8BD;" ToolTip="Paroles" AutomationProperties.Name="Paroles" Click="OnShowMusicPanel" Tag="lyrics" />
                     <Button Style="{StaticResource IconButton}" Content="&#xE9E9;" ToolTip="Effets musique (basses, nightcore, 8D, karaoké…)" AutomationProperties.Name="Effets musique (basses, nightcore, 8D, karaoké…)" Click="OnShowMusicPanel" Tag="effects" />

@@ -127,7 +127,8 @@ public partial class App : Application
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         Log(e.Exception);
-        MessageBox.Show("Une erreur inattendue s'est produite :\n\n" + e.Exception.Message, "SpokaSoundBoard",
+        MessageBox.Show("Une erreur inattendue s'est produite : " + Core.FriendlyErrors.Describe(e.Exception).TrimEnd('.') +
+                        ".\n\nLe détail est enregistré dans le fichier error.log du dossier des réglages.", "SpokaSoundBoard",
             MessageBoxButton.OK, MessageBoxImage.Warning);
         e.Handled = true;
     }
