@@ -36,6 +36,10 @@ public sealed partial class MediaDownloader
 {
     private const string YtDlpUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
     private const string FfmpegUrl = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
+
+    // SHA-256 lists published with each release: the tools run silently, so a file that does not match is never kept.
+    private const string YtDlpSumsUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA2-256SUMS";
+    private const string FfmpegSumsUrl = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/checksums.sha256";
     private const string FilePrefix = "[SPKFILE]";
     private const string ProgressPrefix = "[SPKPROG]";
     private const string Separator = "|#|";
@@ -535,7 +539,8 @@ public sealed partial class MediaDownloader
             }
 
             progress?.Report(new DownloadProgress(0, "Première utilisation : installation de yt-dlp…"));
-            await DownloadFileAsync(YtDlpUrl, YtDlpPath, progress, "Installation de yt-dlp", ct);
+            var expected = await PublishedHashAsync(YtDlpSumsUrl, "yt-dlp.exe", ct);
+            await DownloadFileAsync(YtDlpUrl, YtDlpPath, progress, "Installation de yt-dlp", ct, expected);
             _updatedThisSession = true;
         }
         finally
@@ -580,7 +585,8 @@ public sealed partial class MediaDownloader
         {
             if (File.Exists(FfmpegPath)) return;
             var zip = Path.Combine(ToolsDirectory, "ffmpeg.zip");
-            await DownloadFileAsync(FfmpegUrl, zip, progress, "Installation du convertisseur audio (une seule fois)", ct);
+            var expected = await PublishedHashAsync(FfmpegSumsUrl, "ffmpeg-master-latest-win64-gpl.zip", ct);
+            await DownloadFileAsync(FfmpegUrl, zip, progress, "Installation du convertisseur audio (une seule fois)", ct, expected);
             await Task.Run(() =>
             {
                 using var archive = ZipFile.OpenRead(zip);
@@ -596,7 +602,24 @@ public sealed partial class MediaDownloader
         }
     }
 
-    private async Task DownloadFileAsync(string url, string target, IProgress<DownloadProgress>? progress, string label, CancellationToken ct)
+    /// <summary>The hash the publisher lists for a tool; without it the tool is not installed.</summary>
+    private static async Task<string> PublishedHashAsync(string sumsUrl, string fileName, CancellationToken ct)
+    {
+        string sums;
+        try
+        {
+            sums = await Http.GetStringAsync(sumsUrl, ct);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new DownloadException($"Téléchargement impossible ({FriendlyErrors.Describe(ex)}). Vérifiez votre connexion Internet.");
+        }
+        return Checksums.Find(sums, fileName)
+               ?? throw new DownloadException($"Impossible de vérifier {fileName} (empreinte introuvable chez l'éditeur) : il n'a pas été installé. Réessayez plus tard.");
+    }
+
+    private async Task DownloadFileAsync(string url, string target, IProgress<DownloadProgress>? progress, string label, CancellationToken ct,
+        string? expectedSha256 = null)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(target)!);
         var temp = target + ".part";
@@ -617,6 +640,11 @@ public sealed partial class MediaDownloader
                     done += n;
                     if (total > 0) progress?.Report(new DownloadProgress(done * 100.0 / total.Value, $"{label}… {done / 1048576} / {total.Value / 1048576} Mo"));
                 }
+            }
+            if (expectedSha256 != null && await Checksums.FileSha256Async(temp, ct) != expectedSha256)
+            {
+                TryDelete(temp);
+                throw new DownloadException($"{label} : le fichier reçu ne correspond pas à celui publié par son éditeur. Il n'a pas été installé ; réessayez plus tard.");
             }
             File.Move(temp, target, true);
         }

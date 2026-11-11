@@ -36,10 +36,22 @@ function Invoke-Tool([string]$exe, [string[]]$arguments, [string]$what, [switch]
     if ($LASTEXITCODE -ne 0) { throw "$what a échoué (code $LASTEXITCODE)." }
 }
 
-function Get-File([string]$url, [string]$target) {
+function Get-File([string]$url, [string]$target, [string]$sumsUrl) {
     Write-Host "Téléchargement de $url"
     $tmp = "$target.part"
     Invoke-WebRequest $url -OutFile $tmp -UseBasicParsing
+    if ($sumsUrl) {
+        # The tools are shipped to every user: refuse a file that differs from what its publisher lists.
+        $name = [IO.Path]::GetFileName(([Uri]$url).AbsolutePath)
+        $sums = (Invoke-WebRequest $sumsUrl -UseBasicParsing).Content
+        if ($sums -is [byte[]]) { $sums = [Text.Encoding]::UTF8.GetString($sums) }
+        $line = ($sums -split "`n") | Where-Object { $_ -match "^[0-9a-fA-F]{64}\s+\*?$([regex]::Escape($name))\s*$" } | Select-Object -First 1
+        if (-not $line) { Remove-Item $tmp -Force; throw "Empreinte de $name introuvable dans $sumsUrl." }
+        $expected = $line.Substring(0, 64).ToLowerInvariant()
+        $actual = (Get-FileHash $tmp -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($actual -ne $expected) { Remove-Item $tmp -Force; throw "$name ne correspond pas à l'empreinte publiée ($actual au lieu de $expected)." }
+        Write-Host "  empreinte vérifiée ($name)"
+    }
     Move-Item $tmp $target -Force
 }
 
@@ -69,14 +81,14 @@ $signtool = Join-Path $sdkBin "signtool.exe"
 # ---------------------------------------------------------------- 3. yt-dlp and ffmpeg (bundled: the Store edition never downloads executables)
 $ytdlp = Join-Path $deps "yt-dlp.exe"
 if (-not (Test-Path $ytdlp) -or ((Get-Date) - (Get-Item $ytdlp).LastWriteTime).TotalDays -gt 7) {
-    Get-File "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" $ytdlp
+    Get-File "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" $ytdlp "https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA2-256SUMS"
 }
 $ffmpeg = Join-Path $deps "ffmpeg.exe"
 $ffmpegLicense = Join-Path $deps "ffmpeg-LICENSE.txt"
 if (-not (Test-Path $ffmpeg) -or ((Get-Date) - (Get-Item $ffmpeg).LastWriteTime).TotalDays -gt 30) {
     $zip = Join-Path $deps "ffmpeg-win64-gpl.zip"
     if (-not (Test-Path $zip) -or ((Get-Date) - (Get-Item $zip).LastWriteTime).TotalDays -gt 30) {
-        Get-File "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip" $zip
+        Get-File "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip" $zip "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/checksums.sha256"
     }
     $archive = [IO.Compression.ZipFile]::OpenRead($zip)
     try {

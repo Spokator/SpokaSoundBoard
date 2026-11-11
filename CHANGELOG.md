@@ -1,5 +1,10 @@
 # Journal des versions
 
+## 2.5.1
+
+- **Outils vérifiés** : yt-dlp et le convertisseur audio ffmpeg, téléchargés à la première utilisation dans la version installeur, sont comparés à l'empreinte SHA-256 publiée par leurs auteurs. Un fichier qui ne correspond pas est supprimé sans jamais être lancé. Ceux livrés avec l'installeur et la version Microsoft Store sont vérifiés de la même façon.
+- **Preset renommé** : « Dark Vador » s'appelle maintenant « Seigneur noir » (même voix). Si c'était votre effet actif, il le reste.
+
 ## 2.5.0
 
 Blind test sur un thème, et une application plus facile à utiliser au clavier.

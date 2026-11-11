@@ -157,6 +157,7 @@ public sealed class SettingsStore
         s.BlindTest.Sanitize();
         s.TextToSpeech ??= new TextToSpeechSettings();
         s.TextToSpeech.Sanitize();
+        if (s.SelectedPresetName == BuiltInPresets.OldDarkLordName) s.SelectedPresetName = BuiltInPresets.DarkLordName;
         s.CustomPresets ??= [];
         s.CustomPresets.RemoveAll(p => p is null);
         foreach (var preset in s.CustomPresets)

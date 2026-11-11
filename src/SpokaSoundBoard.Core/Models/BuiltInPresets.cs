@@ -2,6 +2,10 @@ namespace SpokaSoundBoard.Core.Models;
 
 public static class BuiltInPresets
 {
+    /// <summary>Called « Dark Vador » before 2.5.1 (a trademark): settings saved with the old name are moved over.</summary>
+    public const string DarkLordName = "Seigneur noir";
+    public const string OldDarkLordName = "Dark Vador";
+
     public static IReadOnlyList<EffectPreset> All { get; } = Create();
 
     private static List<EffectPreset> Create()
@@ -167,7 +171,7 @@ public static class BuiltInPresets
                 s.EqHighDb = 3f;
                 s.CompressorAmount = 0.8f;
             }),
-            P("Dark Vador", "\uE7E8", "Voix grave, métallique et caverneuse.", s =>
+            P(DarkLordName, "\uE7E8", "Voix grave, métallique et caverneuse, comme un seigneur noir de l'espace.", s =>
             {
                 s.PitchSemitones = -4f;
                 s.RobotEnabled = true;

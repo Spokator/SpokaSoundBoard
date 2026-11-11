@@ -36,7 +36,7 @@ Diffusez votre playlist et vos sons **dans votre micro**, parlez par-dessus (la 
 | 🗨️ **Synthèse vocale** | Tapez une phrase, elle est dite dans votre micro, et devient un son de la soundboard en un clic. Voix naturelles neuronales hors ligne (téléchargement unique de 139 Mo) ou voix Windows. |
 | 📊 **Statistiques** | Top morceaux et artistes, heures d'écoute, séries, rétrospective de l'année. |
 | 🗣️ **Ducking** | Quand vous parlez, la musique baisse pour que votre voix passe par-dessus, puis remonte doucement. |
-| 🎙️ **22 effets de voix** | Pilote d'hélico, tour de contrôle, talkie-walkie, astronaute NASA, pilote de chasse, téléphone, vieille radio, mégaphone, robot, Dark Vador, démon, fantôme, alien, sous l'eau, lo-fi 8 bits… Chaque réglage est modifiable et vous pouvez enregistrer vos propres presets. |
+| 🎙️ **22 effets de voix** | Pilote d'hélico, tour de contrôle, talkie-walkie, astronaute NASA, pilote de chasse, téléphone, vieille radio, mégaphone, robot, seigneur noir, démon, fantôme, alien, sous l'eau, lo-fi 8 bits… Chaque réglage est modifiable et vous pouvez enregistrer vos propres presets. |
 | 📻 **Mode radio** | Votre voix ne passe que quand vous maintenez la touche, avec le grésillement et le bip de fin (roger, NASA « Quindar »…). |
 | 🔀 **Jeu et Discord séparés** | Tableau « Qui entend quoi ? » : par exemple, la musique et l'effet pilote pour les passagers de l'hélico, et seulement votre voix naturelle sur Discord. |
 | 📦 **Packs de soundboard** | Exportez votre soundboard (sons inclus) en `.spokapack` et envoyez-la à vos amis. |
