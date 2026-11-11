@@ -103,6 +103,7 @@ public sealed class SettingsStore
         nameof(AppSettings.BlindTest) => "blind test",
         nameof(AppSettings.TextToSpeech) => "synthèse vocale",
         nameof(AppSettings.CustomPresets) => "presets personnalisés",
+        nameof(AppSettings.Remote) => "télécommande",
         _ => "autres réglages",
     };
 
@@ -157,6 +158,8 @@ public sealed class SettingsStore
         s.BlindTest.Sanitize();
         s.TextToSpeech ??= new TextToSpeechSettings();
         s.TextToSpeech.Sanitize();
+        s.Remote ??= new RemoteSettings();
+        s.Remote.Sanitize();
         if (s.SelectedPresetName == BuiltInPresets.OldDarkLordName) s.SelectedPresetName = BuiltInPresets.DarkLordName;
         s.CustomPresets ??= [];
         s.CustomPresets.RemoveAll(p => p is null);

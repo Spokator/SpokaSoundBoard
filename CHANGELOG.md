@@ -1,5 +1,12 @@
 # Journal des versions
 
+## 2.6.0
+
+Pilotez SpokaSoundBoard à distance.
+
+- **Télécommande** (Configuration → Télécommande, désactivée par défaut) : déclenchez vos sons, arrêtez-les, coupez le micro, changez d'effet de voix ou de musique depuis un Stream Deck, Touch Portal, un script OBS ou un simple lien. Chaque adresse contient un code d'accès secret, et une adresse qui se trompe de code plusieurs fois est bloquée.
+- **Depuis votre téléphone** : activez « Depuis mon téléphone », scannez le QR code avec un téléphone sur le même Wi-Fi, et toute votre soundboard s'affiche (avec ses onglets) : un appui joue le son dans votre micro. Le micro, les effets, l'effet de voix et la musique se pilotent aussi. Aucune application à installer.
+
 ## 2.5.1
 
 - **Outils vérifiés** : yt-dlp et le convertisseur audio ffmpeg, téléchargés à la première utilisation dans la version installeur, sont comparés à l'empreinte SHA-256 publiée par leurs auteurs. Un fichier qui ne correspond pas est supprimé sans jamais être lancé. Ceux livrés avec l'installeur et la version Microsoft Store sont vérifiés de la même façon.

@@ -329,6 +329,26 @@ public partial class AppearanceSettings : ObservableObject
     [ObservableProperty] private string _padCategory = "";
 }
 
+/// <summary>Remote control: Stream Deck / Touch Portal / OBS on this PC, or a phone on the local network.</summary>
+public partial class RemoteSettings : ObservableObject
+{
+    [ObservableProperty] private bool _enabled;
+
+    /// <summary>Also accept the local network (phone). Off: this PC only.</summary>
+    [ObservableProperty] private bool _allowNetwork;
+
+    [ObservableProperty] private int _port = Remote.RemoteServer.DefaultPort;
+
+    /// <summary>Access code every request carries (regenerated on demand).</summary>
+    [ObservableProperty] private string _code = Remote.RemoteServer.NewCode();
+
+    public void Sanitize()
+    {
+        if (Port is < 1024 or > 65535) Port = Remote.RemoteServer.DefaultPort;
+        if (string.IsNullOrWhiteSpace(Code) || Code.Length < 8) Code = Remote.RemoteServer.NewCode();
+    }
+}
+
 public class AppSettings
 {
     public AppearanceSettings Appearance { get; set; } = new();
@@ -356,6 +376,8 @@ public class AppSettings
 
     public BlindTestSettings BlindTest { get; set; } = new();
     public TextToSpeechSettings TextToSpeech { get; set; } = new();
+
+    public RemoteSettings Remote { get; set; } = new();
 
     public string? SelectedPresetName { get; set; } = "Voix normale";
     public RepeatMode Repeat { get; set; } = RepeatMode.All;

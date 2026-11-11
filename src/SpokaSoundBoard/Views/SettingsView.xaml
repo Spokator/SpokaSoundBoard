@@ -430,6 +430,82 @@
             <Border Style="{StaticResource Card}">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8EA;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
+                        <TextBlock Text="Télécommande" Style="{StaticResource SectionTitle}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,10"
+                               Text="Déclenchez vos sons depuis un Stream Deck, Touch Portal, un script OBS… ou depuis votre téléphone sur le même Wi-Fi. Chaque adresse contient un code d'accès : ne la partagez pas." />
+                    <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding RemoteSettings.Enabled}" Margin="0,0,0,8">
+                        <StackPanel>
+                            <TextBlock Text="Activer la télécommande" Style="{StaticResource Label}" />
+                            <TextBlock Text="Accessible depuis ce PC (Stream Deck, Touch Portal, OBS…)" Style="{StaticResource Caption}" />
+                        </StackPanel>
+                    </CheckBox>
+                    <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding RemoteSettings.AllowNetwork}" Margin="0,0,0,8"
+                              IsEnabled="{Binding RemoteSettings.Enabled}">
+                        <StackPanel>
+                            <TextBlock Text="Depuis mon téléphone" Style="{StaticResource Label}" />
+                            <TextBlock Text="Ouvre la télécommande aux appareils de votre réseau local (même Wi-Fi). À activer seulement sur le réseau de la maison." Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </CheckBox>
+                    <TextBlock Text="{Binding RemoteStatus}" Style="{StaticResource Caption}" TextWrapping="Wrap" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,0,8" />
+
+                    <Grid Visibility="{Binding RemoteSettings.Enabled, Converter={StaticResource BoolToVis}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Adresse sur ce PC" Style="{StaticResource Caption}" Margin="0,0,0,4" />
+                            <DockPanel Margin="0,0,0,10">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Content="Ouvrir" Padding="10,5" Margin="6,0,0,0"
+                                        Command="{Binding OpenRemotePageCommand}" />
+                                <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Content="Copier" Padding="10,5" Margin="6,0,0,0"
+                                        Command="{Binding CopyTextCommand}" CommandParameter="{Binding RemoteLocalUrl}" />
+                                <TextBox Text="{Binding RemoteLocalUrl, Mode=OneWay}" IsReadOnly="True" VerticalContentAlignment="Center"
+                                         AutomationProperties.Name="Adresse de la télécommande sur ce PC" />
+                            </DockPanel>
+                            <StackPanel Visibility="{Binding HasRemoteNetworkUrl, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Adresse pour le téléphone" Style="{StaticResource Caption}" Margin="0,0,0,4" />
+                                <DockPanel Margin="0,0,0,10">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Content="Copier" Padding="10,5" Margin="6,0,0,0"
+                                            Command="{Binding CopyTextCommand}" CommandParameter="{Binding RemoteNetworkUrl}" />
+                                    <TextBox Text="{Binding RemoteNetworkUrl, Mode=OneWay}" IsReadOnly="True" VerticalContentAlignment="Center"
+                                             AutomationProperties.Name="Adresse de la télécommande pour le téléphone" />
+                                </DockPanel>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <TextBlock Text="Port" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBox Width="80" Text="{Binding RemoteSettings.Port, UpdateSourceTrigger=LostFocus}" AutomationProperties.Name="Port de la télécommande" />
+                                <Button Style="{StaticResource FlatButton}" Content="Nouveau code d'accès" Padding="10,5" Margin="12,0,0,0"
+                                        Command="{Binding NewRemoteCodeCommand}" ToolTip="Les anciennes adresses (et le QR code) cessent de fonctionner" />
+                            </StackPanel>
+                            <Expander Header="Utiliser avec un Stream Deck, Touch Portal ou OBS" Foreground="{DynamicResource TextBrush}">
+                                <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,8,0,0" FontFamily="Cascadia Mono, Consolas">
+                                    <Run Text="Ajoutez une action « ouvrir une adresse » ou « requête HTTP » (GET ou POST) : l'adresse sur ce PC, en remplaçant « /? » par l'un de ces chemins suivi de « ?code=… » :" FontFamily="Segoe UI" />
+                                    <LineBreak /><LineBreak />
+                                    <Run Text="/api/pads/NOM DU SON/play" /><Run Text="  jouer un son (son nom exact)" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/stop" /><Run Text="  arrêter tous les sons" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/mic/toggle" /><Run Text="  couper / activer le micro" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/effects/toggle" /><Run Text="  effets de voix on / off" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/preset/next, /api/preset/previous" /><Run Text="  effet suivant / précédent" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/music/playpause, /api/music/next" /><Run Text="  musique" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/pads, /api/status" /><Run Text="  liste des sons et état (JSON)" FontFamily="Segoe UI" />
+                                </TextBlock>
+                            </Expander>
+                        </StackPanel>
+                        <Border Grid.Column="1" Margin="16,0,0,0" Background="White" CornerRadius="8" Padding="6" VerticalAlignment="Top"
+                                Visibility="{Binding HasRemoteNetworkUrl, Converter={StaticResource BoolToVis}}">
+                            <Image Source="{Binding RemoteQrCode}" Width="160" Height="160" RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                   AutomationProperties.Name="QR code de la télécommande pour le téléphone" />
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBlock Style="{StaticResource Icon}" Text="&#xEDA2;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
                         <TextBlock Text="Stockage" Style="{StaticResource SectionTitle}" />
                     </StackPanel>

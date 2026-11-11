@@ -407,6 +407,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Devices.InitializeSelection();
         RestartEngine();
         WatchDevices();
+        InitializeRemote();
         Music.RestoreState();
         Soundboard.AnalyzeMissingLoudness();
         Music.AnalyzeMissingLoudness();
@@ -706,6 +707,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         _meterTimer.Stop();
         _deviceWatcher?.Dispose();
+        DisposeRemote();
         _saveTimer.Stop();
         Save();
         BlindTest.Shutdown();
