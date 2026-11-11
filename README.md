@@ -47,6 +47,7 @@ Diffusez votre playlist et vos sons **dans votre micro**, parlez par-dessus (la 
 <div align="center">
 <img src="docs/screenshots/voice.png" alt="Voix et effets" width="420" /> <img src="docs/screenshots/mix.png" alt="Mixage et ducking" width="420" />
 <img src="docs/screenshots/search.png" alt="Recherche" width="420" /> <img src="docs/screenshots/music.png" alt="Musique" width="420" />
+<img src="docs/screenshots/blindtest.png" alt="Blind test" width="420" />
 </div>
 
 ## Installation
