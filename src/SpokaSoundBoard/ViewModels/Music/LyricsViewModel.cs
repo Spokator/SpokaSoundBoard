@@ -109,7 +109,7 @@ public partial class LyricsViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            Status = "Paroles indisponibles : " + ex.Message;
+            Status = "Paroles indisponibles : " + Core.FriendlyErrors.Describe(ex);
         }
         finally
         {

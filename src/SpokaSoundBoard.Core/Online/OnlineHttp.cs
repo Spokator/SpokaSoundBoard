@@ -7,7 +7,7 @@ namespace SpokaSoundBoard.Core.Online;
 /// <summary>Shared HTTP plumbing for the online music services: one pooled client, friendly French errors.</summary>
 internal static class OnlineHttp
 {
-    public const string AppUserAgent = "SpokaSoundBoard/2.0 (https://github.com/Spokator/SpokaSoundBoard)";
+    public static readonly string AppUserAgent = $"SpokaSoundBoard/{AppEnvironment.UserAgentVersion} (https://github.com/Spokator/SpokaSoundBoard)";
     public const string BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 
     private static readonly HttpClient Client = new(new SocketsHttpHandler

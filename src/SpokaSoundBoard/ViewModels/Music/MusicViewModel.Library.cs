@@ -104,12 +104,6 @@ public partial class MusicViewModel
     partial void OnFilterChanged(string value) => RefreshVisible();
 
     [RelayCommand]
-    private void OpenSection(MusicSection? section)
-    {
-        if (section != null) SelectedSection = section;
-    }
-
-    [RelayCommand]
     private void OpenPlaylist(MusicPlaylist? playlist)
     {
         if (playlist != null) SelectedPlaylist = playlist;
@@ -409,7 +403,7 @@ public partial class MusicViewModel
         }
         catch (Exception ex)
         {
-            _main.ShowToast("Export impossible : " + ex.Message);
+            _main.ShowToast("Export impossible : " + Core.FriendlyErrors.Describe(ex));
         }
     }
 
@@ -446,7 +440,7 @@ public partial class MusicViewModel
         }
         catch (Exception ex)
         {
-            _main.ShowToast("Lecture du dossier impossible : " + ex.Message);
+            _main.ShowToast("Lecture du dossier impossible : " + Core.FriendlyErrors.Describe(ex));
         }
 
         var added = new List<TrackItem>();

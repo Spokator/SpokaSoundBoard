@@ -153,7 +153,7 @@ public partial class LinkImporter : ObservableObject
         catch (Exception ex)
         {
             HasError = true;
-            Status = ex is DownloadException ? ex.Message : "Recherche impossible : " + ex.Message;
+            Status = ex is DownloadException ? Core.FriendlyErrors.Describe(ex) : "Recherche impossible : " + Core.FriendlyErrors.Describe(ex);
         }
         finally
         {
@@ -193,7 +193,7 @@ public partial class LinkImporter : ObservableObject
         catch (Exception ex)
         {
             HasError = true;
-            Status = $"« {item.Title} » : " + (ex is DownloadException ? ex.Message : ex.Message);
+            Status = $"« {item.Title} » : " + Core.FriendlyErrors.Describe(ex);
         }
         finally
         {
@@ -237,7 +237,7 @@ public partial class LinkImporter : ObservableObject
         catch (Exception ex)
         {
             HasError = true;
-            Status = "Aperçu impossible : " + ex.Message;
+            Status = "Aperçu impossible : " + Core.FriendlyErrors.Describe(ex);
         }
         finally
         {
@@ -324,7 +324,7 @@ public partial class LinkImporter : ObservableObject
         catch (Exception ex)
         {
             HasError = true;
-            Status = ex is DownloadException ? ex.Message : "Erreur : " + ex.Message;
+            Status = ex is DownloadException ? Core.FriendlyErrors.Describe(ex) : "Erreur : " + Core.FriendlyErrors.Describe(ex);
         }
         finally
         {

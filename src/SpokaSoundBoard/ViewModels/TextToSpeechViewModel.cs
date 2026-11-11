@@ -201,7 +201,7 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
         catch (Exception ex)
         {
             IsSpeaking = false;
-            _main.ShowToast("Lecture impossible de la synthèse vocale : " + ex.Message);
+            _main.ShowToast("Lecture impossible de la synthèse vocale : " + Core.FriendlyErrors.Describe(ex));
             return null;
         }
     }
@@ -220,7 +220,7 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _main.ShowToast("Synthèse vocale impossible : " + ex.Message);
+            _main.ShowToast("Synthèse vocale impossible : " + Core.FriendlyErrors.Describe(ex));
             return null;
         }
         finally
@@ -248,7 +248,7 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
             catch (Exception ex) when (Speech.DefaultVoice != null && ex is not ArgumentException)
             {
                 // The natural engine failed (damaged files, missing native library…): say it with Windows anyway.
-                _main.ShowToast("Voix naturelle indisponible (" + ex.Message + ") : voix Windows utilisée.");
+                _main.ShowToast("Voix naturelle indisponible (" + Core.FriendlyErrors.Describe(ex) + ") : voix Windows utilisée.");
                 return await Speech.SynthesizeAsync(text, Speech.DefaultVoice.Id, Settings.Rate, Settings.Pitch);
             }
         }
@@ -299,7 +299,7 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _main.ShowToast("Aperçu impossible : " + ex.Message);
+            _main.ShowToast("Aperçu impossible : " + Core.FriendlyErrors.Describe(ex));
         }
         finally
         {
@@ -340,11 +340,11 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
         }
         catch (DownloadException ex)
         {
-            _main.ShowToast(ex.Message);
+            _main.ShowToast(Core.FriendlyErrors.Describe(ex));
         }
         catch (Exception ex)
         {
-            _main.ShowToast("Téléchargement des voix naturelles impossible : " + ex.Message);
+            _main.ShowToast("Téléchargement des voix naturelles impossible : " + Core.FriendlyErrors.Describe(ex));
         }
         finally
         {
@@ -373,7 +373,7 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _main.ShowToast("Suppression impossible des voix naturelles : " + ex.Message);
+            _main.ShowToast("Suppression impossible des voix naturelles : " + Core.FriendlyErrors.Describe(ex));
         }
         RefreshInstalled();
     }
@@ -431,7 +431,7 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _main.ShowToast("Impossible d'enregistrer la phrase : " + ex.Message);
+            _main.ShowToast("Impossible d'enregistrer la phrase : " + Core.FriendlyErrors.Describe(ex));
         }
     }
 

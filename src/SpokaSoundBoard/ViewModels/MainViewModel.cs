@@ -200,7 +200,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            ShowToast("Impossible de modifier le démarrage automatique : " + ex.Message);
+            ShowToast("Impossible de modifier le démarrage automatique : " + Core.FriendlyErrors.Describe(ex));
         }
         await RefreshAutostartAsync();
     }
@@ -237,7 +237,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            ShowToast("Raccourcis globaux indisponibles : " + ex.Message);
+            ShowToast("Raccourcis globaux indisponibles : " + Core.FriendlyErrors.Describe(ex));
         }
 
         LinkImporter.CleanPreviewCache(Downloader);
@@ -403,7 +403,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            if (!silent) ShowToast("Vérification impossible : " + ex.Message);
+            if (!silent) ShowToast("Vérification impossible : " + Core.FriendlyErrors.Describe(ex));
         }
     }
 
@@ -424,7 +424,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            ShowToast("Mise à jour impossible : " + ex.Message);
+            ShowToast("Mise à jour impossible : " + Core.FriendlyErrors.Describe(ex));
             IsUpdating = false;
         }
     }
@@ -483,7 +483,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            ShowToast("Impossible d'enregistrer les réglages : " + ex.Message);
+            ShowToast("Impossible d'enregistrer les réglages : " + Core.FriendlyErrors.Describe(ex));
         }
     }
 

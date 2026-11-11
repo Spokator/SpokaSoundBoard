@@ -46,6 +46,10 @@ public static class AppEnvironment
     /// <summary>Folder of the running executable (read-only when packaged).</summary>
     public static string InstallDirectory => AppContext.BaseDirectory;
 
+    /// <summary>"2.2.1": version of the running app, for HTTP User-Agent headers.</summary>
+    public static string UserAgentVersion { get; } =
+        (System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(2, 0)).ToString(3);
+
     /// <summary>Tools shipped with the app (yt-dlp, ffmpeg): installer "tools" folder or package "tools" folder.</summary>
     public static string BundledToolsDirectory => Path.Combine(InstallDirectory, "tools");
 

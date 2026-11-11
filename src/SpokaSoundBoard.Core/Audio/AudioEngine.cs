@@ -104,7 +104,7 @@ public sealed class AudioEngine : IDisposable
                         _mic?.Dispose();
                         _mic = null;
                         Core.SetMicSource(null);
-                        warnings.Add("Micro indisponible : " + ex.Message);
+                        warnings.Add("Micro indisponible : " + FriendlyErrors.Describe(ex));
                     }
                 }
                 else
@@ -165,7 +165,7 @@ public sealed class AudioEngine : IDisposable
             {
                 StopUnlocked();
                 State = EngineState.Error;
-                StatusMessage = "Erreur audio : " + ex.Message;
+                StatusMessage = "Erreur audio : " + FriendlyErrors.Describe(ex);
             }
         }
         StateChanged?.Invoke();
@@ -205,7 +205,7 @@ public sealed class AudioEngine : IDisposable
         {
             if (_stopping) return;
             State = EngineState.Error;
-            StatusMessage = "Périphérique perdu : " + ex.Message;
+            StatusMessage = "Périphérique perdu : " + FriendlyErrors.Describe(ex);
         }
         StateChanged?.Invoke();
     }

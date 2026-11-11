@@ -2,14 +2,32 @@ using NAudio.Wave;
 
 namespace SpokaSoundBoard.Core.Audio;
 
-/// <summary>Mixes any number of simultaneously playing soundboard sounds.</summary>
+/// <summary>
+/// Mixes the soundboard sounds that are playing at the same time. The audio thread never disposes a file reader:
+/// finished sounds are handed to the thread pool (like <see cref="MusicPlayer"/> does with its decks), and the
+/// number of simultaneous sounds is capped so that hammering a hotkey cannot overload the audio thread.
+/// </summary>
 public sealed class SoundPadPlayer : ISampleProvider, IDisposable
 {
+    /// <summary>Sounds playing at once; starting one more stops the oldest.</summary>
+    public const int MaxVoices = 24;
+
     private readonly object _lock = new();
-    private readonly List<Voice> _voices = [];
+    private readonly List<Voice> _voices = new(MaxVoices + 1);
+
+    // Readers waiting to be disposed off the audio thread. Preallocated: adding never allocates in steady state.
+    private readonly WaveStream?[] _graveyard = new WaveStream?[MaxVoices * 4];
+    private int _graveyardCount;
+    private int _drainQueued;
+    private readonly Drainer _drainer;
+
     private float[] _scratch = new float[4096];
 
-    public SoundPadPlayer(int sampleRate) => WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, 2);
+    public SoundPadPlayer(int sampleRate)
+    {
+        WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, 2);
+        _drainer = new Drainer(this);
+    }
 
     public WaveFormat WaveFormat { get; }
 
@@ -27,25 +45,49 @@ public sealed class SoundPadPlayer : ISampleProvider, IDisposable
         if (endSeconds > startSeconds && endSeconds > 0)
             budget = (long)((endSeconds - start.TotalSeconds) * WaveFormat.SampleRate) * 2;
 
-        lock (_lock) _voices.Add(new Voice(id, path, reader, provider, volume, loop, start, budget));
+        WaveStream? evicted = null;
+        lock (_lock)
+        {
+            if (_voices.Count >= MaxVoices)
+            {
+                evicted = _voices[0].Reader;
+                _voices.RemoveAt(0);
+            }
+            _voices.Add(new Voice(id, path, reader, provider, volume, loop, start, budget));
+        }
+        evicted?.Dispose();
     });
+
+    /// <summary>Number of sounds currently playing.</summary>
+    public int ActiveCount
+    {
+        get { lock (_lock) return _voices.Count; }
+    }
 
     public void Stop(Guid id)
     {
+        List<WaveStream> stopped = [];
         lock (_lock)
         {
-            foreach (var v in _voices.Where(v => v.Id == id)) v.Reader.Dispose();
-            _voices.RemoveAll(v => v.Id == id);
+            for (var i = _voices.Count - 1; i >= 0; i--)
+            {
+                if (_voices[i].Id != id) continue;
+                stopped.Add(_voices[i].Reader);
+                _voices.RemoveAt(i);
+            }
         }
+        foreach (var reader in stopped) reader.Dispose(); // outside the lock the audio thread needs
     }
 
     public void StopAll()
     {
+        List<WaveStream> stopped;
         lock (_lock)
         {
-            foreach (var v in _voices) v.Reader.Dispose();
+            stopped = _voices.Select(v => v.Reader).ToList();
             _voices.Clear();
         }
+        foreach (var reader in stopped) reader.Dispose();
     }
 
     public bool IsPlaying(Guid id)
@@ -70,6 +112,7 @@ public sealed class SoundPadPlayer : ISampleProvider, IDisposable
         Array.Clear(buffer, offset, count);
         if (_scratch.Length < count) _scratch = new float[count];
 
+        var retired = false;
         lock (_lock)
         {
             for (var i = _voices.Count - 1; i >= 0; i--)
@@ -106,15 +149,55 @@ public sealed class SoundPadPlayer : ISampleProvider, IDisposable
 
                 if (total < count)
                 {
-                    v.Reader.Dispose();
                     _voices.RemoveAt(i);
+                    retired |= Retire(v.Reader);
                 }
             }
         }
+        if (retired && Interlocked.Exchange(ref _drainQueued, 1) == 0)
+            ThreadPool.UnsafeQueueUserWorkItem(_drainer, preferLocal: false);
         return count;
     }
 
-    public void Dispose() => StopAll();
+    public void Dispose()
+    {
+        StopAll();
+        DrainGraveyard();
+    }
+
+    /// <summary>Queues a reader for disposal on the thread pool. Called with <see cref="_lock"/> held.</summary>
+    private bool Retire(WaveStream reader)
+    {
+        if (_graveyardCount < _graveyard.Length)
+        {
+            _graveyard[_graveyardCount++] = reader;
+            return true;
+        }
+        // Only if the thread pool is far behind: dispose here rather than leak the file handle.
+        try { reader.Dispose(); } catch { /* never throw on the audio thread */ }
+        return false;
+    }
+
+    private void DrainGraveyard()
+    {
+        Volatile.Write(ref _drainQueued, 0);
+        while (true)
+        {
+            WaveStream? reader;
+            lock (_lock)
+            {
+                if (_graveyardCount == 0) return;
+                reader = _graveyard[--_graveyardCount];
+                _graveyard[_graveyardCount] = null;
+            }
+            try { reader?.Dispose(); } catch { /* best effort */ }
+        }
+    }
+
+    private sealed class Drainer(SoundPadPlayer owner) : IThreadPoolWorkItem
+    {
+        public void Execute() => owner.DrainGraveyard();
+    }
 
     private sealed class Voice(Guid id, string path, WaveStream reader, ISampleProvider provider, float volume, bool loop, TimeSpan start, long budget)
     {

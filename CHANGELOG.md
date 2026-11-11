@@ -1,5 +1,14 @@
 # Journal des versions
 
+## 2.2.1
+
+Version de fiabilité, sans nouveauté visible.
+
+- **Mises à jour plus sûres** : l'installateur téléchargé est vérifié (taille et empreinte SHA-256 publiées par GitHub) avant d'être lancé. S'il ne correspond pas, il est supprimé et rien n'est installé.
+- **Réglages protégés** : une valeur abîmée dans le fichier de réglages (effet de voix, mixage, effets musique, raccourci vide) est remise dans les limites au lieu de couper le son ou d'effacer tous vos réglages. Les presets importés depuis un pack sont vérifiés de la même façon.
+- **Soundboard plus fluide** : 24 sons au plus en même temps (le plus ancien s'arrête), et les fichiers terminés sont refermés en arrière-plan, sans gêner le son.
+- **Messages d'erreur en français** : les erreurs réseau, de fichier ou de périphérique sont expliquées clairement au lieu d'afficher le message technique en anglais.
+
 ## 2.2.0
 
 - **Synthèse vocale dans son propre onglet** : elle a maintenant sa place dans le menu de gauche, juste sous Soundboard, au lieu d'être cachée dans la page Soundboard.

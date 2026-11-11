@@ -187,9 +187,6 @@ public partial class MusicViewModel : ObservableObject
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(CurrentSubtitle));
 
     [RelayCommand]
-    private void ShowPanel(string panel) => SidePanel = SidePanel == panel ? "" : panel;
-
-    [RelayCommand]
     private void ClosePanel() => SidePanel = "";
 
     // ---- Transport ---------------------------------------------------------------------------------------
@@ -480,8 +477,8 @@ public partial class MusicViewModel : ObservableObject
         catch (Exception ex)
         {
             track.State = TrackState.Error;
-            track.StateMessage = ex.Message;
-            _main.ShowToast($"Lecture impossible de « {track.Title} » : {ex.Message}");
+            track.StateMessage = Core.FriendlyErrors.Describe(ex);
+            _main.ShowToast($"Lecture impossible de « {track.Title} » : {Core.FriendlyErrors.Describe(ex)}");
             Player.Stop();
             SkipAfterFailure(track);
             return;
@@ -707,7 +704,7 @@ public partial class MusicViewModel : ObservableObject
         catch (Exception ex)
         {
             track.State = TrackState.Error;
-            track.StateMessage = ex is DownloadException ? ex.Message : "erreur : " + ex.Message;
+            track.StateMessage = ex is DownloadException ? Core.FriendlyErrors.Describe(ex) : "erreur : " + Core.FriendlyErrors.Describe(ex);
             return false;
         }
     }
@@ -807,7 +804,7 @@ public partial class MusicViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _main.ShowToast("Impossible d'enregistrer la bibliothèque : " + ex.Message);
+            _main.ShowToast("Impossible d'enregistrer la bibliothèque : " + Core.FriendlyErrors.Describe(ex));
         }
     }
 

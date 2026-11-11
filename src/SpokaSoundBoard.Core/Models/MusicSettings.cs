@@ -78,6 +78,18 @@ public partial class MusicEffectSettings : ObservableObject
         Eq1k = bands[5]; Eq2k = bands[6]; Eq4k = bands[7]; Eq8k = bands[8]; Eq16k = bands[9];
     }
 
+    /// <summary>Brings every value back into the range of its slider (NaN / infinity → neutral).</summary>
+    public void Sanitize()
+    {
+        BassDb = SettingsMath.Clamp(BassDb, 0, 15, 0);
+        TrebleDb = SettingsMath.Clamp(TrebleDb, -10, 10, 0);
+        SetEqBands(EqBands().Select(b => SettingsMath.Clamp(b, -12, 12, 0)).ToArray());
+        Speed = SettingsMath.Clamp(Speed, 0.5f, 2f, 1f);
+        Surround8DRate = SettingsMath.Clamp(Surround8DRate, 0.05f, 0.5f, 0.12f);
+        ReverbMix = SettingsMath.Clamp(ReverbMix, 0, 1, 0);
+        StereoWidth = SettingsMath.Clamp(StereoWidth, 0, 2, 1f);
+    }
+
     /// <summary>True when every effect is neutral (lets the player skip the processing).</summary>
     public bool IsNeutral =>
         !Enabled || BassDb == 0 && TrebleDb == 0 && (!EqEnabled || EqBands().All(b => b == 0)) && Speed == 1f

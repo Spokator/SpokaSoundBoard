@@ -42,7 +42,7 @@ public static class VbCableInstaller
         progress.Report("Téléchargement de VB-CABLE…");
         using (var http = new HttpClient { Timeout = TimeSpan.FromMinutes(2) })
         {
-            http.DefaultRequestHeaders.UserAgent.ParseAdd("SpokaSoundBoard/1.0");
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("SpokaSoundBoard/" + AppEnvironment.UserAgentVersion);
             await using var stream = await http.GetStreamAsync(PackageUrl);
             await using var file = File.Create(zip);
             await stream.CopyToAsync(file);
@@ -88,7 +88,7 @@ public static class VbCableInstaller
         progress.Report("Téléchargement de Virtual Audio Cable Lite…");
         using (var http = new HttpClient { Timeout = TimeSpan.FromMinutes(2) })
         {
-            http.DefaultRequestHeaders.UserAgent.ParseAdd("SpokaSoundBoard/1.1");
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("SpokaSoundBoard/" + AppEnvironment.UserAgentVersion);
             await using var stream = await http.GetStreamAsync(VacLiteUrl);
             await using var file = File.Create(zip);
             await stream.CopyToAsync(file);

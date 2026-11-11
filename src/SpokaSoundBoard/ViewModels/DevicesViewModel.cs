@@ -170,7 +170,6 @@ public partial class DevicesViewModel : ObservableObject
         _main.ShowToast($"Spoka Cable activé : dans Discord et vos jeux, choisissez « {VirtualMicName} » comme micro.");
     }
 
-    [RelayCommand]
     private void Apply()
     {
         StoreSelection();
@@ -208,7 +207,7 @@ public partial class DevicesViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            SecondInstallStatus = "Échec : " + ex.Message + " — utilisez le lien vers le site officiel.";
+            SecondInstallStatus = "Échec : " + Core.FriendlyErrors.Describe(ex) + " — utilisez le lien vers le site officiel.";
         }
         finally
         {
@@ -236,7 +235,7 @@ public partial class DevicesViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            InstallStatus = "Échec : " + ex.Message + " — utilisez le lien vers le site officiel.";
+            InstallStatus = "Échec : " + Core.FriendlyErrors.Describe(ex) + " — utilisez le lien vers le site officiel.";
         }
         finally
         {
@@ -261,7 +260,7 @@ public partial class DevicesViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _main.ShowToast("Impossible de lister les périphériques audio : " + ex.Message);
+            _main.ShowToast("Impossible de lister les périphériques audio : " + Core.FriendlyErrors.Describe(ex));
         }
         HasVirtualCable = Outputs.Any(o => o.IsVirtualCable);
         HasSecondCable = DeviceService.CountDistinctCables(Outputs) >= 2;

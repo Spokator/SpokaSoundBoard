@@ -10,6 +10,9 @@ public sealed class SettingsStore
     {
         WriteIndented = true,
         Converters = { new JsonStringEnumConverter() },
+        // A NaN that slipped into a setting must neither make every save fail nor reset the whole file on load:
+        // it is written as "NaN", read back, then replaced by Sanitize.
+        NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
     };
 
     public SettingsStore(string? directory = null)
@@ -57,23 +60,32 @@ public sealed class SettingsStore
     private static AppSettings Sanitize(AppSettings s)
     {
         s.Voice ??= new VoiceEffectSettings();
+        s.Voice.Sanitize();
         s.Mix ??= new MixSettings();
+        s.Mix.Sanitize();
         s.Appearance ??= new AppearanceSettings();
         s.Appearance.UiScale = Math.Clamp(s.Appearance.UiScale, 0.8, 1.4);
         s.Hotkeys ??= new HotkeySettings();
-        s.Hotkeys.ToggleDiscordShare ??= new HotkeyBinding();
-        s.Hotkeys.NextPreset ??= new HotkeyBinding();
-        s.Hotkeys.PreviousPreset ??= new HotkeyBinding();
+        s.Hotkeys.Sanitize();
         s.Pads ??= [];
         s.Playlist ??= [];
         s.Music ??= new MusicSettings();
         s.Music.Effects ??= new MusicEffectSettings();
+        s.Music.Effects.Sanitize();
         s.Music.CrossfadeSeconds = Math.Clamp(s.Music.CrossfadeSeconds, 0, 12);
         s.BlindTest ??= new BlindTestSettings();
         s.BlindTest.Sanitize();
         s.TextToSpeech ??= new TextToSpeechSettings();
         s.TextToSpeech.Sanitize();
         s.CustomPresets ??= [];
+        s.CustomPresets.RemoveAll(p => p is null);
+        foreach (var preset in s.CustomPresets)
+        {
+            preset.Settings ??= new VoiceEffectSettings();
+            preset.Settings.Sanitize();
+        }
+        for (var i = s.Pads.Count - 1; i >= 0; i--)
+            if (s.Pads[i] is null) s.Pads.RemoveAt(i);
         foreach (var pad in s.Pads) pad.Hotkey ??= new HotkeyBinding();
         return s;
     }

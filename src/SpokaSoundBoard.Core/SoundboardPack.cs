@@ -78,7 +78,12 @@ public static class SoundboardPack
             });
         }
 
-        foreach (var preset in manifest.Presets) preset.IsBuiltIn = false;
+        foreach (var preset in manifest.Presets)
+        {
+            preset.IsBuiltIn = false;
+            preset.Settings ??= new VoiceEffectSettings();
+            preset.Settings.Sanitize();
+        }
         return (pads, manifest.Presets);
     }
 

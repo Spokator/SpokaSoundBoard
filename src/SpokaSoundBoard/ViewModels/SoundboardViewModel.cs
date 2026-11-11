@@ -119,7 +119,7 @@ public partial class SoundboardViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _main.ShowToast("Export impossible : " + ex.Message);
+            _main.ShowToast("Export impossible : " + Core.FriendlyErrors.Describe(ex));
         }
     }
 
@@ -147,7 +147,7 @@ public partial class SoundboardViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _main.ShowToast("Import impossible : " + ex.Message);
+            _main.ShowToast("Import impossible : " + Core.FriendlyErrors.Describe(ex));
         }
     }
 
@@ -241,7 +241,7 @@ public partial class SoundboardViewModel : ObservableObject
         catch (Exception ex)
         {
             pad.IsPlaying = false;
-            _main.ShowToast($"Lecture impossible de « {pad.Name} » : {ex.Message}");
+            _main.ShowToast($"Lecture impossible de « {pad.Name} » : {Core.FriendlyErrors.Describe(ex)}");
         }
     }
 

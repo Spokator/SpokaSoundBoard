@@ -109,13 +109,6 @@ public partial class MusicSearchViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Toggle()
-    {
-        IsOpen = !IsOpen;
-        if (!IsOpen) StopPreview();
-    }
-
-    [RelayCommand]
     private void Close()
     {
         IsOpen = false;
@@ -179,7 +172,7 @@ public partial class MusicSearchViewModel : ObservableObject
         catch (Exception ex)
         {
             HasError = true;
-            Status = ex is DownloadException ? ex.Message : "Recherche impossible : " + ex.Message;
+            Status = ex is DownloadException ? Core.FriendlyErrors.Describe(ex) : "Recherche impossible : " + Core.FriendlyErrors.Describe(ex);
         }
         finally
         {
@@ -316,7 +309,7 @@ public partial class MusicSearchViewModel : ObservableObject
         catch (Exception ex)
         {
             HasError = true;
-            Status = "Aperçu impossible : " + ex.Message;
+            Status = "Aperçu impossible : " + Core.FriendlyErrors.Describe(ex);
         }
         finally
         {
@@ -423,7 +416,7 @@ public partial class MusicSearchViewModel : ObservableObject
         catch (Exception ex)
         {
             HasError = true;
-            Status = ex is DownloadException ? ex.Message : "Import impossible : " + ex.Message;
+            Status = ex is DownloadException ? Core.FriendlyErrors.Describe(ex) : "Import impossible : " + Core.FriendlyErrors.Describe(ex);
         }
         finally
         {

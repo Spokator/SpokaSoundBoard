@@ -130,6 +130,50 @@ public partial class VoiceEffectSettings : ObservableObject
         GateEnabled = o.GateEnabled;
         VoiceThresholdDb = o.VoiceThresholdDb;
     }
+
+    /// <summary>
+    /// Brings every value back into the range of its slider (NaN / infinity → default), so a hand-edited or
+    /// corrupted settings file can never feed the audio thread values that break the effects.
+    /// </summary>
+    public void Sanitize()
+    {
+        var d = new VoiceEffectSettings();
+        InputGainDb = SettingsMath.Clamp(InputGainDb, -12, 24, d.InputGainDb);
+        VoiceVolumeDb = SettingsMath.Clamp(VoiceVolumeDb, -24, 12, d.VoiceVolumeDb);
+        VoiceThresholdDb = SettingsMath.Clamp(VoiceThresholdDb, -60, 0, d.VoiceThresholdDb);
+        PitchSemitones = SettingsMath.Clamp(PitchSemitones, -12, 12, d.PitchSemitones);
+        RadioLowCutHz = SettingsMath.Clamp(RadioLowCutHz, 100, 1200, d.RadioLowCutHz);
+        RadioHighCutHz = SettingsMath.Clamp(RadioHighCutHz, 1500, 6000, d.RadioHighCutHz);
+        RadioDrive = SettingsMath.Clamp(RadioDrive, 0, 1, d.RadioDrive);
+        RadioNoise = SettingsMath.Clamp(RadioNoise, 0, 1, d.RadioNoise);
+        if (!Enum.IsDefined(BeepStyle)) BeepStyle = d.BeepStyle;
+        RobotFrequency = SettingsMath.Clamp(RobotFrequency, 20, 300, d.RobotFrequency);
+        RobotMix = SettingsMath.Clamp(RobotMix, 0, 1, d.RobotMix);
+        EchoDelayMs = SettingsMath.Clamp(EchoDelayMs, 40, 1000, d.EchoDelayMs);
+        EchoFeedback = SettingsMath.Clamp(EchoFeedback, 0, 0.9f, d.EchoFeedback);
+        EchoMix = SettingsMath.Clamp(EchoMix, 0, 1, d.EchoMix);
+        ReverbSize = SettingsMath.Clamp(ReverbSize, 0, 1, d.ReverbSize);
+        ReverbMix = SettingsMath.Clamp(ReverbMix, 0, 1, d.ReverbMix);
+        CompressorAmount = SettingsMath.Clamp(CompressorAmount, 0, 1, d.CompressorAmount);
+        EqLowDb = SettingsMath.Clamp(EqLowDb, -12, 12, d.EqLowDb);
+        EqMidDb = SettingsMath.Clamp(EqMidDb, -12, 12, d.EqMidDb);
+        EqHighDb = SettingsMath.Clamp(EqHighDb, -12, 12, d.EqHighDb);
+        ChorusRate = SettingsMath.Clamp(ChorusRate, 0.1f, 8, d.ChorusRate);
+        ChorusDepth = SettingsMath.Clamp(ChorusDepth, 0, 1, d.ChorusDepth);
+        ChorusMix = SettingsMath.Clamp(ChorusMix, 0, 1, d.ChorusMix);
+        LofiDrive = SettingsMath.Clamp(LofiDrive, 0, 1, d.LofiDrive);
+        LofiBits = SettingsMath.Clamp(LofiBits, 3, 16, d.LofiBits);
+        LofiDownsample = SettingsMath.Clamp(LofiDownsample, 1, 10, d.LofiDownsample);
+        MuffleHz = SettingsMath.Clamp(MuffleHz, 200, 8000, d.MuffleHz);
+    }
+}
+
+/// <summary>Range checks shared by the settings Sanitize methods.</summary>
+public static class SettingsMath
+{
+    /// <summary>Clamps <paramref name="value"/> to [min, max]; NaN and infinities become <paramref name="fallback"/>.</summary>
+    public static float Clamp(float value, float min, float max, float fallback) =>
+        float.IsFinite(value) ? Math.Clamp(value, min, max) : fallback;
 }
 
 public partial class MixSettings : ObservableObject
@@ -167,6 +211,19 @@ public partial class MixSettings : ObservableObject
     [ObservableProperty] private bool _discordVoiceEffects;
     [ObservableProperty] private bool _discordMusic;
     [ObservableProperty] private bool _discordSounds;
+
+    /// <summary>Brings every value back into the range of its slider (NaN / infinity → default).</summary>
+    public void Sanitize()
+    {
+        var d = new MixSettings();
+        MusicVolume = SettingsMath.Clamp(MusicVolume, 0, 1.5f, d.MusicVolume);
+        PadsVolume = SettingsMath.Clamp(PadsVolume, 0, 1.5f, d.PadsVolume);
+        MediaToMicVolume = SettingsMath.Clamp(MediaToMicVolume, 0, 1.5f, d.MediaToMicVolume);
+        MonitorVolume = SettingsMath.Clamp(MonitorVolume, 0, 1.5f, d.MonitorVolume);
+        DuckingAmountDb = SettingsMath.Clamp(DuckingAmountDb, -40, 0, d.DuckingAmountDb);
+        DuckingAttackMs = SettingsMath.Clamp(DuckingAttackMs, 10, 500, d.DuckingAttackMs);
+        DuckingReleaseMs = SettingsMath.Clamp(DuckingReleaseMs, 100, 3000, d.DuckingReleaseMs);
+    }
 }
 
 public class EffectPreset

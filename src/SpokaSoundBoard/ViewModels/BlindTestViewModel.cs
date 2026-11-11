@@ -541,7 +541,7 @@ public sealed partial class BlindTestViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _main.ShowToast("Impossible de reprendre l'extrait : " + ex.Message);
+            _main.ShowToast("Impossible de reprendre l'extrait : " + Core.FriendlyErrors.Describe(ex));
             _ = PlayRoundAsync(TakeNextTrack());
             return;
         }

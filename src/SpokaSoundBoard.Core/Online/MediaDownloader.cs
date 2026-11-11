@@ -697,7 +697,7 @@ public sealed partial class MediaDownloader
     private static HttpClient CreateHttpClient()
     {
         var client = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("SpokaSoundBoard/1.1");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(OnlineHttp.AppUserAgent);
         return client;
     }
 

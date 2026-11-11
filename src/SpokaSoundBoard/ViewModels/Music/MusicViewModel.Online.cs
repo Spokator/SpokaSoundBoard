@@ -57,7 +57,7 @@ public partial class MusicViewModel
         }
         catch (Exception ex)
         {
-            _main.ShowToast("Recommandations indisponibles : " + (ex is DownloadException ? ex.Message : ex.Message));
+            _main.ShowToast("Recommandations indisponibles : " + Core.FriendlyErrors.Describe(ex));
         }
         finally
         {
@@ -82,7 +82,7 @@ public partial class MusicViewModel
         catch (Exception ex)
         {
             Search.HasError = true;
-            Search.Status = "Recherche impossible : " + ex.Message;
+            Search.Status = "Recherche impossible : " + Core.FriendlyErrors.Describe(ex);
         }
         finally
         {

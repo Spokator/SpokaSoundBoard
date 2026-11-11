@@ -247,6 +247,21 @@ public class HotkeySettings
     public HotkeyBinding ToggleDiscordShare { get; set; } = new();
     public HotkeyBinding NextPreset { get; set; } = new();
     public HotkeyBinding PreviousPreset { get; set; } = new();
+
+    /// <summary>A binding written as null in settings.json (hand edit, older version) becomes "no shortcut".</summary>
+    public void Sanitize()
+    {
+        PushToTalk ??= new HotkeyBinding();
+        PlayPause ??= new HotkeyBinding();
+        NextTrack ??= new HotkeyBinding();
+        StopAll ??= new HotkeyBinding();
+        ToggleMic ??= new HotkeyBinding();
+        ToggleEffects ??= new HotkeyBinding();
+        ToggleMediaToMic ??= new HotkeyBinding();
+        ToggleDiscordShare ??= new HotkeyBinding();
+        NextPreset ??= new HotkeyBinding();
+        PreviousPreset ??= new HotkeyBinding();
+    }
 }
 
 public enum AppTheme
