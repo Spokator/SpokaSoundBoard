@@ -4,6 +4,8 @@ SpokaSoundBoard part sur le Store en **MSIX**, comme SpokaStream : c'est le Stor
 
 Pour une version suivante, va directement à [Pour une nouvelle version](#pour-une-nouvelle-version).
 
+**État** : nom réservé le 11/11/2026, produit **9NZH7V1ZS1T1** (https://apps.microsoft.com/detail/9NZH7V1ZS1T1), identité `Spokator.SpokaSoundBoard` / `CN=1FBF4454-E4DA-41D2-BBA3-8C9433B84CE4` (identique au manifeste). Première soumission préparée avec la 2.2.0 : paquet validé, fiche française (5 captures 1920 × 1032 prises dans la VM de test avec l'édition Store), classification IARC 3+. Partner Center limite la justification de `runFullTrust` à 500 caractères : la version envoyée est plus courte que celle ci-dessous.
+
 ## Ce qui change dans l'édition Store
 
 L'application détecte qu'elle tourne depuis un paquet (`AppEnvironment.IsPackaged`) et se comporte alors ainsi :
@@ -15,7 +17,7 @@ L'application détecte qu'elle tourne depuis un paquet (`AppEnvironment.IsPackag
 | Micro virtuel | Télécharge et lance l'installeur officiel de VB-CABLE / VAC Lite | N'exécute rien : ouvre la page officielle et l'assistant explique les étapes |
 | Reprise après redémarrage | Clé `RunOnce` qui rouvre l'assistant | Pas de `RunOnce` : l'étape est enregistrée (`SetupResumeStep`), l'assistant reprend au prochain lancement. Le bouton « Redémarrer maintenant » lance toujours `shutdown.exe`, seulement si l'utilisateur clique |
 | Autorisation micro | Entrée `NonPackaged` | Entrée du paquet (`AppCapability`), avec demande d'autorisation Windows |
-| yt-dlp, ffmpeg | yt-dlp livré, mis à jour par `yt-dlp -U`, ffmpeg téléchargé au besoin | Les deux sont livrés dans `tools\` du paquet. Le Store interdit de télécharger du code exécutable (règle 10.2.2). **`MediaDownloader` reste à adapter**, voir [Risques et plan B](#risques-et-plan-b) |
+| yt-dlp, ffmpeg | yt-dlp livré, mis à jour par `yt-dlp -U`, ffmpeg téléchargé au besoin | Les deux sont livrés dans `tools\` du paquet et utilisés en lecture seule (`AppEnvironment.BundledToolsDirectory`) : jamais de `-U` ni de téléchargement d'exécutable (règle 10.2.2) |
 | Double-clic sur un `.spokapack` | — | Association de fichier du manifeste : l'application importe le pack |
 | Données | `%AppData%\SpokaSoundBoard` | Même chemin vu de l'application, mais Windows redirige les écritures vers le dossier privé du paquet, effacé à la désinstallation |
 | À propos | « édition Installeur » | « édition Microsoft Store » |
@@ -169,7 +171,6 @@ Comme pour SpokaStream, **essaie avec un profil Windows sans données SpokaSound
 ## Risques et plan B
 
 - **Fraîcheur de yt-dlp.** Les sites changent souvent et une version de yt-dlp vieille de quelques semaines finit par échouer. L'édition Store n'a pas le droit de se mettre à jour toute seule : **il faut publier une mise à jour Store régulièrement** (toutes les 2 à 4 semaines, ou dès que la recherche YouTube casse), même sans changement de l'application. Le script reprend automatiquement le dernier yt-dlp. Il suffit d'augmenter la version du csproj, de reconstruire et de soumettre. Plan B si c'est trop contraignant : renvoyer vers l'édition GitHub pour l'import de liens.
-- **À corriger avant la soumission (hors de ce lot)** : `Core/Online/MediaDownloader.cs` copie encore yt-dlp dans le dossier de données, lance `yt-dlp -U` après un échec et télécharge ffmpeg s'il manque dans ce dossier. En édition Store, il doit utiliser directement `AppEnvironment.BundledToolsDirectory` (lecture seule), ne jamais lancer `-U` ni télécharger ffmpeg. Sinon, refus probable au titre de la règle 10.2.2.
 - **VB-CABLE n'est pas sur le Store.** Le Store ne permet pas d'installer un pilote. Si un testeur estime l'application inutilisable sans lui, répondre que l'écoute locale, la soundboard et les effets marchent sans pilote, et que VB-CABLE est un pilote gratuit qu'on installe depuis le site de son éditeur, comme le font d'autres soundboards du Store. Plan B : mettre en avant ce point dans la description et les notes.
 - **`runFullTrust` et hooks bas niveau.** C'est courant (Discord, OBS, autres soundboards), mais Microsoft reste juge. Plan B : si les hooks posent problème, ne garder en édition Store que les raccourcis globaux classiques (`RegisterHotKey`), qui ne nécessitent aucun hook, en perdant les boutons de souris.
 - **ffmpeg en GPL.** Le build `win64-gpl` est redistribué dans le paquet : la licence est livrée dans `tools\`, et le code source de ffmpeg est public (lien dans la licence et sur https://github.com/yt-dlp/FFmpeg-Builds). Si on préfère éviter la GPL, la variante `win64-lgpl` du même dépôt suffit pour l'audio : changer l'URL dans `scripts/build-store.ps1`.
