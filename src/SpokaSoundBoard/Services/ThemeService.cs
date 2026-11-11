@@ -84,6 +84,10 @@ public static class ThemeService
         resources["AccentBrush"] = Frozen(new SolidColorBrush(accent));
         resources["Accent2Brush"] = Frozen(new SolidColorBrush(secondary));
         resources["AccentSoftBrush"] = Frozen(new SolidColorBrush(Color.FromArgb(0x33, accent.R, accent.G, accent.B)));
+        // Text and icons drawn on the accent color: white on dark accents, near-black on light ones (gold, lime, cyan…).
+        resources["OnAccentBrush"] = Frozen(new SolidColorBrush(Core.ColorMath.PrefersDarkText(accent.R, accent.G, accent.B)
+            ? Color.FromRgb(0x11, 0x14, 0x1C)
+            : Colors.White));
         resources["BrandBrush"] = Frozen(new LinearGradientBrush(accent, Parse(appearance.SecondaryColor, "#22D3EE"), new Point(0, 0), new Point(1, 1)));
 
         var (width, height) = appearance.PadSize switch

@@ -10,6 +10,7 @@
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
     <SolidColorBrush x:Key="Accent2Brush" Color="{StaticResource Accent2Color}" />
     <SolidColorBrush x:Key="AccentSoftBrush" Color="#337C5CFF" />
+    <SolidColorBrush x:Key="OnAccentBrush" Color="White" />
     <SolidColorBrush x:Key="WindowBrush" Color="#0F1117" />
     <SolidColorBrush x:Key="SidebarBrush" Color="#141722" />
     <SolidColorBrush x:Key="CardBrush" Color="#1A1E2B" />
@@ -151,10 +152,21 @@
     </Style>
 
     <!-- Toggle switch (CheckBox) -->
+    <!-- Keyboard focus: a ring around the control, shown only while navigating with the keyboard (not after a click). -->
+    <Style x:Key="FocusRing">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Rectangle Margin="-3" RadiusX="9" RadiusY="9" StrokeThickness="2" Stroke="{DynamicResource Accent2Brush}" SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="ToggleSwitch" TargetType="CheckBox">
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
@@ -176,7 +188,7 @@
                             <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
                             <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right" />
                             <Setter TargetName="Knob" Property="Margin" Value="0,0,4,0" />
-                            <Setter TargetName="Knob" Property="Fill" Value="White" />
+                            <Setter TargetName="Knob" Property="Fill" Value="{DynamicResource OnAccentBrush}" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Track" Property="Opacity" Value="0.9" />
@@ -201,7 +213,7 @@
         <Setter Property="Foreground" Value="{DynamicResource SubtleTextBrush}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Margin" Value="0,2" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
@@ -249,7 +261,7 @@
         <Setter Property="Padding" Value="14,8" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ButtonBase">
@@ -276,7 +288,7 @@
     <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource FlatButton}">
         <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource FlatButton}">

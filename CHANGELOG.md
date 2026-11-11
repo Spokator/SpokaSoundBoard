@@ -1,5 +1,15 @@
 # Journal des versions
 
+## 2.5.0
+
+Blind test sur un thème, et une application plus facile à utiliser au clavier.
+
+- **Blind test sur un thème** : nouvelle source « Un thème » : tapez « années 80 », « rap français », « Disney »… et les morceaux sont cherchés sur YouTube, sans rien avoir dans votre bibliothèque. Les compilations, remix, reprises et versions live sont écartés.
+- **Indices** : pendant une manche, « Indice » affiche la forme du titre (V••••• V•••••), puis ses premières lettres, puis les initiales de l'artiste.
+- **Aide et signalement** : dans Configuration, « Copier le rapport de diagnostic » (version, périphériques, compteurs audio, dernières erreurs) à coller dans un signalement, « Signaler un problème » et « Ouvrir le dossier des réglages ». Les compteurs audio se sélectionnent et se copient.
+- **Navigation au clavier** : un contour indique l'élément sélectionné quand vous naviguez avec Tab.
+- **Couleurs claires lisibles** : avec une couleur d'accent claire (or, vert, cyan), le texte des boutons passe en foncé pour rester lisible.
+
 ## 2.4.0
 
 La musique se range et se corrige.

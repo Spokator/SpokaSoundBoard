@@ -455,7 +455,40 @@
                     </StackPanel>
                     <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,8"
                                Text="Si le son coupe chez vos amis, regardez ces compteurs (remis à zéro à chaque redémarrage de l'audio). Ils restent à 0 si tout va bien côté SpokaSoundBoard : une coupure vient alors des réglages de Discord." />
-                    <TextBlock Text="{Binding DiagnosticsText}" FontFamily="Cascadia Mono, Consolas" FontSize="12" TextWrapping="Wrap" />
+                    <TextBox Text="{Binding DiagnosticsText, Mode=OneWay}" IsReadOnly="True" FontFamily="Cascadia Mono, Consolas" FontSize="12"
+                             TextWrapping="Wrap" Background="Transparent" BorderThickness="0" Padding="0"
+                             AutomationProperties.Name="Compteurs de diagnostic audio" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE897;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
+                        <TextBlock Text="Aide et signalement" Style="{StaticResource SectionTitle}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,10"
+                               Text="Un problème ? Copiez le rapport de diagnostic (versions, périphériques, compteurs audio, dernières erreurs) et collez-le dans votre signalement. Rien n'est envoyé automatiquement." />
+                    <WrapPanel>
+                        <Button Style="{StaticResource FlatButton}" Margin="0,0,8,8" Command="{Binding CopyDiagnosticsCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE8C8;" FontSize="13" Margin="0,0,8,0" />
+                                <TextBlock Text="Copier le rapport de diagnostic" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource FlatButton}" Margin="0,0,8,8" Command="{Binding ReportProblemCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xEBE8;" FontSize="13" Margin="0,0,8,0" />
+                                <TextBlock Text="Signaler un problème" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource FlatButton}" Margin="0,0,8,8" Command="{Binding OpenDataFolderCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE838;" FontSize="13" Margin="0,0,8,0" />
+                                <TextBlock Text="Ouvrir le dossier des réglages" />
+                            </StackPanel>
+                        </Button>
+                    </WrapPanel>
                 </StackPanel>
             </Border>
 

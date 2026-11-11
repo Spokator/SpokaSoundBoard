@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SpokaSoundBoard.Core.Audio;
 using SpokaSoundBoard.Core.Models;
+using SpokaSoundBoard.Core.Online;
 using SpokaSoundBoard.Services;
 using SpokaSoundBoard.ViewModels.Music;
 
@@ -35,7 +36,8 @@ public enum BlindTestRoundState
 /// <summary>A song source offered on the setup screen.</summary>
 public sealed record BlindTestSourceOption(BlindTestSource Kind, Guid? PlaylistId, string Label, string Icon, int Count)
 {
-    public string CountText => Count switch { 0 => "aucun morceau", 1 => "1 morceau", _ => $"{Count} morceaux" };
+    public string CountText => Kind == BlindTestSource.Theme ? "YouTube"
+        : Count switch { 0 => "aucun morceau", 1 => "1 morceau", _ => $"{Count} morceaux" };
 }
 
 /// <summary>A player of the current game: committed score plus what they found in this round.</summary>
@@ -187,6 +189,43 @@ public sealed partial class BlindTestViewModel : ObservableObject
         if (value == null) return;
         Settings.Source = value.Kind;
         Settings.PlaylistId = value.PlaylistId;
+        OnPropertyChanged(nameof(IsThemeSource));
+    }
+
+    /// <summary>The « thème » source is selected: its text box is shown.</summary>
+    public bool IsThemeSource => SelectedSource?.Kind == BlindTestSource.Theme;
+
+    [ObservableProperty] private bool _isPreparing;
+
+    public string ThemeText
+    {
+        get => Settings.Theme;
+        set
+        {
+            if (Settings.Theme == value) return;
+            Settings.Theme = value;
+            OnPropertyChanged();
+            StartCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    /// <summary>Songs for a theme: a few YouTube searches, filtered down to single songs of normal length.</summary>
+    private async Task<List<TrackItem>> ThemeCandidatesAsync(string theme)
+    {
+        var results = new List<SearchResult>();
+        foreach (var query in BlindTestThemes.Queries(theme))
+        {
+            try
+            {
+                results.AddRange(await _main.Search.SearchAsync(SearchSource.YouTube, query, 25, CancellationToken.None));
+            }
+            catch (Exception ex) when (results.Count > 0)
+            {
+                // One search failing is fine if the others found songs.
+                App.Log(ex);
+            }
+        }
+        return BlindTestThemes.ToTracks(results);
     }
 
     [ObservableProperty]
@@ -265,6 +304,8 @@ public sealed partial class BlindTestViewModel : ObservableObject
             new(BlindTestSource.History, null, "Mon historique d'écoute", "\uE81C", library.RecentlyPlayed(HistoryCount).Count),
         };
         options.AddRange(library.Playlists.Select(p => new BlindTestSourceOption(BlindTestSource.Playlist, p.Id, p.Name, "\uE8FD", library.TracksOf(p).Count)));
+        // Always offered, even with an empty library: the songs come from YouTube.
+        options.Add(new BlindTestSourceOption(BlindTestSource.Theme, null, "Un thème (années 80, rap français…)", "\uE721", 1));
 
         var kind = Settings.Source;
         var playlist = Settings.PlaylistId;
@@ -328,6 +369,29 @@ public sealed partial class BlindTestViewModel : ObservableObject
     private TrackItem? _currentTrack;
 
     public string AnswerTitle => BlindTestAnswerMatcher.StripDecorations(CurrentTrack?.Title);
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HintText), nameof(HasHint), nameof(HintButtonText))]
+    private int _hintLevel;
+
+    partial void OnCurrentTrackChanged(TrackItem? value) => HintLevel = 0;
+
+    public string HintText => CurrentTrack == null ? "" : BlindTestHints.For(AnswerTitle, CurrentTrack.Artist, HintLevel);
+    public bool HasHint => HintLevel > 0;
+    public string HintButtonText => HintLevel switch
+    {
+        0 => "Indice",
+        < BlindTestHints.MaxLevel => "Indice suivant",
+        _ => "Plus d'indice",
+    };
+
+    /// <summary>« Indice » : shape of the title, then its first letters, then the artist's initials.</summary>
+    [RelayCommand]
+    private void Hint()
+    {
+        if (CurrentTrack == null || IsRevealed || HintLevel >= BlindTestHints.MaxLevel) return;
+        HintLevel++;
+    }
     public string AnswerArtist => string.IsNullOrWhiteSpace(CurrentTrack?.Artist) ? "Artiste inconnu" : CurrentTrack!.Artist!;
 
     [ObservableProperty] private string _statusText = "";
@@ -362,13 +426,43 @@ public sealed partial class BlindTestViewModel : ObservableObject
         };
     }
 
-    private bool CanStart() => SelectedSource is { Count: > 0 } && Settings.Players.Count > 0;
+    private bool CanStart() => SelectedSource is { Count: > 0 } && Settings.Players.Count > 0 && !IsPreparing
+                               && (SelectedSource.Kind != BlindTestSource.Theme || !string.IsNullOrWhiteSpace(Settings.Theme));
+
+    partial void OnIsPreparingChanged(bool value) => StartCommand.NotifyCanExecuteChanged();
 
     [RelayCommand(CanExecute = nameof(CanStart))]
-    private void Start()
+    private async Task Start()
     {
         if (SelectedSource == null) return;
-        _order = BlindTestPicker.Order(Candidates(SelectedSource), t => t.IsDownloaded, _random);
+        List<TrackItem> candidates;
+        if (SelectedSource.Kind == BlindTestSource.Theme)
+        {
+            IsPreparing = true;
+            try
+            {
+                candidates = await ThemeCandidatesAsync(Settings.Theme);
+            }
+            catch (Exception ex)
+            {
+                _main.ShowToast("Recherche du thème impossible : " + Core.FriendlyErrors.Describe(ex));
+                return;
+            }
+            finally
+            {
+                IsPreparing = false;
+            }
+            if (candidates.Count < BlindTestSettings.MinRounds)
+            {
+                _main.ShowToast($"Trop peu de morceaux trouvés pour « {Settings.Theme.Trim()} » ({candidates.Count}). Essayez un thème plus large.");
+                return;
+            }
+        }
+        else
+        {
+            candidates = Candidates(SelectedSource);
+        }
+        _order = BlindTestPicker.Order(candidates, t => t.IsDownloaded, _random);
         if (_order.Count == 0)
         {
             _main.ShowToast("Aucun morceau jouable dans cette source.");

@@ -17,27 +17,22 @@ body:
     id: expected
     attributes:
       label: Qu'attendiez-vous ?
+  - type: textarea
+    id: report
+    attributes:
+      label: Rapport de diagnostic
+      description: >-
+        Dans SpokaSoundBoard, ouvrez Configuration → Aide et signalement → « Copier le rapport de diagnostic »,
+        puis collez-le ici (Ctrl+V). Il contient la version, les périphériques audio, les compteurs de coupures et les dernières erreurs.
+      render: text
   - type: input
     id: version
     attributes:
-      label: Version de SpokaSoundBoard
-      description: Visible dans Configuration → Mises à jour.
-      placeholder: "1.4.0"
-    validations:
-      required: true
-  - type: textarea
-    id: diagnostics
-    attributes:
-      label: Diagnostic audio
-      description: Copiez les compteurs de Configuration → Diagnostic audio (utile pour les coupures de son).
+      label: Version de SpokaSoundBoard (si vous n'avez pas pu copier le rapport)
+      description: Visible dans Configuration → À propos.
+      placeholder: "2.5.0"
   - type: textarea
     id: setup
     attributes:
       label: Configuration
-      description: Micros virtuels installés (VB-CABLE, Virtual Audio Cable…), jeu / Discord utilisés, version de Windows.
-  - type: textarea
-    id: log
-    attributes:
-      label: Journal d'erreurs
-      description: Contenu de %AppData%\SpokaSoundBoard\error.log s'il existe.
-      render: text
+      description: Micros virtuels installés (VB-CABLE, Virtual Audio Cable…), jeu / Discord utilisés.

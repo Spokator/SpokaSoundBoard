@@ -122,6 +122,61 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     public string EditionName => IsStoreEdition ? "Microsoft Store" : "Installeur";
 
+    // ---- Help and diagnostics ---------------------------------------------------------------------------------
+
+    /// <summary>Text to paste in a bug report: versions, devices, audio counters and the end of the error log.</summary>
+    public string BuildDiagnosticsReport()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"SpokaSoundBoard {CurrentVersion} ({EditionName})");
+        sb.AppendLine($"Windows {Environment.OSVersion.Version} {(Environment.Is64BitOperatingSystem ? "64 bits" : "32 bits")}, .NET {Environment.Version}");
+        sb.AppendLine($"Audio : {(EngineRunning ? "en marche" : EngineError ? "en erreur" : "arrêté")}");
+        sb.AppendLine($"  Micro : {Engine.MicName ?? "aucun"}");
+        sb.AppendLine($"  Sortie jeu : {Engine.MainOutputName ?? "aucune"}");
+        sb.AppendLine($"  Sortie Discord : {Engine.DiscordOutputName ?? "aucune"}");
+        sb.AppendLine($"  Casque : {Engine.MonitorName ?? "aucun"}");
+        sb.AppendLine($"  Micro virtuel détecté : {(Devices.HasVirtualCable ? "oui" : "non")}");
+        UpdateDiagnostics();
+        sb.AppendLine(DiagnosticsText.Replace("   ·   ", "\n"));
+        sb.AppendLine($"Sons : {Settings.Pads.Count} · Musiques : {Music.Library.LibraryTracks.Count()} · Playlists : {Music.Library.Playlists.Count}");
+        try
+        {
+            if (System.IO.File.Exists(App.LogPath))
+            {
+                var lines = System.IO.File.ReadAllLines(App.LogPath);
+                sb.AppendLine();
+                sb.AppendLine("Dernières erreurs enregistrées :");
+                foreach (var line in lines.Skip(Math.Max(0, lines.Length - 40))) sb.AppendLine(line);
+            }
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
+        {
+            sb.AppendLine("(journal d'erreurs illisible)");
+        }
+        return sb.ToString();
+    }
+
+    [RelayCommand]
+    private void CopyDiagnostics()
+    {
+        try
+        {
+            System.Windows.Clipboard.SetText(BuildDiagnosticsReport());
+            ShowToast("Rapport copié : collez-le (Ctrl+V) dans votre signalement. Il ne contient ni vos sons ni vos réglages personnels.", 6);
+        }
+        catch (System.Runtime.InteropServices.COMException)
+        {
+            ShowToast("Le presse-papiers est occupé par une autre application : réessayez dans un instant.");
+        }
+    }
+
+    [RelayCommand]
+    private void OpenDataFolder() => WindowsIntegration.Open(DataDirectory);
+
+    /// <summary>Opens the GitHub issue form (nothing is sent by the app: the user pastes the report if they want).</summary>
+    [RelayCommand]
+    private void ReportProblem() => WindowsIntegration.Open("https://github.com/Spokator/SpokaSoundBoard/issues/new/choose");
+
     public const string PrivacyPolicyUrl = "https://github.com/Spokator/SpokaSoundBoard/blob/main/docs/PRIVACY.md";
 
     public string SettingsLocationText => IsStoreEdition

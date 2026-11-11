@@ -11,6 +11,9 @@ public enum BlindTestSource
     Favorites,
     History,
     Playlist,
+
+    /// <summary>Songs found on YouTube for a theme typed by the host (« années 80 », « rap français »…).</summary>
+    Theme,
 }
 
 /// <summary>Blind test options, players and all-time scores (persisted in settings.json).</summary>
@@ -28,6 +31,9 @@ public partial class BlindTestSettings : ObservableObject
 
     /// <summary>Playlist used when <see cref="Source"/> is <see cref="BlindTestSource.Playlist"/>.</summary>
     [ObservableProperty] private Guid? _playlistId;
+
+    /// <summary>Theme searched when <see cref="Source"/> is <see cref="BlindTestSource.Theme"/>.</summary>
+    [ObservableProperty] private string _theme = "";
 
     [ObservableProperty] private int _rounds = 10;
     [ObservableProperty] private int _excerptSeconds = 20;
