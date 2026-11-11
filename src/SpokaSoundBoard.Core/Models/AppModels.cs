@@ -342,8 +342,12 @@ public partial class RemoteSettings : ObservableObject
     /// <summary>Access code every request carries (regenerated on demand).</summary>
     [ObservableProperty] private string _code = Remote.RemoteServer.NewCode();
 
+    /// <summary>Buttons of « Mon deck » on the phone, in order (« pad:{id} », « preset:{name} », « say:{text} », « act:{action} »).</summary>
+    public List<string> Deck { get; set; } = [];
+
     public void Sanitize()
     {
+        Deck = (Deck ?? []).Where(i => i != null && Remote.RemoteApi.IsDeckItem(i)).Distinct().Take(Remote.RemoteApi.MaxDeckItems).ToList();
         if (Port is < 1024 or > 65535) Port = Remote.RemoteServer.DefaultPort;
         if (string.IsNullOrWhiteSpace(Code) || Code.Length < 8) Code = Remote.RemoteServer.NewCode();
     }

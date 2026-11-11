@@ -434,7 +434,7 @@
                         <TextBlock Text="Télécommande" Style="{StaticResource SectionTitle}" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,10"
-                               Text="Déclenchez vos sons depuis un Stream Deck, Touch Portal, un script OBS… ou depuis votre téléphone sur le même Wi-Fi. Chaque adresse contient un code d'accès : ne la partagez pas." />
+                               Text="Votre téléphone devient un Stream Deck : votre deck de boutons favoris, toute la soundboard, le micro et les effets de voix, « maintenir pour parler », une phrase à dire dans le micro, la musique et ses volumes, et l'animation du blind test (la réponse s'affiche sur le téléphone, pas à l'écran). Marche aussi avec un Stream Deck, Touch Portal ou OBS. Chaque adresse contient un code d'accès : ne la partagez pas." />
                     <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding RemoteSettings.Enabled}" Margin="0,0,0,8">
                         <StackPanel>
                             <TextBlock Text="Activer la télécommande" Style="{StaticResource Label}" />
@@ -448,7 +448,8 @@
                             <TextBlock Text="Ouvre la télécommande aux appareils de votre réseau local (même Wi-Fi). À activer seulement sur le réseau de la maison." Style="{StaticResource Caption}" TextWrapping="Wrap" />
                         </StackPanel>
                     </CheckBox>
-                    <TextBlock Text="{Binding RemoteStatus}" Style="{StaticResource Caption}" TextWrapping="Wrap" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,0,8" />
+                    <TextBlock Text="{Binding RemoteStatus}" Style="{StaticResource Caption}" TextWrapping="Wrap" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,0,2" />
+                    <TextBlock Text="{Binding RemoteClientsText}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,8" />
 
                     <Grid Visibility="{Binding RemoteSettings.Enabled, Converter={StaticResource BoolToVis}}">
                         <Grid.ColumnDefinitions>
@@ -482,15 +483,17 @@
                             </StackPanel>
                             <Expander Header="Utiliser avec un Stream Deck, Touch Portal ou OBS" Foreground="{DynamicResource TextBrush}">
                                 <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,8,0,0" FontFamily="Cascadia Mono, Consolas">
-                                    <Run Text="Ajoutez une action « ouvrir une adresse » ou « requête HTTP » (GET ou POST) : l'adresse sur ce PC, en remplaçant « /? » par l'un de ces chemins suivi de « ?code=… » :" FontFamily="Segoe UI" />
+                                    <Run Text="Ajoutez une action « ouvrir une adresse » ou « requête HTTP » (GET ou POST) : l'adresse sur ce PC, en remplaçant « /? » par l'un de ces chemins, puis le code : « ?code=… » (ou « &amp;code=… » si le chemin contient déjà un « ? ») :" FontFamily="Segoe UI" />
                                     <LineBreak /><LineBreak />
                                     <Run Text="/api/pads/NOM DU SON/play" /><Run Text="  jouer un son (son nom exact)" FontFamily="Segoe UI" /><LineBreak />
-                                    <Run Text="/api/stop" /><Run Text="  arrêter tous les sons" FontFamily="Segoe UI" /><LineBreak />
-                                    <Run Text="/api/mic/toggle" /><Run Text="  couper / activer le micro" FontFamily="Segoe UI" /><LineBreak />
-                                    <Run Text="/api/effects/toggle" /><Run Text="  effets de voix on / off" FontFamily="Segoe UI" /><LineBreak />
-                                    <Run Text="/api/preset/next, /api/preset/previous" /><Run Text="  effet suivant / précédent" FontFamily="Segoe UI" /><LineBreak />
-                                    <Run Text="/api/music/playpause, /api/music/next" /><Run Text="  musique" FontFamily="Segoe UI" /><LineBreak />
-                                    <Run Text="/api/pads, /api/status" /><Run Text="  liste des sons et état (JSON)" FontFamily="Segoe UI" />
+                                    <Run Text="/api/presets/NOM DE L'EFFET/apply" /><Run Text="  appliquer un effet de voix" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/action/stop · mic · effects · radio" /><Run Text="  tout arrêter, micro, effets, mode radio" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/action/preset-next · preset-previous" /><Run Text="  effet suivant / précédent" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/action/music-playpause · music-next · music-previous · media-to-mic" /><Run Text="  musique" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/action/bt-reveal · bt-next · bt-replay · bt-pause · bt-hint · bt-skip" /><Run Text="  blind test" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/say?text=Bonjour" /><Run Text="  dire une phrase dans le micro" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/mix?key=music&amp;value=0.8" /><Run Text="  volume (music, pads, tomic, monitor ; 0 à 1,5)" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/catalog, /api/state" /><Run Text="  sons, effets et état complet (JSON)" FontFamily="Segoe UI" />
                                 </TextBlock>
                             </Expander>
                         </StackPanel>

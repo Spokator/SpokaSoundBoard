@@ -75,6 +75,9 @@ public sealed class MixerCore
     /// <summary>Radio-mode key state, set by the hotkey service.</summary>
     public volatile bool PushToTalkHeld;
 
+    /// <summary>Radio key held on the phone remote (released by the app if the phone goes silent).</summary>
+    public volatile bool RemotePushToTalkHeld;
+
     public void SetMicSource(ISampleProvider? source) => Volatile.Write(ref _micSource, source);
 
     public void Render(Span<float> game, Span<float> monitor, int frames) =>
@@ -113,7 +116,7 @@ public sealed class MixerCore
                       || !discord.IsEmpty && mix.DiscordVoice && !mix.DiscordVoiceEffects;
         var wetSpan = _voiceWet.AsSpan(0, frames);
         var drySpan = needDry ? _voiceDry.AsSpan(0, frames) : Span<float>.Empty;
-        _voice.Process(micSpan, wetSpan, drySpan, mix.MicEnabled, mix.PushToTalkEnabled, PushToTalkHeld);
+        _voice.Process(micSpan, wetSpan, drySpan, mix.MicEnabled, mix.PushToTalkEnabled, PushToTalkHeld || RemotePushToTalkHeld);
 
         Music.Read(_music, 0, frames * 2);
         Pads.Read(_pads, 0, frames * 2);

@@ -11,6 +11,12 @@ public sealed record RemoteRequest(string Method, string Path, IReadOnlyDictiona
 
 public sealed record RemoteResponse(int Status, string ContentType, byte[] Body)
 {
+    /// <summary>Set for a streamed answer (server-sent events): written until the client leaves.</summary>
+    public Func<Stream, CancellationToken, Task>? Streamer { get; init; }
+
+    public static RemoteResponse Stream(Func<Stream, CancellationToken, Task> streamer) =>
+        new(200, "text/event-stream; charset=utf-8", []) { Streamer = streamer };
+
     public static RemoteResponse Json(string json, int status = 200) => new(status, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(json));
     public static RemoteResponse Html(string html) => new(200, "text/html; charset=utf-8", Encoding.UTF8.GetBytes(html));
     public static RemoteResponse Error(int status, string message) =>
@@ -32,6 +38,21 @@ public sealed class RemoteServer : IAsyncDisposable
 
     private readonly Func<RemoteRequest, Task<RemoteResponse>> _handler;
     private readonly ConcurrentDictionary<IPAddress, (int Count, DateTime Until)> _failures = new();
+    private readonly ConcurrentDictionary<IPAddress, DateTime> _clients = new();
+    private int _streams;
+
+    /// <summary>Live connections at once (each phone keeps one open); beyond that, clients fall back to polling.</summary>
+    public const int MaxStreams = 8;
+
+    /// <summary>Raised (on a worker thread) the first time an address uses the code in this session.</summary>
+    public event Action<IPAddress>? ClientConnected;
+
+    /// <summary>Addresses that used the code within <paramref name="window"/> (a phone with the page open counts).</summary>
+    public IReadOnlyList<IPAddress> ActiveClients(TimeSpan window)
+    {
+        var limit = DateTime.UtcNow - window;
+        return _clients.Where(c => c.Value >= limit).Select(c => c.Key).ToList();
+    }
     private TcpListener? _listener;
     private CancellationTokenSource? _cts;
     private Task? _loop;
@@ -121,7 +142,28 @@ public sealed class RemoteServer : IAsyncDisposable
             var stream = client.GetStream();
             var head = await ReadHeadAsync(stream, timeout.Token).ConfigureAwait(false);
             var response = head == null ? RemoteResponse.Error(400, "requête invalide") : await HandleAsync(head, remote).ConfigureAwait(false);
-            await WriteAsync(stream, response, timeout.Token).ConfigureAwait(false);
+            if (response.Streamer == null)
+            {
+                await WriteAsync(stream, response, timeout.Token).ConfigureAwait(false);
+                return;
+            }
+            if (Interlocked.Increment(ref _streams) > MaxStreams)
+            {
+                Interlocked.Decrement(ref _streams);
+                await WriteAsync(stream, RemoteResponse.Error(503, "trop de connexions"), timeout.Token).ConfigureAwait(false);
+                return;
+            }
+            try
+            {
+                await WriteHeaderAsync(stream, response, ct).ConfigureAwait(false);
+                // The stream lives until the phone leaves; the address stays « connected » meanwhile.
+                using var touch = new Timer(_ => _clients[remote] = DateTime.UtcNow, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+                await response.Streamer(stream, ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _streams);
+            }
         }
         catch (Exception)
         {
@@ -138,6 +180,9 @@ public sealed class RemoteServer : IAsyncDisposable
         if (_failures.TryGetValue(remote, out var f) && f.Count >= MaxFailures && f.Until > DateTime.UtcNow)
             return RemoteResponse.Error(429, "trop d'essais avec un mauvais code : réessayez dans quelques minutes");
 
+        if (RemoteApi.PublicPaths.Contains(path))
+            return await _handler(new RemoteRequest(method, path, query, remote)).ConfigureAwait(false);
+
         var code = query.GetValueOrDefault("code") ?? headers.GetValueOrDefault("x-spoka-code");
         if (!CodeMatches(code))
         {
@@ -145,6 +190,8 @@ public sealed class RemoteServer : IAsyncDisposable
             return RemoteResponse.Error(401, "code d'accès manquant ou incorrect (Configuration → Télécommande)");
         }
         _failures.TryRemove(remote, out _);
+        if (_clients.TryAdd(remote, DateTime.UtcNow)) ClientConnected?.Invoke(remote);
+        else _clients[remote] = DateTime.UtcNow;
         try
         {
             return await _handler(new RemoteRequest(method, path, query, remote)).ConfigureAwait(false);
@@ -209,10 +256,21 @@ public sealed class RemoteServer : IAsyncDisposable
 
     private static async Task WriteAsync(NetworkStream stream, RemoteResponse response, CancellationToken ct)
     {
-        var reason = response.Status switch { 200 => "OK", 400 => "Bad Request", 401 => "Unauthorized", 404 => "Not Found", 429 => "Too Many Requests", _ => "Error" };
-        var header = $"HTTP/1.1 {response.Status} {reason}\r\nContent-Type: {response.ContentType}\r\nContent-Length: {response.Body.Length}\r\n" +
+        await WriteHeaderAsync(stream, response, ct).ConfigureAwait(false);
+        await stream.WriteAsync(response.Body, ct).ConfigureAwait(false);
+    }
+
+    private static async Task WriteHeaderAsync(NetworkStream stream, RemoteResponse response, CancellationToken ct)
+    {
+        var reason = response.Status switch
+        {
+            200 => "OK", 400 => "Bad Request", 401 => "Unauthorized", 404 => "Not Found", 409 => "Conflict",
+            429 => "Too Many Requests", 503 => "Service Unavailable", _ => "Error",
+        };
+        var length = response.Streamer == null ? $"Content-Length: {response.Body.Length}\r\n" : "";
+        var header = $"HTTP/1.1 {response.Status} {reason}\r\nContent-Type: {response.ContentType}\r\n{length}" +
                      "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n";
         await stream.WriteAsync(Encoding.ASCII.GetBytes(header), ct).ConfigureAwait(false);
-        await stream.WriteAsync(response.Body, ct).ConfigureAwait(false);
+        await stream.FlushAsync(ct).ConfigureAwait(false);
     }
 }

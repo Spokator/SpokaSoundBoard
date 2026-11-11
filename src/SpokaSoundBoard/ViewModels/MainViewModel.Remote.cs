@@ -45,12 +45,21 @@ public partial class MainViewModel
         RemoteQrCode = null;
         RemoteNetworkUrl = "";
         RemoteLocalUrl = "";
+        RemoteTalk(false);
+        _remoteClientsTimer?.Stop();
+        RemoteClientsText = "";
         if (!RemoteSettings.Enabled)
         {
             RemoteStatus = "Désactivée.";
             return;
         }
-        _remote ??= new RemoteServer(request => RemoteApi.HandleAsync(request, new RemoteActions(this)));
+        _remoteClientsTimer ??= new System.Windows.Threading.DispatcherTimer(TimeSpan.FromSeconds(3),
+            System.Windows.Threading.DispatcherPriority.Background, (_, _) => UpdateRemoteClients(), _dispatcher);
+        if (_remote == null)
+        {
+            _remote = new RemoteServer(request => RemoteApi.HandleAsync(request, new RemoteActions(this)));
+            _remote.ClientConnected += OnRemoteClientConnected;
+        }
         _remote.Code = RemoteSettings.Code;
         try
         {
@@ -62,6 +71,8 @@ public partial class MainViewModel
             return;
         }
         RemoteLocalUrl = $"http://127.0.0.1:{_remote.Port}/?code={RemoteSettings.Code}";
+        UpdateRemoteClients();
+        _remoteClientsTimer.Start();
         if (RemoteSettings.AllowNetwork && LocalNetworkAddress() is { } ip)
         {
             RemoteNetworkUrl = $"http://{ip}:{_remote.Port}/?code={RemoteSettings.Code}";
@@ -157,7 +168,81 @@ public partial class MainViewModel
         }
     }
 
-    private void DisposeRemote() => _remote?.Stop();
+    private void DisposeRemote()
+    {
+        RemoteTalk(false);
+        _remote?.Stop();
+    }
+
+    // ---- Phone push-to-talk: released by itself if the phone stops repeating « down » (lost Wi-Fi, locked screen) ----
+
+    private DateTime _remoteTalkUntil;
+    private System.Windows.Threading.DispatcherTimer? _remoteTalkWatch;
+
+    private void RemoteTalk(bool down)
+    {
+        if (!down)
+        {
+            Engine.Core.RemotePushToTalkHeld = false;
+            _remoteTalkWatch?.Stop();
+            return;
+        }
+        _remoteTalkUntil = DateTime.UtcNow.AddMilliseconds(900);
+        Engine.Core.RemotePushToTalkHeld = true;
+        _remoteTalkWatch ??= new System.Windows.Threading.DispatcherTimer(TimeSpan.FromMilliseconds(200),
+            System.Windows.Threading.DispatcherPriority.Normal, (_, _) =>
+            {
+                if (DateTime.UtcNow <= _remoteTalkUntil) return;
+                Engine.Core.RemotePushToTalkHeld = false;
+                _remoteTalkWatch!.Stop();
+            }, _dispatcher);
+        _remoteTalkWatch.Start();
+    }
+
+    // ---- Connected devices ---------------------------------------------------------------------------------------
+
+    [ObservableProperty] private string _remoteClientsText = "";
+    private System.Windows.Threading.DispatcherTimer? _remoteClientsTimer;
+
+    private void OnRemoteClientConnected(IPAddress address) => _dispatcher.BeginInvoke(() =>
+    {
+        var who = IPAddress.IsLoopback(address) ? "sur ce PC" : $"depuis {address}";
+        ShowToast($"Télécommande connectée {who}.");
+        UpdateRemoteClients();
+    });
+
+    private void UpdateRemoteClients()
+    {
+        var clients = _remote?.ActiveClients(TimeSpan.FromSeconds(20)) ?? [];
+        RemoteClientsText = clients.Count switch
+        {
+            0 => "Aucun appareil connecté pour l'instant.",
+            1 => "1 appareil connecté : " + Describe(clients[0]) + ".",
+            _ => $"{clients.Count} appareils connectés : " + string.Join(", ", clients.Select(Describe)) + ".",
+        };
+
+        static string Describe(IPAddress a) => IPAddress.IsLoopback(a) ? "ce PC" : a.ToString();
+    }
+
+    private static byte[]? _appIcon;
+
+    private static byte[]? AppIcon()
+    {
+        if (_appIcon != null) return _appIcon;
+        try
+        {
+            var info = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Assets/logo.png"));
+            if (info == null) return null;
+            using var stream = info.Stream;
+            using var copy = new MemoryStream();
+            stream.CopyTo(copy);
+            return _appIcon = copy.ToArray();
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+    }
 
     /// <summary>Remote actions, run on the UI thread like a click.</summary>
     private sealed class RemoteActions(MainViewModel vm) : IRemoteActions
@@ -165,13 +250,72 @@ public partial class MainViewModel
         private Task<T> Ui<T>(Func<T> f) => vm._dispatcher.InvokeAsync(f).Task;
         private Task Ui(Action a) => vm._dispatcher.InvokeAsync(a).Task;
 
-        public Task<IReadOnlyList<RemotePad>> PadsAsync() => Ui<IReadOnlyList<RemotePad>>(() =>
+        public byte[]? Icon => AppIcon();
+
+        public Task<RemoteCatalog> CatalogAsync() => Ui(BuildCatalog);
+
+        private RemoteCatalog BuildCatalog()
         {
-            var playing = vm.Engine.Pads.PlayingIds();
+            var accent = vm.Settings.Appearance.AccentColor;
+            var color = Services.ThemeService.Parse(accent, "#7C5CFF");
+            var onAccent = Core.ColorMath.PrefersDarkText(color.R, color.G, color.B) ? "#11141c" : "#ffffff";
+            return new RemoteCatalog(
+                vm.Settings.Pads.Select(p => new RemotePad(p.Id, p.Name, p.Color, p.Category, false, p.Hotkey.IsSet ? p.Hotkey.Display : null)).ToList(),
+                vm.Voice.Presets.Select(p => new RemotePreset(p.Name, p.Description)).ToList(),
+                vm.Soundboard.Tts.QuickPhrases.ToList(),
+                vm.Settings.TextToSpeech.History.ToList(),
+                vm.RemoteSettings.Deck.ToList(),
+                $"#{color.R:x2}{color.G:x2}{color.B:x2}",
+                onAccent);
+        }
+
+        public Task<RemoteState> StateAsync() => Ui(() =>
+        {
+            // The catalog's fingerprint: the phone reloads it when a sound, an effect, a phrase or the deck changes.
+            var version = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+                System.Text.Encoding.UTF8.GetBytes(RemoteApi.Serialize(BuildCatalog()))))[..12];
+            var playing = new HashSet<Guid>();
+            vm.Engine.Pads.FillPlayingIds(playing);
             vm.Engine.PrivatePads.FillPlayingIds(playing, clear: false);
-            return vm.Settings.Pads.Select(p => new RemotePad(p.Id, p.Name, p.Color, p.Category, playing.Contains(p.Id),
-                p.Hotkey.IsSet ? p.Hotkey.Display : null)).ToList();
+            var mix = vm.Mix;
+            var track = vm.Music.CurrentTrack;
+            string? cover = null;
+            if (track?.ThumbnailUrl is { Length: > 0 } thumb)
+                cover = thumb.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? thumb : File.Exists(thumb) ? "/api/music/cover" : null;
+            var music = new RemoteMusic(track != null, track?.Title, track?.Artist, cover, vm.Music.IsPlaying,
+                vm.Music.Position, vm.Music.Duration);
+            return new RemoteState(
+                version,
+                mix.MicEnabled,
+                vm.VoiceSettings.EffectsEnabled,
+                vm.Voice.SelectedPresetName ?? "Voix normale",
+                mix.PushToTalkEnabled,
+                mix.PushToTalkEnabled && vm.Engine.Core.Meters.Transmitting,
+                playing.ToList(),
+                new RemoteMix(mix.MusicVolume, mix.PadsVolume, mix.MediaToMicVolume, mix.MonitorVolume, mix.MediaToMicEnabled),
+                music,
+                BlindTestState(),
+                vm.Soundboard.Tts.IsAvailable);
         });
+
+        private RemoteBlindTest? BlindTestState()
+        {
+            var bt = vm.BlindTest;
+            if (bt.Phase == BlindTestPhase.Setup) return null;
+            var state = bt.RoundState switch
+            {
+                BlindTestRoundState.Loading => "loading",
+                BlindTestRoundState.Listening => "listening",
+                BlindTestRoundState.TimeUp => "timeup",
+                _ => "revealed",
+            };
+            return new RemoteBlindTest(
+                bt.Phase == BlindTestPhase.Podium ? "podium" : "playing",
+                bt.IsSuspended, bt.RoundNumber, bt.TotalRounds, bt.Countdown, state, bt.IsPausedByHost,
+                bt.AnswerTitle, bt.CurrentTrack == null ? "" : bt.AnswerArtist, bt.HintText.Replace("\n", "  ·  "),
+                bt.HintLevel < BlindTestHints.MaxLevel,
+                bt.Leaderboard.Select(p => new RemoteBlindTestPlayer(p.Name, p.Score, p.Rank, p.Answer.Title, p.Answer.Artist, p.Answer.Fast)).ToList());
+        }
 
         public Task<bool> PlayPadAsync(string idOrName) => Ui(() =>
         {
@@ -181,14 +325,112 @@ public partial class MainViewModel
             return true;
         });
 
-        public Task StopAllAsync() => Ui(() => vm.Soundboard.StopAllCommand.Execute(null));
-        public Task ToggleMicAsync() => Ui(vm.ToggleMic);
-        public Task ToggleEffectsAsync() => Ui(vm.ToggleEffects);
-        public Task CyclePresetAsync(int direction) => Ui(() => vm.Voice.CyclePreset(direction));
-        public Task MusicPlayPauseAsync() => Ui(() => vm.Music.PlayPauseCommand.Execute(null));
-        public Task MusicNextAsync() => Ui(() => vm.Music.NextCommand.Execute(null));
+        public Task<bool> ApplyPresetAsync(string name) => Ui(() =>
+        {
+            var preset = vm.Voice.Presets.FirstOrDefault(p => p.Name == name)
+                         ?? vm.Voice.Presets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.CurrentCultureIgnoreCase));
+            if (preset == null) return false;
+            vm.Voice.ApplyPresetCommand.Execute(preset);
+            if (!vm.VoiceSettings.EffectsEnabled) vm.VoiceSettings.EffectsEnabled = true;
+            return true;
+        });
 
-        public Task<RemoteStatus> StatusAsync() => Ui(() => new RemoteStatus(vm.Mix.MicEnabled, vm.VoiceSettings.EffectsEnabled,
-            vm.Voice.SelectedPresetName ?? "Voix normale", vm.Music.CurrentTrack?.Title, vm.Music.IsPlaying));
+        public Task<bool> RunAsync(string action) => Ui(() =>
+        {
+            var bt = vm.BlindTest;
+            // Blind test buttons only mean something during a game (« reprendre » only once it was left).
+            if (action.StartsWith("bt-", StringComparison.Ordinal)
+                && (bt.Phase != BlindTestPhase.Playing || action != "bt-resume" && bt.IsSuspended))
+                return false;
+            switch (action)
+            {
+                case "stop": vm.Soundboard.StopAllCommand.Execute(null); return true;
+                case "mic": vm.ToggleMic(); return true;
+                case "effects": vm.ToggleEffects(); return true;
+                case "radio":
+                    vm.Mix.PushToTalkEnabled = !vm.Mix.PushToTalkEnabled;
+                    vm.ShowToast(vm.Mix.PushToTalkEnabled ? "Mode radio activé : votre voix passe en maintenant la touche." : "Mode radio désactivé");
+                    return true;
+                case "preset-next": vm.Voice.CyclePreset(1); return true;
+                case "preset-previous": vm.Voice.CyclePreset(-1); return true;
+                case "music-playpause": vm.Music.PlayPauseCommand.Execute(null); return true;
+                case "music-next": vm.Music.NextCommand.Execute(null); return true;
+                case "music-previous": vm.Music.PreviousCommand.Execute(null); return true;
+                case "media-to-mic": vm.ToggleMediaToMic(); return true;
+                case "bt-reveal": return Execute(bt.RevealCommand);
+                case "bt-next": return Execute(bt.NextRoundCommand);
+                case "bt-replay": return Execute(bt.ReplayCommand);
+                case "bt-pause": return Execute(bt.TogglePauseCommand);
+                case "bt-hint": return Execute(bt.HintCommand);
+                case "bt-skip": return Execute(bt.SkipCommand);
+                case "bt-resume":
+                    // The game resumes on its page, like when the host comes back to it.
+                    vm.CurrentPage = BlindTestViewModel.PageName;
+                    if (bt.IsSuspended) bt.ResumeGameCommand.Execute(null);
+                    return true;
+                default: return false;
+            }
+        });
+
+        private static bool Execute(System.Windows.Input.ICommand command)
+        {
+            if (!command.CanExecute(null)) return false;
+            command.Execute(null);
+            return true;
+        }
+
+        public Task PushToTalkAsync(bool down) => Ui(() => vm.RemoteTalk(down));
+
+        public Task<bool> SetMixAsync(string key, double value) => Ui(() =>
+        {
+            if (!double.IsFinite(value)) return false;
+            var v = (float)Math.Clamp(value, 0, 1.5);
+            switch (key)
+            {
+                case "music": vm.Mix.MusicVolume = v; break;
+                case "pads": vm.Mix.PadsVolume = v; break;
+                case "tomic": vm.Mix.MediaToMicVolume = v; break;
+                case "monitor": vm.Mix.MonitorVolume = v; break;
+                default: return false;
+            }
+            return true;
+        });
+
+        public async Task<bool> SayAsync(string text)
+        {
+            var task = await Ui(() => vm.Soundboard.Tts.IsAvailable ? vm.Soundboard.Tts.SayAsync(text, remember: true) : Task.FromResult<string?>(null));
+            return await task != null;
+        }
+
+        public Task<bool> SetDeckAsync(IReadOnlyList<string> items) => Ui(() =>
+        {
+            vm.RemoteSettings.Deck = items.ToList();
+            vm.Save();
+            return true;
+        });
+
+        public Task<bool> ToggleBlindTestAsync(string player, string field) => Ui(() =>
+        {
+            if (vm.BlindTest.Phase != BlindTestPhase.Playing) return false;
+            var p = vm.BlindTest.Players.FirstOrDefault(x => x.Name == player);
+            if (p == null) return false;
+            switch (field)
+            {
+                case "title": p.Answer.Title = !p.Answer.Title; return true;
+                case "artist": p.Answer.Artist = !p.Answer.Artist; return true;
+                default: return false;
+            }
+        });
+
+        public Task<(byte[] Data, string ContentType)?> CoverAsync() => Ui<(byte[] Data, string ContentType)?>(() =>
+        {
+            var path = vm.Music.CurrentTrack?.ThumbnailUrl;
+            if (string.IsNullOrEmpty(path) || path.StartsWith("http", StringComparison.OrdinalIgnoreCase) || !File.Exists(path)) return null;
+            // Only covers kept by the app (never an arbitrary file of the PC).
+            var data = Path.GetFullPath(vm.DataDirectory) + Path.DirectorySeparatorChar;
+            if (!Path.GetFullPath(path).StartsWith(data, StringComparison.OrdinalIgnoreCase)) return null;
+            var type = Path.GetExtension(path).ToLowerInvariant() switch { ".png" => "image/png", ".webp" => "image/webp", _ => "image/jpeg" };
+            return (File.ReadAllBytes(path), type);
+        });
     }
 }

@@ -1,5 +1,17 @@
 # Journal des versions
 
+## 2.7.0
+
+Votre téléphone devient un Stream Deck.
+
+- **Mon deck** : composez votre page de boutons favoris : sons, effets de voix, phrases à dire dans le micro et actions (tout arrêter, micro, effets, mode radio, « parler », musique, blind test). « Remplir automatiquement » pour démarrer en un geste, « Modifier » pour ajouter, ranger (◀ ▶) ou retirer, appui long sur un son ou un effet pour l'épingler. Le deck est enregistré sur le PC : il est le même sur tous vos téléphones.
+- **État en direct** : les sons en cours, le micro, l'effet de voix actif, la musique et le blind test se mettent à jour instantanément sur le téléphone, sans rafraîchir.
+- **Voix** : un grand bouton « Maintenir pour parler » (mode radio), qui relâche tout seul si le téléphone perd le Wi-Fi ; micro, effets et mode radio en un appui ; tous les effets de voix ; et « Dire dans le micro » pour taper une phrase que la synthèse vocale prononce, avec vos phrases rapides et récentes.
+- **Musique** : pochette, titre, progression, précédent / lecture / suivant, « musique dans le micro » et les volumes (musique, sons, envoi dans le micro, casque).
+- **Blind test** : pendant une partie, l'onglet Blind test affiche la réponse sur votre téléphone (et pas à l'écran partagé), les boutons Révéler, Indice, Pause, Rejouer, Passer, Manche suivante, et les points de chaque joueur (Titre +2, Artiste +1) d'un appui.
+- **Pensé pour le téléphone** : grands boutons, onglets en bas à portée de pouce, « Stop » toujours visible, vibration au toucher (Android), taille des boutons réglable, affichage paysage façon Stream Deck, et ajout à l'écran d'accueil pour l'ouvrir comme une application.
+- **Sur le PC** : un message signale chaque téléphone qui se connecte, et Configuration → Télécommande liste les appareils connectés. L'API pour Stream Deck, Touch Portal et OBS gagne les effets de voix, les phrases, les volumes, le mode radio et le blind test.
+
 ## 2.6.0
 
 Pilotez SpokaSoundBoard à distance.
