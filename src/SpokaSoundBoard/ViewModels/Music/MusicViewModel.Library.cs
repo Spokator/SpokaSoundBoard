@@ -21,6 +21,8 @@ public enum MusicSectionKind
     Playlist,
 }
 
+public sealed record SortOption(TrackSort Sort, string Label);
+
 /// <summary>An entry of the music page sidebar.</summary>
 public sealed record MusicSection(MusicSectionKind Kind, string Title, string Icon);
 
@@ -40,15 +42,27 @@ public partial class MusicViewModel
 
     public ObservableCollection<MusicPlaylist> Playlists => Library.Playlists;
 
+    public IReadOnlyList<SortOption> SortOptions { get; } =
+    [
+        new(TrackSort.Default, "Par défaut"),
+        new(TrackSort.Title, "Titre"),
+        new(TrackSort.Artist, "Artiste"),
+        new(TrackSort.Duration, "Durée"),
+        new(TrackSort.MostPlayed, "Les plus écoutés"),
+    ];
+
+    /// <summary>The history keeps its chronological order: no sort menu there.</summary>
+    public bool CanSort => CurrentKind is MusicSectionKind.Tracks or MusicSectionKind.Favorites or MusicSectionKind.Playlist;
+
     /// <summary>Tracks shown in the centre list for the selected section, after the filter.</summary>
     public ObservableCollection<TrackItem> VisibleTracks { get; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsHome), nameof(IsStats), nameof(IsTrackList), nameof(IsPlaylist), nameof(SectionTitle), nameof(SectionIcon))]
+    [NotifyPropertyChangedFor(nameof(IsHome), nameof(IsStats), nameof(IsTrackList), nameof(IsPlaylist), nameof(SectionTitle), nameof(SectionIcon), nameof(CanSort), nameof(CanSyncPlaylist))]
     private MusicSection? _selectedSection;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsHome), nameof(IsStats), nameof(IsTrackList), nameof(IsPlaylist), nameof(SectionTitle), nameof(SectionIcon))]
+    [NotifyPropertyChangedFor(nameof(IsHome), nameof(IsStats), nameof(IsTrackList), nameof(IsPlaylist), nameof(SectionTitle), nameof(SectionIcon), nameof(CanSort), nameof(CanSyncPlaylist))]
     private MusicPlaylist? _selectedPlaylist;
 
     [ObservableProperty] private string _filter = "";
@@ -131,6 +145,7 @@ public partial class MusicViewModel
             MusicSectionKind.Playlist when SelectedPlaylist != null => Library.TracksOf(SelectedPlaylist),
             _ => [],
         };
+        if (CanSort) source = MusicLibrary.Sort(source, Settings.TrackSort);
         var list = source.Where(t => MusicLibrary.Matches(t, Filter)).ToList();
 
         if (!list.SequenceEqual(VisibleTracks))
@@ -264,8 +279,8 @@ public partial class MusicViewModel
     {
         if (track == null) return;
         Library.DislikeTrack(track);
-        if (!string.IsNullOrWhiteSpace(track.Artist))
-            _main.ShowToast($"Noté : l'autoplay ne proposera plus ce morceau.");
+        // Only web tracks can come back through the autoplay.
+        if (track.HasSource) _main.ShowToast("Noté : l'autoplay ne proposera plus ce morceau.");
         if (track == CurrentTrack) Next();
         Queue.Remove(track);
     }
@@ -288,11 +303,51 @@ public partial class MusicViewModel
     public void MoveInPlaylist(int from, int to)
     {
         if (SelectedPlaylist == null || !string.IsNullOrEmpty(Filter)) return;
+        if (Settings.TrackSort != TrackSort.Default)
+        {
+            _main.ShowToast("Choisissez le tri « Par défaut » pour réordonner la playlist.");
+            return;
+        }
         Library.MoveInPlaylist(SelectedPlaylist, from, to);
         RefreshVisible();
     }
 
     // ---- Playlists -------------------------------------------------------------------------------------------------
+
+    /// <summary>The open playlist was imported from Spotify, Deezer, YouTube…: it can be updated from there.</summary>
+    public bool CanSyncPlaylist => SelectedPlaylist?.SourceUrl is { Length: > 0 };
+
+    [ObservableProperty] private bool _isSyncingPlaylist;
+
+    [RelayCommand]
+    private async Task SyncPlaylist(MusicPlaylist? playlist)
+    {
+        playlist ??= SelectedPlaylist;
+        if (playlist?.SourceUrl is not { Length: > 0 } url || IsSyncingPlaylist) return;
+        IsSyncingPlaylist = true;
+        try
+        {
+            var imported = await Importer.ImportAsync(url, CancellationToken.None);
+            if (imported.Tracks.Count == 0)
+            {
+                _main.ShowToast("La playlist d'origine est vide ou n'est plus publique : rien n'a été changé.");
+                return;
+            }
+            var (added, removed) = Library.SyncPlaylist(playlist, MusicSearchViewModel.ToTracks(imported));
+            _main.ShowToast(added == 0 && removed == 0
+                ? $"« {playlist.Name} » est déjà à jour."
+                : $"« {playlist.Name} » mise à jour : {added} ajouté(s), {removed} retiré(s).");
+            RefreshVisible();
+        }
+        catch (Exception ex)
+        {
+            _main.ShowToast("Mise à jour impossible : " + Core.FriendlyErrors.Describe(ex));
+        }
+        finally
+        {
+            IsSyncingPlaylist = false;
+        }
+    }
 
     [RelayCommand]
     private void NewPlaylist()

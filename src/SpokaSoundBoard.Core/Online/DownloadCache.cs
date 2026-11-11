@@ -35,6 +35,33 @@ public static class DownloadCache
         return orphans;
     }
 
+    /// <summary>Total size of the files under <paramref name="folder"/> (0 if it does not exist).</summary>
+    public static long FolderSize(string folder)
+    {
+        try
+        {
+            var dir = new DirectoryInfo(folder);
+            return dir.Exists ? dir.EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length) : 0;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return 0;
+        }
+    }
+
+    /// <summary>« 1,2 Go », « 340 Mo », « 12 Ko ».</summary>
+    public static string FormatSize(long bytes)
+    {
+        var fr = System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
+        return bytes switch
+        {
+            >= 1L << 30 => (bytes / (double)(1L << 30)).ToString("0.0", fr) + " Go",
+            >= 1L << 20 => (bytes / (double)(1L << 20)).ToString("0", fr) + " Mo",
+            >= 1L << 10 => (bytes / (double)(1L << 10)).ToString("0", fr) + " Ko",
+            _ => bytes + " o",
+        };
+    }
+
     /// <summary>Deletes the orphans; files in use or protected are skipped. Returns the space freed.</summary>
     public static (int Files, long Bytes) DeleteOrphans(string cacheDirectory, IEnumerable<string> subFolders, IEnumerable<string?> referenced,
                                                        DateTime nowUtc, TimeSpan? minimumAge = null)

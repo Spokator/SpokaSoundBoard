@@ -151,6 +151,7 @@ public sealed class SettingsStore
         s.Music ??= new MusicSettings();
         s.Music.Effects ??= new MusicEffectSettings();
         s.Music.Effects.Sanitize();
+        if (!Enum.IsDefined(s.Music.TrackSort)) s.Music.TrackSort = TrackSort.Default;
         s.Music.CrossfadeSeconds = Math.Clamp(s.Music.CrossfadeSeconds, 0, 12);
         s.BlindTest ??= new BlindTestSettings();
         s.BlindTest.Sanitize();

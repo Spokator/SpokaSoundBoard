@@ -100,6 +100,30 @@ public partial class MusicView : UserControl
         if (Vm == null) return;
         if (e.Key == Key.Enter) Vm.PlayTrackCommand.Execute(Vm.SelectedTrack);
         else if (e.Key == Key.Delete) Vm.RemoveTrackCommand.Execute(Vm.SelectedTrack);
+        // Menu key or Maj+F10: the row's menu, which lives on the row content rather than on the list item.
+        else if (e.Key == Key.Apps || e.Key == Key.System && e.SystemKey == Key.F10 && Keyboard.Modifiers == ModifierKeys.Shift)
+        {
+            if (sender is ListBox list && Vm.SelectedTrack is { } track
+                && list.ItemContainerGenerator.ContainerFromItem(track) is DependencyObject item
+                && FindDescendantWithMenu(item) is { } row)
+            {
+                row.ContextMenu!.PlacementTarget = row;
+                row.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+                row.ContextMenu.IsOpen = true;
+                e.Handled = true;
+            }
+        }
+    }
+
+    private static FrameworkElement? FindDescendantWithMenu(DependencyObject start)
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(start); i++)
+        {
+            var child = VisualTreeHelper.GetChild(start, i);
+            if (child is FrameworkElement { ContextMenu: not null } fe) return fe;
+            if (FindDescendantWithMenu(child) is { } found) return found;
+        }
+        return null;
     }
 
     /// <summary>"⋯" button: opens the row's context menu under the button.</summary>

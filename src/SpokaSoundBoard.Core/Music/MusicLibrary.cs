@@ -154,6 +154,98 @@ public sealed class MusicLibrary
         return playlist.TrackIds.Select(id => byId.GetValueOrDefault(id)).OfType<TrackItem>().ToList();
     }
 
+    private static readonly StringComparer TextOrder =
+        StringComparer.Create(new System.Globalization.CultureInfo("fr-FR"), System.Globalization.CompareOptions.IgnoreCase | System.Globalization.CompareOptions.IgnoreNonSpace);
+
+    /// <summary>
+    /// Sorts a track list. <see cref="TrackSort.Default"/> keeps the given order. Titles and artists follow French
+    /// alphabetical order (accents and case ignored); tracks without artist or duration go last.
+    /// </summary>
+    public static IEnumerable<TrackItem> Sort(IEnumerable<TrackItem> tracks, TrackSort sort) => sort switch
+    {
+        TrackSort.Title => tracks.OrderBy(t => t.Title, TextOrder),
+        TrackSort.Artist => tracks.OrderBy(t => string.IsNullOrWhiteSpace(t.Artist) ? 1 : 0)
+                                  .ThenBy(t => t.Artist ?? "", TextOrder).ThenBy(t => t.Title, TextOrder),
+        TrackSort.Duration => tracks.OrderBy(t => t.DurationSeconds is > 0 ? 0 : 1).ThenBy(t => t.DurationSeconds ?? 0),
+        TrackSort.MostPlayed => tracks.OrderByDescending(t => t.PlayCount).ThenByDescending(t => t.LastPlayedAt ?? DateTime.MinValue),
+        _ => tracks,
+    };
+
+    /// <summary>
+    /// Makes an imported playlist match its source again (songs added, removed or moved on Spotify…). Songs that left
+    /// the playlist stay in the library. Returns how many were added and removed.
+    /// </summary>
+    public (int Added, int Removed) SyncPlaylist(MusicPlaylist playlist, IEnumerable<TrackItem> imported)
+    {
+        var ids = new List<Guid>();
+        foreach (var t in imported)
+        {
+            var item = AddOrGet(t);
+            item.IsTransient = false;
+            if (!ids.Contains(item.Id)) ids.Add(item.Id);
+        }
+        var before = playlist.TrackIds.ToHashSet();
+        var added = ids.Count(id => !before.Contains(id));
+        var removed = before.Count(id => !ids.Contains(id));
+        if (!ids.SequenceEqual(playlist.TrackIds))
+        {
+            playlist.TrackIds.Clear();
+            foreach (var id in ids) playlist.TrackIds.Add(id);
+            Changed?.Invoke();
+        }
+        return (added, removed);
+    }
+
+    /// <summary>
+    /// « Ce n'est pas le bon morceau » : points the track at another video. Its file is forgotten (downloaded again on
+    /// the next play) and returned so the caller can delete it if it belongs to the app's cache.
+    /// </summary>
+    public string? ChangeSource(TrackItem track, string sourceUrl, double? durationSeconds, string? thumbnailUrl)
+    {
+        var oldFile = string.IsNullOrEmpty(track.FilePath) ? null : track.FilePath;
+        track.SourceUrl = sourceUrl;
+        track.FilePath = "";
+        track.State = TrackState.Remote;
+        track.StateMessage = null;
+        track.NormalizationDb = null;
+        if (durationSeconds is > 0) track.DurationSeconds = durationSeconds;
+        if (!string.IsNullOrEmpty(thumbnailUrl)) track.ThumbnailUrl = thumbnailUrl;
+        Changed?.Invoke();
+        return oldFile;
+    }
+
+    /// <summary>Renames a track (title and artist typed by the user). Empty values are ignored.</summary>
+    public void EditInfo(TrackItem track, string? title, string? artist)
+    {
+        title = title?.Trim();
+        artist = artist?.Trim();
+        if (!string.IsNullOrEmpty(title)) track.DisplayTitle = title;
+        track.Artist = string.IsNullOrEmpty(artist) ? null : artist;
+        Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// Downloaded songs whose file can be deleted to free space: in <paramref name="downloadFolder"/>, re-downloadable
+    /// (they have a link), and neither favourite, in a playlist nor in <paramref name="keep"/> (queue, current track).
+    /// </summary>
+    public List<TrackItem> ReleasableDownloads(string downloadFolder, IReadOnlyCollection<Guid> keep)
+    {
+        var root = Path.GetFullPath(downloadFolder).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        var inPlaylists = Playlists.SelectMany(p => p.TrackIds).ToHashSet();
+        return Tracks.Where(t => !string.IsNullOrEmpty(t.FilePath) && !string.IsNullOrEmpty(t.SourceUrl)
+                                 && !t.IsFavorite && !inPlaylists.Contains(t.Id) && !keep.Contains(t.Id)
+                                 && Path.GetFullPath(t.FilePath).StartsWith(root, StringComparison.OrdinalIgnoreCase))
+                     .ToList();
+    }
+
+    /// <summary>Forgets the file of a downloaded track (after it was deleted): it is downloaded again when played.</summary>
+    public void ForgetDownload(TrackItem track)
+    {
+        track.FilePath = "";
+        track.State = TrackState.Remote;
+        Changed?.Invoke();
+    }
+
     public TimeSpan DurationOf(IEnumerable<TrackItem> tracks) =>
         TimeSpan.FromSeconds(tracks.Sum(t => t.DurationSeconds ?? 0));
 

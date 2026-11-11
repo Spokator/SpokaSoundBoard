@@ -1,5 +1,18 @@
 # Journal des versions
 
+## 2.4.0
+
+La musique se range et se corrige.
+
+- **Trier les listes** : « Toutes les musiques », les favoris et les playlists se trient par titre, artiste, durée ou nombre d'écoutes (menu « Trier par », mémorisé). L'ordre alphabétique suit le français : accents et majuscules ne changent rien.
+- **Mauvaise version ? Choisissez la bonne** : clic droit sur un morceau → « Infos et autre version… ». Le panneau « Morceau » propose les autres vidéos trouvées (reprises, live, clip officiel…), écoutables au casque avant de choisir. Le bon fichier est téléchargé à la place de l'ancien, qui est supprimé.
+- **Modifier le titre et l'artiste** d'un morceau dans ce même panneau, y compris pour vos fichiers.
+- **Mettre à jour une playlist importée** : le bouton « Mettre à jour » d'une playlist venue de Spotify, Deezer, Apple Music, YouTube ou SoundCloud ajoute ses nouveaux morceaux et retire ceux qui n'y sont plus (ils restent dans votre bibliothèque).
+- **Stockage** : la page Configuration montre la place prise par les musiques, les sons et les voix naturelles, et « Libérer l'espace des musiques » supprime les fichiers des morceaux téléchargés qui ne sont ni en favori, ni dans une playlist, ni dans la file (ils restent dans la bibliothèque et se retéléchargent si vous les écoutez).
+- **Suivant en fin de file** : sans répétition, « Suivant » sur le dernier morceau continue avec l'autoplay au lieu de revenir au début.
+- **Clavier** : la touche Menu ou Maj+F10 ouvre le menu du morceau sélectionné dans une liste.
+- **Correction** : « Ne plus proposer ce morceau » n'affiche plus de confirmation pour un fichier de votre PC (l'autoplay ne le propose de toute façon jamais).
+
 ## 2.3.0
 
 La soundboard s'organise.

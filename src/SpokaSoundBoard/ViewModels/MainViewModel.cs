@@ -234,6 +234,87 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty] private string _currentPage = "soundboard";
 
+    partial void OnCurrentPageChanged(string value)
+    {
+        if (value == "settings") _ = RefreshStorageAsync();
+    }
+
+    // ---- Storage (Configuration page) ---------------------------------------------------------------------
+
+    [ObservableProperty] private string _storageText = "Calcul de l'espace utilisé…";
+    [ObservableProperty] private string _releasableText = "";
+    [ObservableProperty] private bool _canFreeMusicSpace;
+
+    private string MusicDownloadFolder => System.IO.Path.Combine(Downloader.CacheDirectory, ViewModels.Music.MusicViewModel.DownloadFolder);
+
+    private HashSet<Guid> TracksToKeep()
+    {
+        var keep = Music.Queue.Items.Select(t => t.Id).ToHashSet();
+        if (Music.CurrentTrack != null) keep.Add(Music.CurrentTrack.Id);
+        return keep;
+    }
+
+    public async Task RefreshStorageAsync()
+    {
+        var music = MusicDownloadFolder;
+        var sounds = System.IO.Path.Combine(Downloader.CacheDirectory, TextToSpeechViewModel.SoundsFolder);
+        var voices = System.IO.Path.Combine(DataDirectory, Core.Speech.VoiceModelStore.FolderName);
+        var releasable = Music.LibraryLoaded ? Music.Library.ReleasableDownloads(music, TracksToKeep()) : [];
+        var files = releasable.Select(t => t.FilePath).ToList();
+        var (musicSize, soundsSize, voicesSize, releasableSize) = await Task.Run(() =>
+        (
+            Core.Online.DownloadCache.FolderSize(music),
+            Core.Online.DownloadCache.FolderSize(sounds),
+            Core.Online.DownloadCache.FolderSize(voices),
+            files.Sum(f => System.IO.File.Exists(f) ? new System.IO.FileInfo(f).Length : 0L)
+        ));
+        StorageText = $"Musiques téléchargées : {Core.Online.DownloadCache.FormatSize(musicSize)}   ·   " +
+                      $"Sons : {Core.Online.DownloadCache.FormatSize(soundsSize)}   ·   " +
+                      $"Voix naturelles : {Core.Online.DownloadCache.FormatSize(voicesSize)}";
+        CanFreeMusicSpace = releasable.Count > 0 && releasableSize > 0;
+        ReleasableText = CanFreeMusicSpace
+            ? $"{releasable.Count} musique(s) téléchargée(s) ne sont ni en favori ni dans une playlist : {Core.Online.DownloadCache.FormatSize(releasableSize)} récupérables."
+            : "Rien à libérer : chaque musique téléchargée est en favori, dans une playlist ou dans la file d'attente.";
+    }
+
+    /// <summary>Deletes downloaded songs nobody keeps on purpose; they stay in the library and download again if played.</summary>
+    [RelayCommand]
+    private async Task FreeMusicSpace()
+    {
+        if (!Music.LibraryLoaded) return;
+        var tracks = Music.Library.ReleasableDownloads(MusicDownloadFolder, TracksToKeep());
+        if (tracks.Count == 0) return;
+        var question = $"Supprimer les fichiers de {tracks.Count} musique(s) téléchargée(s) ?\n\n" +
+                       "Elles restent dans votre bibliothèque et votre historique, et seront retéléchargées si vous les écoutez. " +
+                       "Vos favoris, vos playlists et la file d'attente ne sont pas touchés.";
+        if (System.Windows.MessageBox.Show(question, "SpokaSoundBoard", System.Windows.MessageBoxButton.OKCancel,
+                System.Windows.MessageBoxImage.Question) != System.Windows.MessageBoxResult.OK) return;
+        var paths = tracks.Select(t => t.FilePath).ToList();
+        var deleted = await Task.Run(() => paths.Select(path =>
+        {
+            try
+            {
+                var length = new System.IO.FileInfo(path).Length;
+                System.IO.File.Delete(path);
+                return length;
+            }
+            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
+            {
+                return -1L;
+            }
+        }).ToList());
+        long freed = 0;
+        for (var i = 0; i < tracks.Count; i++)
+        {
+            if (deleted[i] < 0) continue;
+            freed += deleted[i];
+            Music.Library.ForgetDownload(tracks[i]);
+        }
+        Music.SaveLibrary();
+        ShowToast($"{Core.Online.DownloadCache.FormatSize(freed)} libérés.");
+        await RefreshStorageAsync();
+    }
+
     [ObservableProperty] private double _micLevel;
     [ObservableProperty] private double _micLevelDb = MeterFloorDb;
     [ObservableProperty] private double _voiceLevel;

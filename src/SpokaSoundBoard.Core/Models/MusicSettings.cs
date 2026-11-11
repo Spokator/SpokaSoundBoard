@@ -2,6 +2,17 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace SpokaSoundBoard.Core.Models;
 
+/// <summary>Order of the track lists (« Toutes les musiques », favourites, playlists).</summary>
+public enum TrackSort
+{
+    /// <summary>The list's own order: newest first for the library, the user's order for a playlist.</summary>
+    Default,
+    Title,
+    Artist,
+    Duration,
+    MostPlayed,
+}
+
 /// <summary>Music player behaviour. Bound by the UI, read by the player.</summary>
 public partial class MusicSettings : ObservableObject
 {
@@ -15,6 +26,8 @@ public partial class MusicSettings : ObservableObject
 
     /// <summary>Remove the queue entries once they have been played (otherwise the queue is kept and replayed).</summary>
     [ObservableProperty] private bool _consumeQueue;
+
+    [ObservableProperty] private TrackSort _trackSort;
 
     public MusicEffectSettings Effects { get; set; } = new();
 }

@@ -392,16 +392,7 @@ public partial class MusicSearchViewModel : ObservableObject
                 Status = "Cette playlist est vide ou privée.";
                 return;
             }
-            var tracks = imported.Tracks.Select(t => new TrackItem
-            {
-                DisplayTitle = t.Title,
-                Artist = t.Artist,
-                SourceUrl = t.Url,
-                SearchQuery = string.IsNullOrWhiteSpace(t.Artist) ? t.Title : $"{t.Artist} - {t.Title}",
-                ThumbnailUrl = t.ThumbnailUrl,
-                DurationSeconds = t.Duration?.TotalSeconds,
-                State = TrackState.Remote,
-            }).ToList();
+            var tracks = ToTracks(imported);
             var playlist = _music.Library.CreatePlaylist(imported.Name, tracks, imported.SourceUrl);
             Status = $"Playlist « {playlist.Name} » importée : {playlist.TrackIds.Count} morceaux. Ils seront téléchargés au moment de les écouter.";
             _suppressSuggestions = true;
@@ -426,10 +417,25 @@ public partial class MusicSearchViewModel : ObservableObject
 
     [RelayCommand]
     private void Cancel() => _importCts?.Cancel();
+
+    /// <summary>Library entries for the songs of an imported playlist (downloaded when first played).</summary>
+    internal static List<TrackItem> ToTracks(ImportedPlaylist imported) => imported.Tracks.Select(t => new TrackItem
+    {
+        DisplayTitle = t.Title,
+        Artist = t.Artist,
+        SourceUrl = t.Url,
+        SearchQuery = string.IsNullOrWhiteSpace(t.Artist) ? t.Title : $"{t.Artist} - {t.Title}",
+        ThumbnailUrl = t.ThumbnailUrl,
+        DurationSeconds = t.Duration?.TotalSeconds,
+        State = TrackState.Remote,
+    }).ToList();
 }
 
 public sealed partial class MusicResultViewModel
 {
     /// <summary>File downloaded for the headphone preview, reused when the result is played or added.</summary>
     public string? PreviewLoaded { get; set; }
+
+    /// <summary>Picked in the « Morceau » panel as the right version of a track.</summary>
+    [ObservableProperty] private bool _isChosen;
 }

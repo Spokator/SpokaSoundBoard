@@ -75,6 +75,9 @@ public partial class MusicViewModel : ObservableObject
                 case nameof(MusicSettings.Autoplay):
                     SchedulePrepareNext();
                     break;
+                case nameof(MusicSettings.TrackSort):
+                    RefreshVisible();
+                    break;
             }
             _main.Save();
         };
@@ -112,6 +115,7 @@ public partial class MusicViewModel : ObservableObject
         Effects = new MusicEffectsViewModel(this);
         Lyrics = new LyricsViewModel(this);
         Search = new MusicSearchViewModel(this);
+        TrackInfo = new TrackInfoViewModel(this);
         InitializeLibraryBrowsing();
     }
 
@@ -129,6 +133,25 @@ public partial class MusicViewModel : ObservableObject
     public MusicEffectsViewModel Effects { get; }
     public LyricsViewModel Lyrics { get; }
     public MusicSearchViewModel Search { get; }
+    public TrackInfoViewModel TrackInfo { get; }
+
+    /// <summary>« Infos et version… » on a track: opens the « Morceau » side panel.</summary>
+    [RelayCommand]
+    private void EditTrack(TrackItem? track)
+    {
+        track ??= SelectedTrack ?? CurrentTrack;
+        if (track == null) return;
+        // Edit the library's own entry, not a search result copy.
+        if (!track.IsTransient || Library.Tracks.Contains(track)) TrackInfo.Open(Library.AddOrGet(track));
+        else TrackInfo.Open(track);
+        SidePanel = "track";
+    }
+
+    /// <summary>The track's source changed: if it is playing, download and play the new version.</summary>
+    public void RestartIfCurrent(TrackItem track)
+    {
+        if (track == CurrentTrack && !IsExternalPlayback) _ = StartAsync(track);
+    }
 
     public bool QueueIsEmpty => Queue.Count == 0;
     public int UpNextCount => Math.Max(0, Queue.Count - Queue.CurrentIndex - 1);
@@ -253,6 +276,12 @@ public partial class MusicViewModel : ObservableObject
     public void Next()
     {
         if (IsExternalPlayback) return;
+        // Last track, no repeat: « suivant » continues with similar music like the end of the track would.
+        if (Repeat == RepeatMode.Off && Settings.Autoplay && Queue.CurrentIndex >= Queue.Count - 1)
+        {
+            _ = AutoplayOrStopAsync(Queue.Count);
+            return;
+        }
         var next = Queue.Advance(auto: false);
         if (next != null) _ = StartAsync(next);
         else _ = AutoplayOrStopAsync(Queue.Count);
