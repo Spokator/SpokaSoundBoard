@@ -32,9 +32,11 @@ public sealed class AudioEngine : IDisposable
     public AudioEngine(VoiceEffectSettings voice, MixSettings mix)
     {
         Music = new MusicPlayer(MixerCore.SampleRate);
-        Pads = new SoundPadPlayer(MixerCore.SampleRate);
+        SoundCache = new SoundCache(MixerCore.SampleRate);
+        Pads = new SoundPadPlayer(MixerCore.SampleRate, SoundCache);
         Preview = new MusicPlayer(MixerCore.SampleRate);
-        PrivatePads = new SoundPadPlayer(MixerCore.SampleRate);
+        PrivatePads = new SoundPadPlayer(MixerCore.SampleRate, SoundCache);
+        Monitor = new RenderMonitor(MixerCore.SampleRate);
         Core = new MixerCore(voice, mix, Music, Pads, Preview, PrivatePads);
         _guardTimer = new Timer(_ => GuardSessions(), null, Timeout.Infinite, Timeout.Infinite);
     }
@@ -59,6 +61,14 @@ public sealed class AudioEngine : IDisposable
     public MixerCore Core { get; }
     public MusicPlayer Music { get; }
     public SoundPadPlayer Pads { get; }
+
+    /// <summary>Soundboard sounds decoded in memory, shared by <see cref="Pads"/> and <see cref="PrivatePads"/>.</summary>
+    public SoundCache SoundCache { get; }
+
+    /// <summary>Timing of the audio thread (render load, late blocks, stalls, decoders behind).</summary>
+    public RenderMonitor Monitor { get; }
+
+    public RenderHealth GetRenderHealth() => Monitor.Snapshot();
 
     /// <summary>Soundboard sounds heard in the headphones only.</summary>
     public SoundPadPlayer PrivatePads { get; }
@@ -135,7 +145,7 @@ public sealed class AudioEngine : IDisposable
                     ISampleProvider provider;
                     if (i == master)
                     {
-                        provider = new MasterBusProvider(Core, master, rings);
+                        provider = new MasterBusProvider(Core, master, rings, Monitor);
                     }
                     else
                     {
@@ -158,6 +168,7 @@ public sealed class AudioEngine : IDisposable
 
                 // Ducking opt-out is best applied before the streams start.
                 GuardSessions();
+                Monitor.Reset();
                 foreach (var output in _outputs) output?.Play();
                 GuardSessions();
                 _guardTimer.Change(400, 400);
@@ -259,7 +270,7 @@ public sealed class AudioEngine : IDisposable
     /// Pulled by the master device. Renders all buses in one pass, writes its own bus to the device
     /// and the other buses into their ring buffers.
     /// </summary>
-    private sealed class MasterBusProvider(MixerCore core, int master, FloatRingBuffer?[] rings) : ISampleProvider
+    private sealed class MasterBusProvider(MixerCore core, int master, FloatRingBuffer?[] rings, RenderMonitor monitor) : ISampleProvider
     {
         private readonly float[][] _temp = [new float[4096], new float[4096], new float[4096]];
 
@@ -268,6 +279,7 @@ public sealed class AudioEngine : IDisposable
         public int Read(float[] buffer, int offset, int count)
         {
             var frames = count / 2;
+            var started = monitor.Begin();
             try
             {
                 for (var i = 0; i < 3; i++)
@@ -289,6 +301,7 @@ public sealed class AudioEngine : IDisposable
                 // Never let a processing error stop the audio stream: output silence for this block.
                 Array.Clear(buffer, offset, count);
             }
+            monitor.End(started, frames);
             return count;
         }
     }

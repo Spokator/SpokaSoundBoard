@@ -3,10 +3,11 @@ using NAudio.Wave;
 namespace SpokaSoundBoard.Core.Audio;
 
 /// <summary>
-/// Mixes the soundboard sounds that are playing at the same time. The audio thread never disposes a file reader:
-/// finished sounds are handed to the thread pool (like <see cref="MusicPlayer"/> does with its decks), and the
-/// number of simultaneous sounds is capped so that hammering a hotkey cannot overload the audio thread.
-/// Starting, stopping and volume changes ramp over a few milliseconds instead of jumping, which would click.
+/// Mixes the soundboard sounds that are playing at the same time. Sounds come from the <see cref="SoundCache"/>
+/// (decoded in memory: instant start) or, when too long to be cached, from a <see cref="DecodeAhead"/> stream: the
+/// audio thread never reads a file or decodes. It never disposes a decoder either: finished streams are handed to the
+/// thread pool, and the number of simultaneous sounds is capped so that hammering a hotkey cannot overload the audio
+/// thread. Starting, stopping and volume changes ramp over a few milliseconds instead of jumping, which would click.
 /// </summary>
 public sealed class SoundPadPlayer : ISampleProvider, IDisposable
 {
@@ -23,16 +24,23 @@ public sealed class SoundPadPlayer : ISampleProvider, IDisposable
     private readonly List<Voice> _voices = new(MaxVoicesWithFades + 1);
     private readonly float _gainStep;
 
-    // Readers waiting to be disposed off the audio thread. Preallocated: adding never allocates in steady state.
-    private readonly WaveStream?[] _graveyard = new WaveStream?[MaxVoices * 4];
+    /// <summary>Seconds decoded in advance for the sounds that are streamed rather than cached.</summary>
+    private const double StreamBufferSeconds = 1.5;
+    private const double StreamPrefillSeconds = 0.3;
+
+    private readonly SoundCache? _cache;
+
+    // Streams waiting to be disposed off the audio thread. Preallocated: adding never allocates in steady state.
+    private readonly IDisposable?[] _graveyard = new IDisposable?[MaxVoices * 4];
     private int _graveyardCount;
     private int _drainQueued;
     private readonly Drainer _drainer;
 
     private float[] _scratch = new float[4096];
 
-    public SoundPadPlayer(int sampleRate)
+    public SoundPadPlayer(int sampleRate, SoundCache? cache = null)
     {
+        _cache = cache;
         WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, 2);
         _gainStep = (float)(1.0 / (sampleRate * FadeSeconds));
         _drainer = new Drainer(this);
@@ -40,34 +48,51 @@ public sealed class SoundPadPlayer : ISampleProvider, IDisposable
 
     public WaveFormat WaveFormat { get; }
 
-    /// <summary>Starts a sound. Opening the file happens on a worker thread.</summary>
+    /// <summary>
+    /// Starts a sound. A sound already in the <see cref="SoundCache"/> starts right away; otherwise the file is
+    /// decoded (short sounds, then kept in the cache) or opened for streaming (long ones) on a worker thread.
+    /// </summary>
     /// <param name="startSeconds">Start position inside the file.</param>
     /// <param name="endSeconds">End position inside the file (0 or less = until the end).</param>
-    public Task PlayAsync(Guid id, string path, float volume, bool loop, double startSeconds = 0, double endSeconds = 0) => Task.Run(() =>
+    /// <param name="cache">False for one-off files (synthesized speech): streamed, never kept in memory.</param>
+    public Task PlayAsync(Guid id, string path, float volume, bool loop, double startSeconds = 0, double endSeconds = 0, bool cache = true)
     {
-        var (reader, provider) = AudioFileLoader.Open(path, WaveFormat.SampleRate);
-        var start = TimeSpan.FromSeconds(Math.Max(0, startSeconds));
-        if (start > TimeSpan.Zero && start < reader.TotalTime) reader.CurrentTime = start;
-        else start = TimeSpan.Zero;
+        var cached = cache ? _cache?.TryGet(path) : null;
+        if (cached != null)
+        {
+            AddVoice(new Voice(id, new CachedSoundSource(cached, WaveFormat.SampleRate, startSeconds, endSeconds, loop), null, volume));
+            return Task.CompletedTask;
+        }
 
-        long budget = -1;
-        if (endSeconds > startSeconds && endSeconds > 0)
-            budget = (long)((endSeconds - start.TotalSeconds) * WaveFormat.SampleRate) * 2;
+        return Task.Run(() =>
+        {
+            var sound = cache ? _cache?.GetOrLoad(path) : null;
+            if (sound != null)
+            {
+                AddVoice(new Voice(id, new CachedSoundSource(sound, WaveFormat.SampleRate, startSeconds, endSeconds, loop), null, volume));
+                return;
+            }
+            var stream = DecodeAhead.Open(path, WaveFormat.SampleRate, StreamBufferSeconds, StreamPrefillSeconds, startSeconds, endSeconds, loop);
+            AddVoice(new Voice(id, stream, stream, volume));
+        });
+    }
 
-        WaveStream? evicted = null;
+    private void AddVoice(Voice voice)
+    {
+        IDisposable? evicted = null;
         lock (_lock)
         {
             // Too many sounds: the oldest one fades out. Only if fades pile up too is one cut at once.
             if (CountActive() >= MaxVoices) _voices.First(v => !v.Stopping).Stopping = true;
             if (_voices.Count >= MaxVoicesWithFades)
             {
-                evicted = _voices[0].Reader;
+                evicted = _voices[0].Owner;
                 _voices.RemoveAt(0);
             }
-            _voices.Add(new Voice(id, path, reader, provider, volume, loop, start, budget));
+            _voices.Add(voice);
         }
         evicted?.Dispose();
-    });
+    }
 
     /// <summary>Number of sounds currently playing (not counting those fading out after a stop).</summary>
     public int ActiveCount
@@ -140,26 +165,16 @@ public sealed class SoundPadPlayer : ISampleProvider, IDisposable
                 if (v.Stopping && v.Gain <= 0f)
                 {
                     _voices.RemoveAt(i);
-                    retired |= Retire(v.Reader);
+                    retired |= Retire(v.Owner);
                     continue;
                 }
                 try
                 {
+                    // Memory copies only: cached samples, or samples a decoder prepared in advance.
                     while (total < count)
                     {
-                        var want = count - total;
-                        if (v.Remaining >= 0) want = (int)Math.Min(want, v.Remaining);
-                        var n = want > 0 ? v.Provider.Read(_scratch, total, want) : 0;
-                        if (n <= 0)
-                        {
-                            if (!v.Loop || total == 0 && v.LoopedEmpty) break;
-                            v.LoopedEmpty = total == 0;
-                            v.Reader.CurrentTime = v.Start;
-                            v.Remaining = v.Budget;
-                            continue;
-                        }
-                        v.LoopedEmpty = false;
-                        if (v.Remaining >= 0) v.Remaining -= n;
+                        var n = v.Source.Read(_scratch, total, count - total);
+                        if (n <= 0) break;
                         total += n;
                     }
                 }
@@ -184,7 +199,7 @@ public sealed class SoundPadPlayer : ISampleProvider, IDisposable
                 if (total < count || v.Stopping && gain <= 0f)
                 {
                     _voices.RemoveAt(i);
-                    retired |= Retire(v.Reader);
+                    retired |= Retire(v.Owner);
                 }
             }
         }
@@ -195,19 +210,20 @@ public sealed class SoundPadPlayer : ISampleProvider, IDisposable
 
     public void Dispose()
     {
-        List<WaveStream> readers;
+        List<IDisposable> owners;
         lock (_lock)
         {
-            readers = _voices.Select(v => v.Reader).ToList();
+            owners = _voices.Select(v => v.Owner).OfType<IDisposable>().ToList();
             _voices.Clear();
         }
-        foreach (var reader in readers) reader.Dispose();
+        foreach (var owner in owners) owner.Dispose();
         DrainGraveyard();
     }
 
-    /// <summary>Queues a reader for disposal on the thread pool. Called with <see cref="_lock"/> held.</summary>
-    private bool Retire(WaveStream reader)
+    /// <summary>Queues a stream for disposal on the thread pool. Called with <see cref="_lock"/> held.</summary>
+    private bool Retire(IDisposable? reader)
     {
+        if (reader == null) return false;
         if (_graveyardCount < _graveyard.Length)
         {
             _graveyard[_graveyardCount++] = reader;
@@ -223,7 +239,7 @@ public sealed class SoundPadPlayer : ISampleProvider, IDisposable
         Volatile.Write(ref _drainQueued, 0);
         while (true)
         {
-            WaveStream? reader;
+            IDisposable? reader;
             lock (_lock)
             {
                 if (_graveyardCount == 0) return;
@@ -239,26 +255,21 @@ public sealed class SoundPadPlayer : ISampleProvider, IDisposable
         public void Execute() => owner.DrainGraveyard();
     }
 
-    private sealed class Voice(Guid id, string path, WaveStream reader, ISampleProvider provider, float volume, bool loop, TimeSpan start, long budget)
+    private sealed class Voice(Guid id, ISampleProvider source, IDisposable? owner, float volume)
     {
-        public TimeSpan Start { get; } = start;
-
-        /// <summary>Samples to play per pass (-1 = until the end of the file).</summary>
-        public long Budget { get; } = budget;
-
-        public long Remaining { get; set; } = budget;
-
         public Guid Id { get; } = id;
-        public string Path { get; } = path;
-        public WaveStream Reader { get; } = reader;
-        public ISampleProvider Provider { get; } = provider;
+
+        /// <summary>Stereo samples; the region and the loop are handled by the source. 0 = finished.</summary>
+        public ISampleProvider Source { get; } = source;
+
+        /// <summary>What must be released once the sound is over (the stream of a long sound), null for cached ones.</summary>
+        public IDisposable? Owner { get; } = owner;
+
         public float Volume { get; set; } = volume;
 
         /// <summary>Gain applied right now: starts at 0 and follows <see cref="Volume"/> (or 0 once stopping).</summary>
         public float Gain { get; set; }
 
         public bool Stopping { get; set; }
-        public bool Loop { get; } = loop;
-        public bool LoopedEmpty { get; set; }
     }
 }

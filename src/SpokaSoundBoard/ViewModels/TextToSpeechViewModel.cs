@@ -199,7 +199,7 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
             IsSpeaking = true;
             _speakStarted = DateTime.UtcNow;
             _playingTimer.Start();
-            await _main.Engine.Pads.PlayAsync(SpeechPadId, path, (float)Settings.Volume, false);
+            await _main.Engine.Pads.PlayAsync(SpeechPadId, path, (float)Settings.Volume, false, cache: false);
             return path;
         }
         catch (Exception ex)

@@ -111,6 +111,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Mix.NormalizeLoudness && db is { } value ? DspUtil.DbToLinear((float)value) : 1f;
 
     [ObservableProperty] private string _diagnosticsText = "";
+
+    /// <summary>Something may have been heard as a gap or a crackle in the last minute (see the diagnostics).</summary>
+    [ObservableProperty] private bool _audioGlitchesRecent;
+
+    private long _lastGlitches;
+    private DateTime _lastGlitchAt = DateTime.MinValue;
     [ObservableProperty] private UpdateInfo? _availableUpdate;
     [ObservableProperty] private bool _isUpdating;
     [ObservableProperty] private double _updateProgress;
@@ -597,9 +603,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private void UpdateDiagnostics()
     {
         var d = Engine.GetDiagnostics();
+        var h = Engine.GetRenderHealth();
+        var cache = Engine.SoundCache;
         DiagnosticsText =
             $"Coupures micro : {d.MicDropouts}   ·   Coupures sortie Discord : {d.DiscordDropouts}   ·   Coupures casque : {d.HeadphoneDropouts}\n" +
-            $"Baisses de volume corrigées : {d.VolumeCorrections}   ·   Compensation d'horloge Discord : {(d.DiscordClockRatio - 1) * 100:+0.000;-0.000;0.000} %";
+            $"Baisses de volume corrigées : {d.VolumeCorrections}   ·   Compensation d'horloge Discord : {(d.DiscordClockRatio - 1) * 100:+0.000;-0.000;0.000} %\n" +
+            $"Calcul du son : {h.AverageLoad * 100:0.0} % du temps disponible en moyenne, pic {h.PeakLoad * 100:0} %   ·   Blocs en retard : {h.LateBlocks}   ·   Blocs lents : {h.SlowBlocks}\n" +
+            $"PC trop occupé : {h.Stalls}   ·   Lecture disque en retard : {h.DecodeUnderruns}   ·   Sons prêts en mémoire : {cache.Count} ({cache.Bytes / (1024.0 * 1024):0} Mo)";
+
+        // Restarting the audio resets the counters.
+        var glitches = h.Glitches;
+        if (glitches < _lastGlitches) _lastGlitches = 0;
+        if (glitches > _lastGlitches) _lastGlitchAt = DateTime.UtcNow;
+        _lastGlitches = glitches;
+        AudioGlitchesRecent = EngineRunning && DateTime.UtcNow - _lastGlitchAt < TimeSpan.FromMinutes(1);
     }
 
     [RelayCommand]

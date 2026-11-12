@@ -12,7 +12,8 @@ namespace SpokaSoundBoard.Core.Audio;
 /// </summary>
 /// <remarks>
 /// Threading: UI calls only take <c>_lock</c> for short state swaps (files are opened outside of it, the next track
-/// on a worker task); the audio thread holds it while decoding one block. Retired decks are disposed on the thread
+/// on a worker task). Files are decoded ahead on the thread pool (<see cref="DecodeAhead"/>): the audio thread holds
+/// the lock while it copies and mixes one block, without disk access or decoding. Retired decks are disposed on the thread
 /// pool, never on the audio thread. Events are raised outside the lock: <see cref="TrackEnded"/> and
 /// <see cref="TrackAdvanced"/> on the audio thread, <see cref="NextTrackFailed"/> on a worker thread.
 /// </remarks>
@@ -251,6 +252,7 @@ public sealed class MusicPlayer : ISampleProvider, IDisposable
             deck.SetGain(g);
             _gain = deck.GainTarget;
             deck.PendingSeek = null;
+            deck.RampWhenReady = false;
             deck.SeekRamp.Set(1f);
 
             var old = _current;
@@ -377,7 +379,16 @@ public sealed class MusicPlayer : ISampleProvider, IDisposable
             {
                 deck.PendingSeek = null;
                 deck.Seek(position);
-                deck.SeekRamp.Set(1f);
+                if (deck.IsAsync)
+                {
+                    // The decoder is still positioning the file: rise from silence once its samples are ready.
+                    deck.SeekRamp.Set(0f);
+                    deck.RampWhenReady = true;
+                }
+                else
+                {
+                    deck.SeekRamp.Set(1f);
+                }
             }
         }
     }
@@ -523,8 +534,15 @@ public sealed class MusicPlayer : ISampleProvider, IDisposable
         var deck = _current;
         if (deck is { PendingSeek: { } target } && deck.SeekRamp.Value == 0f)
         {
+            // Faded out: reposition. A background decoder does the file work; the deck stays silent until it is done.
             deck.Seek(target);
             deck.PendingSeek = null;
+            if (deck.IsAsync) deck.RampWhenReady = true;
+            else deck.SeekRamp.To(1f, _seekFadeFrames);
+        }
+        if (deck is { RampWhenReady: true } && !deck.Waiting)
+        {
+            deck.RampWhenReady = false;
             deck.SeekRamp.To(1f, _seekFadeFrames);
         }
 
@@ -601,6 +619,8 @@ public sealed class MusicPlayer : ISampleProvider, IDisposable
     /// <summary>Reads one deck and adds it to <paramref name="output"/>. Returns the frames produced.</summary>
     private int RenderDeck(MusicDeck deck, Span<float> output, int offsetFrames, int frames, float speed)
     {
+        // A seek is being decoded: this block is silent for the deck, and its position does not move.
+        if (deck.Waiting) return frames;
         var n = deck.Read(_scratch, 0, frames, speed);
         if (n <= 0) return 0;
         var o = offsetFrames * 2;

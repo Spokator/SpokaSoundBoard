@@ -1,5 +1,14 @@
 # Journal des versions
 
+## 2.9.0
+
+Un son plus solide et plus réactif.
+
+- **Sons instantanés** : les sons de la soundboard sont préparés en mémoire dès le lancement. Une touche lance le son au bloc audio suivant : 0,1 ms en moyenne au lieu d'environ 13 ms, sans jamais lire le disque. Les sons de plus de 30 secondes sont lus à l'avance par petits morceaux.
+- **Plus de coupure à cause du disque** : la musique est décodée deux secondes à l'avance, en arrière-plan. Un disque lent, l'antivirus ou un fichier OneDrive pas encore téléchargé ne peuvent plus couper le micro, ni votre voix au passage. Même chose quand vous avancez dans un morceau.
+- **Moins de travail pour le fil audio** : le calcul de chaque bloc de son prend en moyenne 18 fois moins de temps qu'avant (0,05 ms au lieu de 0,9 ms). Le pire bloc mesuré passe de 21 ms, assez long pour s'entendre, à 3 ms.
+- **Santé audio** : Configuration → Aide et signalement indique maintenant la charge du calcul du son, les blocs en retard, les moments où le PC était trop occupé et les retards de lecture du disque. Un voyant « Coupures audio récentes » s'affiche sous l'état de l'audio quand quelque chose a pu s'entendre dans la dernière minute. Ces chiffres sont aussi dans le rapport à copier pour signaler un problème.
+
 ## 2.8.1
 
 - **Mode radio plus sûr** : si Windows avale le relâchement de la touche « parler » (verrouillage du PC, fenêtre d'autorisation administrateur, Ctrl+Alt+Suppr…), le micro ne reste plus ouvert : la touche est relâchée d'elle-même moins d'une seconde plus tard. Le même problème pouvait aussi faire ignorer l'appui suivant sur un raccourci de son : corrigé.

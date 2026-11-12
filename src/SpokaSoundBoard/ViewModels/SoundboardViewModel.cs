@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows.Data;
+using System.Windows.Threading;
 using SpokaSoundBoard.Core;
 using System.ComponentModel;
 using System.IO;
@@ -53,7 +54,14 @@ public partial class SoundboardViewModel : ObservableObject
                 foreach (SoundPad pad in e.OldItems) pad.PropertyChanged -= OnPadChanged;
             OnPropertyChanged(nameof(IsEmpty));
             RebuildTabs();
+            ScheduleCacheSync();
         };
+        _cacheSyncTimer = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) =>
+        {
+            _cacheSyncTimer!.Stop();
+            SyncSoundCache();
+        }, Dispatcher.CurrentDispatcher);
+        ScheduleCacheSync();
         RebuildTabs();
         // The remembered tab was deleted or renamed elsewhere: show everything.
         if (SelectedCategory.Length > 0 && !Categories.Contains(SelectedCategory)) Appearance.PadCategory = "";
@@ -625,9 +633,29 @@ public partial class SoundboardViewModel : ObservableObject
     private readonly Dictionary<Guid, DateTime> _startGrace = [];
     private readonly HashSet<Guid> _playingIds = [];
 
+    private readonly DispatcherTimer _cacheSyncTimer;
+
+    private void ScheduleCacheSync()
+    {
+        _cacheSyncTimer?.Stop();
+        _cacheSyncTimer?.Start();
+    }
+
+    /// <summary>
+    /// Keeps every pad decoded in memory (in tab order) so that a hotkey starts its sound on the next audio block,
+    /// and forgets the sounds of deleted pads. Decoding happens in the background.
+    /// </summary>
+    private void SyncSoundCache()
+    {
+        var paths = Pads.Select(p => p.FilePath).Where(p => !string.IsNullOrEmpty(p)).ToList();
+        _main.Engine.SoundCache.Retain(paths);
+        _ = _main.Engine.SoundCache.PreloadAsync(paths);
+    }
+
     private void OnPadChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (sender is not SoundPad pad) return;
+        if (e.PropertyName == nameof(SoundPad.FilePath)) ScheduleCacheSync();
         if (e.PropertyName is nameof(SoundPad.Volume) or nameof(SoundPad.NormalizationDb))
         {
             _main.Engine.Pads.SetVolume(pad.Id, EffectiveVolume(pad));

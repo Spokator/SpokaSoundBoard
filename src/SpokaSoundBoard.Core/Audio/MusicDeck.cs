@@ -8,7 +8,14 @@ namespace SpokaSoundBoard.Core.Audio;
 /// </summary>
 internal sealed class MusicDeck : IDisposable
 {
+    /// <summary>Seconds of music decoded in advance off the audio thread.</summary>
+    public const double BufferSeconds = 2.0;
+
+    /// <summary>Decoded before <see cref="Open"/> returns, so the track can start on the next block.</summary>
+    public const double PrefillSeconds = 0.4;
+
     private readonly WaveStream? _reader;
+    private readonly DecodeAhead? _ahead;
     private readonly VarispeedProvider _varispeed;
     private readonly int _sampleRate;
     private int _disposed;
@@ -23,7 +30,10 @@ internal sealed class MusicDeck : IDisposable
     public float Gain = 1f, GainTarget = 1f;
     /// <summary>Seek requested while audible: applied once <see cref="SeekRamp"/> reaches 0.</summary>
     public TimeSpan? PendingSeek;
+    /// <summary>A seek was handed to the decoder: <see cref="SeekRamp"/> rises again once its first samples are ready.</summary>
+    public bool RampWhenReady;
 
+    /// <summary>A deck that reads a source synchronously (the tests use it with generated sources).</summary>
     internal MusicDeck(string path, WaveStream? reader, ISampleProvider source, TimeSpan duration, int sampleRate)
     {
         Path = path;
@@ -36,20 +46,33 @@ internal sealed class MusicDeck : IDisposable
         SeekRamp.Set(1f);
     }
 
-    /// <summary>Opens a file (blocking I/O: never call this on the audio thread).</summary>
+    /// <summary>A deck fed by a decoder working ahead on the thread pool (the audio thread only copies samples).</summary>
+    internal MusicDeck(string path, DecodeAhead ahead, int sampleRate)
+        : this(path, null, ahead, ahead.Duration, sampleRate)
+    {
+        _ahead = ahead;
+    }
+
+    /// <summary>Opens a file and decodes its first moments (blocking I/O: never call this on the audio thread).</summary>
     public static MusicDeck Open(string path, int sampleRate)
     {
-        var (reader, provider) = AudioFileLoader.Open(path, sampleRate);
+        var ahead = DecodeAhead.Open(path, sampleRate, BufferSeconds, PrefillSeconds);
         try
         {
-            return new MusicDeck(path, reader, provider, reader.TotalTime, sampleRate);
+            return new MusicDeck(path, ahead, sampleRate);
         }
         catch
         {
-            reader.Dispose();
+            ahead.Dispose();
             throw;
         }
     }
+
+    /// <summary>True when seeks complete in the background (see <see cref="Waiting"/>).</summary>
+    public bool IsAsync => _ahead != null;
+
+    /// <summary>A seek is being decoded: nothing to play yet (the player outputs silence meanwhile).</summary>
+    public bool Waiting => _ahead?.IsWaiting ?? false;
 
     public string Path { get; }
 
@@ -62,7 +85,7 @@ internal sealed class MusicDeck : IDisposable
 
     public bool Ended => _failed || _varispeed.IsEnded;
 
-    public Exception? Error => _varispeed.Error;
+    public Exception? Error => _varispeed.Error ?? _ahead?.Error;
 
     public void SetGain(float gain)
     {
@@ -95,7 +118,8 @@ internal sealed class MusicDeck : IDisposable
         if (Duration > TimeSpan.Zero && position > Duration) position = Duration;
         try
         {
-            if (_reader != null) _reader.CurrentTime = position;
+            if (_ahead != null) _ahead.Seek(position); // the decoder repositions the file, not the caller
+            else if (_reader != null) _reader.CurrentTime = position;
             _varispeed.Reset((long)Math.Round(position.TotalSeconds * _sampleRate));
             _failed = false;
         }
@@ -111,6 +135,7 @@ internal sealed class MusicDeck : IDisposable
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         try
         {
+            _ahead?.Dispose();
             _reader?.Dispose();
         }
         catch
