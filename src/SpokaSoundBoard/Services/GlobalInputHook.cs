@@ -21,10 +21,14 @@ public sealed class GlobalInputHook : IDisposable
 
     private readonly HookProc _keyboardProc;
     private readonly HookProc _mouseProc;
+    private const uint WmCheckStuckKeys = 0x8000 + 0x51; // WM_APP + n, posted to the hook thread itself
+
     private readonly HashSet<int> _down = [];
+    private readonly StuckKeyGuard _stuck = new();
     private IntPtr _keyboardHook, _mouseHook;
     private Thread? _thread;
     private uint _threadId;
+    private Timer? _stuckTimer;
 
     public GlobalInputHook()
     {
@@ -63,6 +67,11 @@ public sealed class GlobalInputHook : IDisposable
 
             while (GetMessage(out var msg, IntPtr.Zero, 0, 0) > 0)
             {
+                if (msg.Hwnd == IntPtr.Zero && msg.Message == WmCheckStuckKeys)
+                {
+                    ReleaseStuckKeys();
+                    continue;
+                }
                 TranslateMessage(ref msg);
                 DispatchMessage(ref msg);
             }
@@ -83,6 +92,19 @@ public sealed class GlobalInputHook : IDisposable
             _thread = null;
             throw error;
         }
+        // Checked on the hook thread, which owns _down; nothing to do while no key is held.
+        _stuckTimer = new Timer(_ =>
+        {
+            if (_down.Count > 0) PostThreadMessage(_threadId, WmCheckStuckKeys, IntPtr.Zero, IntPtr.Zero);
+        }, null, 250, 250);
+    }
+
+    /// <summary>Hook thread: a key Windows reports as up is released, as if its key-up had arrived.</summary>
+    private void ReleaseStuckKeys()
+    {
+        if (_down.Count == 0) return;
+        foreach (var vk in _stuck.Check(_down, vk => (GetAsyncKeyState(vk) & 0x8000) != 0))
+            OnUp(vk);
     }
 
     public static HotkeyModifiers CurrentModifiers()
@@ -156,6 +178,8 @@ public sealed class GlobalInputHook : IDisposable
     public void Dispose()
     {
         if (_thread == null) return;
+        _stuckTimer?.Dispose();
+        _stuckTimer = null;
         PostThreadMessage(_threadId, WmQuit, IntPtr.Zero, IntPtr.Zero);
         _thread.Join(1000);
         _thread = null;

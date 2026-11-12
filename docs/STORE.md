@@ -106,6 +106,8 @@ Microsoft relit la soumission, en général en quelques jours. S'il y a un refus
 >
 > Décidez qui entend quoi : la musique et l'effet pilote pour les joueurs en jeu, votre voix naturelle sur Discord.
 >
+> Votre téléphone devient un Stream Deck : scannez le QR code, et lancez vos sons, changez d'effet, pilotez la musique ou animez le blind test depuis le canapé, sur votre réseau Wi-Fi, sans rien installer. Les boutons marchent aussi avec un Stream Deck, Touch Portal ou OBS.
+>
 > SpokaSoundBoard utilise le micro virtuel gratuit VB-CABLE, de VB-Audio, à installer une fois depuis son site officiel. L'assistant de configuration vous guide pas à pas.
 
 **Fonctionnalités** (une par ligne dans Partner Center)
@@ -122,6 +124,8 @@ Microsoft relit la soumission, en général en quelques jours. S'il y a un refus
 - 22 effets de voix en temps réel, et vos propres presets
 - Mode radio : parler en maintenant une touche, avec bip de fin
 - Routage séparé pour le jeu et pour Discord
+- Télécommande depuis le téléphone, façon Stream Deck, avec trois thèmes
+- Compatible Stream Deck, Touch Portal et OBS (adresses HTTP locales)
 - Packs de soundboard à partager avec vos amis (.spokapack)
 - Thèmes sombre, noir OLED et clair
 - Assistant de configuration, zone de notification, lancement avec Windows
@@ -145,6 +149,8 @@ Microsoft relit la soumission, en général en quelques jours. S'il y a un refus
 > Bundled tools: tools\yt-dlp.exe (Unlicense) and tools\ffmpeg.exe (GPL, license in tools\ffmpeg-LICENSE.txt) are part of the package and are only run when the user searches or imports a link. The Store edition never updates or downloads executables; new versions ship as Store updates. There is no self-update, no telemetry and no account.
 >
 > Natural text-to-speech voices: the sherpa-onnx / ONNX Runtime libraries (sherpa-onnx-c-api.dll, onnxruntime.dll) are part of the package. When the user clicks "Télécharger" in the text-to-speech options, the app downloads a voice model (data files only: .onnx, .json, .bin, about 139 MB, SHA-256 checked) from Hugging Face into its data folder; no executable code is ever downloaded.
+>
+> Remote control (off by default): in "Configuration" > "Télécommande", the user can turn on a small local HTTP server (port 8737) so a phone browser or a Stream Deck can trigger sounds and actions. It listens on localhost only, unless the user also ticks phone access, which then listens on the local network (Windows Firewall asks first). Every request needs a random 10-character access code shown in the app (with a QR code); an address that sends 10 wrong codes is temporarily locked out. No cloud service, nothing leaves the local network.
 >
 > Global hotkeys use low-level keyboard/mouse hooks so they work in full-screen games; keys are passed through to the game unchanged and nothing is recorded.
 >

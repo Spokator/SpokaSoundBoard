@@ -1,5 +1,10 @@
 # Journal des versions
 
+## 2.8.1
+
+- **Mode radio plus sûr** : si Windows avale le relâchement de la touche « parler » (verrouillage du PC, fenêtre d'autorisation administrateur, Ctrl+Alt+Suppr…), le micro ne reste plus ouvert : la touche est relâchée d'elle-même moins d'une seconde plus tard. Le même problème pouvait aussi faire ignorer l'appui suivant sur un raccourci de son : corrigé.
+- **Microsoft Store** : la fiche présente maintenant la télécommande depuis le téléphone.
+
 ## 2.8.0
 
 La télécommande fait peau neuve.

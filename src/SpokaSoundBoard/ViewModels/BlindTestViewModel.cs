@@ -608,10 +608,10 @@ public sealed partial class BlindTestViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void PlayAgain()
+    private async Task PlayAgain()
     {
         RefreshSources();
-        if (CanStart()) Start();
+        if (CanStart()) await Start();
         else Phase = BlindTestPhase.Setup;
     }
 
