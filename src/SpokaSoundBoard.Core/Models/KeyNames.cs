@@ -16,6 +16,16 @@ public static class KeyNames
         return string.Join(" + ", parts);
     }
 
+    /// <summary>
+    /// Keys that write or edit text in a text box: letters, digits, space, punctuation, the numeric keypad, and
+    /// Entrée, Retour arrière, Suppr, Tab, the arrows, Début / Fin… F keys, mouse buttons, media keys and the like
+    /// never type anything, so they stay shortcuts even while the user types in the app.
+    /// </summary>
+    public static bool IsTypingKey(int vk) => vk is
+        0x08 or 0x09 or 0x0D or 0x20 or (>= 0x21 and <= 0x28) or 0x2D or 0x2E
+        or (>= 0x30 and <= 0x39) or (>= 0x41 and <= 0x5A) or (>= 0x60 and <= 0x6F)
+        or (>= 0xBA and <= 0xC0) or (>= 0xDB and <= 0xDF) or 0xE2;
+
     public static bool IsModifierKey(int vk) => vk is 0x10 or 0x11 or 0x12 or 0xA0 or 0xA1 or 0xA2 or 0xA3 or 0xA4 or 0xA5;
 
     /// <summary>Optional OS-provided name lookup (keyboard-layout aware). Set by the application.</summary>

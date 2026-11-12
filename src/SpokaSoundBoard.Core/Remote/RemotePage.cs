@@ -371,6 +371,27 @@ function onPress(btn, tap, long) {
   btn.addEventListener('click', e => { if (longDone) { e.preventDefault(); return; } buzz(); tap(); });
 }
 
+// ---- Long names --------------------------------------------------------------------------------------------
+// « Applaudissements » must not be cut in the middle of the word: the label shrinks until its longest word fits.
+const measure = document.createElement('canvas').getContext('2d');
+function fitLabels() {
+  document.querySelectorAll('.tile .lbl').forEach(l => {
+    const tile = l.closest('.tile'); if (!tile || !tile.clientWidth) return;
+    const ts = getComputedStyle(tile);
+    const room = tile.clientWidth - parseFloat(ts.paddingLeft) - parseFloat(ts.paddingRight) - 2;
+    const word = l.textContent.split(/\s+/).reduce((a, b) => b.length > a.length ? b : a, '');
+    l.style.fontSize = '';
+    const cs = getComputedStyle(l); const size = parseFloat(cs.fontSize);
+    measure.font = cs.fontWeight + ' ' + size + 'px ' + cs.fontFamily;
+    const need = measure.measureText(word).width;
+    if (need > room && room > 0) l.style.fontSize = Math.max(10, Math.floor(size * room / need * 10) / 10) + 'px';
+  });
+}
+let fitPending = false;
+function fitSoon() { if (fitPending) return; fitPending = true; requestAnimationFrame(() => { fitPending = false; fitLabels(); }); }
+new MutationObserver(fitSoon).observe(document.body, { childList: true, subtree: true });
+addEventListener('resize', fitSoon);
+
 // ---- Deck items ------------------------------------------------------------------------------------------
 function describe(key) {
   const i = key.indexOf(':'); const kind = key.slice(0, i), value = key.slice(i + 1);
@@ -385,7 +406,7 @@ function tileFor(key, opts) {
   const b = el('button', 'tile'); b.dataset.key = key;
   b.style.setProperty('--c1', d.c1); b.style.setProperty('--c2', d.c2);
   const ic = el('span', 'ico'); ic.appendChild(icon(d.icon)); b.appendChild(ic);
-  const lbl = el('span', 'lbl', d.label); if (d.label.length > 13) lbl.style.fontSize = '12.5px';
+  const lbl = el('span', 'lbl', d.label);
   const txt = el('span'); txt.append(lbl, el('span', 'sub', d.sub)); b.appendChild(txt);
   b.setAttribute('aria-label', d.label);
   const editable = opts && opts.editable;

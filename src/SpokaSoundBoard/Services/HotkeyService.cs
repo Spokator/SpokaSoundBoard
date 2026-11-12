@@ -63,14 +63,17 @@ public sealed class HotkeyService : IDisposable
     private static bool IsTextInput(IInputElement? element) =>
         element is TextBoxBase or PasswordBox || element is ComboBox { IsEditable: true };
 
-    /// <summary>Typing a pad name or a search must not fire « A » or « Espace » bound as a shortcut; Ctrl/Alt combos still work.</summary>
-    private bool SwallowedByTyping(HotkeyModifiers modifiers) =>
-        _typingInApp && (modifiers & (HotkeyModifiers.Ctrl | HotkeyModifiers.Alt)) == 0;
+    /// <summary>
+    /// Typing a pad name or a search must not fire « A » or « Espace » bound as a shortcut. Ctrl/Alt combos still
+    /// work, and so do keys that never type (F1–F24, mouse buttons…).
+    /// </summary>
+    private bool SwallowedByTyping(int vk, HotkeyModifiers modifiers) =>
+        _typingInApp && KeyNames.IsTypingKey(vk) && (modifiers & (HotkeyModifiers.Ctrl | HotkeyModifiers.Alt)) == 0;
 
     private void OnHookKeyDown(int vk, HotkeyModifiers modifiers)
     {
         // The radio key must react instantly and is handled directly on the hook thread.
-        if (_recording == null && _pttKey == 0 && !SwallowedByTyping(modifiers))
+        if (_recording == null && _pttKey == 0 && !SwallowedByTyping(vk, modifiers))
         {
             var ptt = _pushToTalk?.Invoke();
             if (ptt is { IsSet: true } && ptt.VirtualKey == vk)
@@ -114,7 +117,7 @@ public sealed class HotkeyService : IDisposable
             return;
         }
 
-        if (SwallowedByTyping(modifiers)) return;
+        if (SwallowedByTyping(vk, modifiers)) return;
         var bindings = BindingsProvider?.Invoke()?.ToList();
         if (bindings == null) return;
         foreach (var i in HotkeyMatching.Select(bindings.ConvertAll(b => b.Binding), vk, modifiers))

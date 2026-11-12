@@ -3,6 +3,8 @@
 ## 2.8.1
 
 - **Mode radio plus sûr** : si Windows avale le relâchement de la touche « parler » (verrouillage du PC, fenêtre d'autorisation administrateur, Ctrl+Alt+Suppr…), le micro ne reste plus ouvert : la touche est relâchée d'elle-même moins d'une seconde plus tard. Le même problème pouvait aussi faire ignorer l'appui suivant sur un raccourci de son : corrigé.
+- **Raccourcis pendant la saisie** : quand vous tapez dans l'application (recherche, nom d'un son), seules les touches qui écrivent restent pour le texte. F1 à F24, les boutons de souris et les touches multimédia déclenchent toujours leurs sons et le mode radio. Au lancement, le curseur dans la recherche bloquait jusqu'ici la touche radio.
+- **Télécommande** : un nom long comme « Applaudissements » n'est plus coupé au milieu du mot, le texte rétrécit pour tenir dans le bouton.
 - **Microsoft Store** : la fiche présente maintenant la télécommande depuis le téléphone.
 
 ## 2.8.0
