@@ -1,5 +1,14 @@
 # Journal des versions
 
+## 2.8.0
+
+La télécommande fait peau neuve.
+
+- **Trois thèmes au choix** sur le téléphone (bouton ⚙ → Thème) : **Nuit**, des boutons en dégradé de couleur sous une vitre brillante ; **Coucher de soleil**, des boutons en verre sur un fond violet, rose et orange ; **Océan**, du verre fumé sur des lueurs bleu turquoise. Le choix est gardé sur chaque téléphone.
+- **De vraies icônes** partout à la place des emojis : nettes, identiques sur iPhone et Android, et intégrées à l'application (elles s'affichent même sans Internet).
+- **Une icône pour chaque son** : elle est choisie automatiquement d'après son nom (un visage qui rit pour « Rire du public », une bombe pour « Explosion », une sirène, une corne de brume…), et vous pouvez en choisir une autre parmi plus de cinquante dans l'éditeur du son, sur le PC (« Icône sur la télécommande »). Elle voyage avec les packs.
+- **Plus clair d'un coup d'œil** : l'état du micro et l'effet de voix s'affichent sous le titre, et un mini-lecteur en bas montre la musique en cours avec lecture / pause et suivant, à portée de pouce.
+
 ## 2.7.0
 
 Votre téléphone devient un Stream Deck.

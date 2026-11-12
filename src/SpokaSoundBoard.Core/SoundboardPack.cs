@@ -17,7 +17,7 @@ public static class SoundboardPack
     // Fields added after version 1 have defaults, so older packs still load.
     private sealed record PackPad(string Name, string File, float Volume, string Color, bool Loop, double StartSeconds,
         double EndSeconds, string? SourceUrl, double? NormalizationDb, string? Category = null,
-        PadPlayMode PlayMode = PadPlayMode.Toggle, bool StopOthers = false);
+        PadPlayMode PlayMode = PadPlayMode.Toggle, bool StopOthers = false, string? Icon = null);
 
     private sealed record PackManifest(int Version, string Name, List<PackPad> Pads, List<EffectPreset> Presets);
 
@@ -33,7 +33,7 @@ public static class SoundboardPack
             var fileName = UniqueName(used, Path.GetFileName(pad.FilePath));
             zip.CreateEntryFromFile(pad.FilePath, "sounds/" + fileName, CompressionLevel.Fastest);
             entries.Add(new PackPad(pad.Name, fileName, pad.Volume, pad.Color, pad.Loop, pad.StartSeconds, pad.EndSeconds,
-                pad.SourceUrl, pad.NormalizationDb, pad.Category, pad.PlayMode, pad.StopOthers));
+                pad.SourceUrl, pad.NormalizationDb, pad.Category, pad.PlayMode, pad.StopOthers, pad.Icon));
         }
 
         var manifest = new PackManifest(2, name, entries, presets.ToList());
@@ -81,6 +81,7 @@ public static class SoundboardPack
                 Category = string.IsNullOrWhiteSpace(p.Category) ? folderName : p.Category.Trim(),
                 PlayMode = Enum.IsDefined(p.PlayMode) ? p.PlayMode : PadPlayMode.Toggle,
                 StopOthers = p.StopOthers,
+                Icon = PadIcons.Clean(p.Icon),
             });
         }
 

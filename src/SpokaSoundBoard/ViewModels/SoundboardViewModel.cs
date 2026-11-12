@@ -231,6 +231,9 @@ public partial class SoundboardViewModel : ObservableObject
 
     public IReadOnlyList<string> Colors => Palette;
 
+    /// <summary>Icons for the phone remote, « automatique » first.</summary>
+    public IReadOnlyList<PadIcon> IconChoices { get; } = [new("", "Automatique (d'après le nom)"), .. PadIcons.All];
+
     public IReadOnlyList<PlayModeOption> PlayModes { get; } =
     [
         new(PadPlayMode.Toggle, "L'arrêter"),

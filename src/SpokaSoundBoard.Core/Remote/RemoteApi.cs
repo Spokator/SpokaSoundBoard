@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace SpokaSoundBoard.Core.Remote;
 
-public sealed record RemotePad(Guid Id, string Name, string Color, string Category, bool Playing, string? Hotkey);
+public sealed record RemotePad(Guid Id, string Name, string Color, string Category, bool Playing, string? Hotkey, string Icon = "wave-sine");
 
 public sealed record RemotePreset(string Name, string Description);
 

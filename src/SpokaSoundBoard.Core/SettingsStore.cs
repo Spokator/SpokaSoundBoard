@@ -175,6 +175,7 @@ public sealed class SettingsStore
             pad.Hotkey ??= new HotkeyBinding();
             pad.Category = PadCategories.Clean(pad.Category);
             if (!Enum.IsDefined(pad.PlayMode)) pad.PlayMode = PadPlayMode.Toggle;
+            pad.Icon = PadIcons.Clean(pad.Icon);
         }
         PadCategories.Merge(s.PadCategories, s.Pads);
         return s;

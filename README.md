@@ -25,7 +25,7 @@ Diffusez votre playlist et vos sons **dans votre micro**, parlez par-dessus (la 
 | | |
 | --- | --- |
 | 🎛️ **Soundboard** | Tuiles colorées rangées en onglets (catégories), réorganisables par glisser-déposer. Volume, boucle et extrait par son, raccourci clavier ou souris (boutons 4 / 5, molette) utilisable en pleine partie, même en courant avec Maj. Au choix pour chaque son : l'arrêter, le relancer ou le superposer quand on rappuie, couper les autres sons, ou le jouer pour vous seul dans le casque. |
-| 📱 **Télécommande** | Votre téléphone devient un Stream Deck (QR code, même Wi-Fi) : votre deck de boutons, toute la soundboard, « maintenir pour parler », effets de voix, phrases dites dans le micro, musique et volumes, et l'animation du blind test avec la réponse visible seulement sur le téléphone. Marche aussi avec un Stream Deck, Touch Portal ou OBS. |
+| 📱 **Télécommande** | Votre téléphone devient un Stream Deck (QR code, même Wi-Fi), en trois thèmes au choix (Nuit, Coucher de soleil, Océan) avec une icône pour chaque son : votre deck de boutons, toute la soundboard, « maintenir pour parler », effets de voix, phrases dites dans le micro, musique et volumes, et l'animation du blind test avec la réponse visible seulement sur le téléphone. Marche aussi avec un Stream Deck, Touch Portal ou OBS. |
 | ⏺️ **Enregistrement** | Enregistrez un son avec votre micro en un clic : le silence au début et à la fin est coupé, il devient un son de la soundboard. |
 | 🔎 **Recherche intégrée** | Tapez « booba mona lisa » ou « vine boom » : résultats YouTube et MyInstants, ▶ pour écouter dans votre casque seulement, « Ajouter » en un clic. Les liens (YouTube, SoundCloud, TikTok, Twitch, MP3…) et les playlists fonctionnent aussi. |
 | 🎵 **Lecteur de musique** | Bibliothèque triable, playlists, file d'attente façon Spotify, fondu enchaîné ou enchaînement sans blanc, favoris, historique, pochettes, volume égalisé automatiquement. Mauvaise version d'un morceau ? Choisissez la bonne en un clic, et corrigez titre et artiste. |
@@ -121,6 +121,7 @@ Les tests en ligne (téléchargements et recherches réels) s'activent avec `$en
 - [NAudio](https://github.com/naudio/NAudio) pour l'audio, [NVorbis](https://github.com/NVorbis/NVorbis) pour l'OGG, et [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet).
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) (Unlicense) pour la recherche et l'import par lien, et [FFmpeg](https://ffmpeg.org) pour les conversions (téléchargé si nécessaire).
 - Voix naturelles : [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (Apache-2.0) et [ONNX Runtime](https://github.com/microsoft/onnxruntime) (MIT) livrés avec l'application ; le modèle [Supertonic 3](https://huggingface.co/Supertone/supertonic-3) de Supertone (licence [OpenRAIL-M](https://huggingface.co/Supertone/supertonic-3/blob/main/LICENSE)) est téléchargé à la demande.
+- Icônes de la télécommande : [Tabler Icons](https://tabler.io/icons) (MIT), intégrées à l'application. Génération du QR code : [QRCoder](https://github.com/codebude/QRCoder) (MIT).
 - Micros virtuels : [VB-CABLE](https://vb-audio.com/Cable/) de VB-Audio (donationware) et [Virtual Audio Cable](https://vac.muzychenko.net/) d'Eugene Muzychenko. Ils ne sont pas redistribués : ils sont téléchargés depuis leurs sites officiels.
 
 Respectez les droits des contenus que vous diffusez.

@@ -260,7 +260,8 @@ public partial class MainViewModel
             var color = Services.ThemeService.Parse(accent, "#7C5CFF");
             var onAccent = Core.ColorMath.PrefersDarkText(color.R, color.G, color.B) ? "#11141c" : "#ffffff";
             return new RemoteCatalog(
-                vm.Settings.Pads.Select(p => new RemotePad(p.Id, p.Name, p.Color, p.Category, false, p.Hotkey.IsSet ? p.Hotkey.Display : null)).ToList(),
+                vm.Settings.Pads.Select(p => new RemotePad(p.Id, p.Name, p.Color, p.Category, false, p.Hotkey.IsSet ? p.Hotkey.Display : null,
+                    PadIcons.Resolve(p.Icon, p.Name))).ToList(),
                 vm.Voice.Presets.Select(p => new RemotePreset(p.Name, p.Description)).ToList(),
                 vm.Soundboard.Tts.QuickPhrases.ToList(),
                 vm.Settings.TextToSpeech.History.ToList(),

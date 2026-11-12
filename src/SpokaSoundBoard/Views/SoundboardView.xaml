@@ -343,6 +343,11 @@
                               ItemsSource="{Binding DataContext.CategoryNames, RelativeSource={RelativeSource AncestorType=local:SoundboardView}}"
                               AutomationProperties.Name="Catégorie du son" />
 
+                    <TextBlock Text="Icône sur la télécommande" Style="{StaticResource Caption}" Margin="0,0,0,4" />
+                    <ComboBox Margin="0,0,0,14" SelectedValue="{Binding Icon}" SelectedValuePath="Key" DisplayMemberPath="Label"
+                              ItemsSource="{Binding DataContext.IconChoices, RelativeSource={RelativeSource AncestorType=local:SoundboardView}}"
+                              AutomationProperties.Name="Icône du son sur la télécommande" />
+
                     <TextBlock Text="Fichier" Style="{StaticResource Caption}" Margin="0,0,0,4" />
                     <DockPanel Margin="0,0,0,14">
                         <Button DockPanel.Dock="Right" Content="Changer" Style="{StaticResource FlatButton}" Padding="10,5" Margin="8,0,0,0"

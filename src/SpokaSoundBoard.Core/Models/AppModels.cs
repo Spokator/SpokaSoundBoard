@@ -74,6 +74,9 @@ public partial class SoundPad : ObservableObject
     /// <summary>Played in the headphones only, never in the virtual microphone (« Moi seulement »).</summary>
     [ObservableProperty] private bool _headphonesOnly;
 
+    /// <summary>Icon on the phone remote (<see cref="PadIcons"/> key; "" = guessed from the name).</summary>
+    [ObservableProperty] private string _icon = "";
+
     /// <summary>Web page the sound was imported from (YouTube, MyInstants…), if any.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSource))]
