@@ -70,6 +70,7 @@ public partial class App : Application
         // Windows shutdown / installer update (Restart Manager): close the window so settings are saved.
         SessionEnding += (_, _) => MainWindow?.Close();
         AppDomain.CurrentDomain.UnhandledException += (_, args) => Log(args.ExceptionObject as Exception);
+        Core.Audio.DecodeAhead.DecodeFailed += (file, ex) => Log(new IOException($"Décodage interrompu : {file}", ex));
         TaskScheduler.UnobservedTaskException += (_, args) =>
         {
             Log(args.Exception);

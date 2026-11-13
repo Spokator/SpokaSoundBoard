@@ -92,7 +92,7 @@ public sealed class DecodeAhead : ISampleProvider, IDisposable, IThreadPoolWorkI
             long pass = -1;
             if (endSeconds > 0 && endSeconds > start.TotalSeconds)
                 pass = (long)((endSeconds - start.TotalSeconds) * sampleRate);
-            var ahead = new DecodeAhead(reader, provider, sampleRate, bufferSeconds, start, pass, loop);
+            var ahead = new DecodeAhead(reader, provider, sampleRate, bufferSeconds, start, pass, loop) { Name = path };
             ahead.Prefill(prefillSeconds);
             return ahead;
         }
@@ -104,6 +104,17 @@ public sealed class DecodeAhead : ISampleProvider, IDisposable, IThreadPoolWorkI
     }
 
     public WaveFormat WaveFormat { get; }
+
+    /// <summary>File being decoded (for the error log), when opened with <see cref="Open"/>.</summary>
+    public string? Name { get; private set; }
+
+    /// <summary>Raised on the decoding thread when a file cannot be decoded any further (logged by the app).</summary>
+    public static event Action<string?, Exception>? DecodeFailed;
+
+    private void ReportFailure(Exception ex)
+    {
+        try { DecodeFailed?.Invoke(Name, ex); } catch { /* logging must never break decoding */ }
+    }
 
     /// <summary>Error that ended the stream early (unreadable file), if any.</summary>
     public Exception? Error { get; private set; }
@@ -134,7 +145,23 @@ public sealed class DecodeAhead : ISampleProvider, IDisposable, IThreadPoolWorkI
 
     /// <summary>Decodes synchronously until <paramref name="seconds"/> are buffered (or the end), then lets the
     /// thread pool fill the rest.</summary>
+    /// <remarks>
+    /// Called from the UI thread (a click on a song), the decoding still happens on a thread-pool thread: Media
+    /// Foundation (m4a, AAC, MP3 through <see cref="AudioFileReader"/>) creates its COM reader on the first read and
+    /// that object cannot be used from another apartment afterwards. Read once on the STA UI thread, it made every
+    /// later read by the background decoder fail, and songs stopped after these first 0.4 s.
+    /// </remarks>
     public void Prefill(double seconds)
+    {
+        if (Thread.CurrentThread.GetApartmentState() == ApartmentState.STA)
+        {
+            Task.Run(() => PrefillCore(seconds)).GetAwaiter().GetResult();
+            return;
+        }
+        PrefillCore(seconds);
+    }
+
+    private void PrefillCore(double seconds)
     {
         var target = Math.Min(CapacityFrames, (int)(seconds * _sampleRate)) * 2;
         while (true)
@@ -282,6 +309,7 @@ public sealed class DecodeAhead : ISampleProvider, IDisposable, IThreadPoolWorkI
             catch (Exception ex)
             {
                 Error = ex;
+                ReportFailure(ex);
                 frames = 0;
             }
         }
@@ -338,6 +366,7 @@ public sealed class DecodeAhead : ISampleProvider, IDisposable, IThreadPoolWorkI
         {
             // Corrupted / unreadable file: the stream ends here.
             Error = ex;
+            ReportFailure(ex);
             return 0;
         }
     }

@@ -437,3 +437,51 @@ public sealed class AudioRobustnessTests
         Assert.InRange(block[^2], (float)(position * Sr / 1e6) - 0.002f, (float)(position * Sr / 1e6) + 0.002f);
     }
 }
+
+/// <summary>
+/// 2.12.1: Media Foundation files (m4a, AAC) opened from the UI thread kept playing only 0.4 s. The COM reader is
+/// created by the first read and cannot be used from another apartment afterwards (InvalidCastException), so the
+/// decoder must never read on an STA thread, even for the samples it prepares before returning.
+/// </summary>
+public sealed class DecoderApartmentTests
+{
+    private const int Sr = 48000;
+
+    /// <summary>Records the apartment of every thread that reads it.</summary>
+    private sealed class ApartmentProbe : NAudio.Wave.ISampleProvider
+    {
+        private long _position;
+        public NAudio.Wave.WaveFormat WaveFormat { get; } = NAudio.Wave.WaveFormat.CreateIeeeFloatWaveFormat(Sr, 2);
+        public System.Collections.Concurrent.ConcurrentBag<ApartmentState> Apartments { get; } = [];
+
+        public int Read(float[] buffer, int offset, int count)
+        {
+            Apartments.Add(Thread.CurrentThread.GetApartmentState());
+            var n = (int)Math.Min(count, Sr * 2 * 3 - _position);
+            Array.Clear(buffer, offset, n);
+            _position += n;
+            return n;
+        }
+    }
+
+    [Fact]
+    public void OpenedOnTheUiThread_TheFileIsNeverReadThere()
+    {
+        var probe = new ApartmentProbe();
+        var thread = new Thread(() =>
+        {
+            Assert.Equal(ApartmentState.STA, Thread.CurrentThread.GetApartmentState());
+            using var ahead = new DecodeAhead(null, probe, Sr, 2, default, -1, false, inline: false);
+            ahead.Prefill(0.4); // what MusicPlayer.Load does on a click
+            Assert.True(ahead.BufferedFrames >= Sr * 4 / 10, "the first moments are ready when it returns");
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            while (ahead.BufferedFrames < Sr * 19 / 10 && watch.Elapsed < TimeSpan.FromSeconds(5)) Thread.Sleep(10);
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+
+        Assert.NotEmpty(probe.Apartments);
+        Assert.DoesNotContain(ApartmentState.STA, probe.Apartments);
+    }
+}

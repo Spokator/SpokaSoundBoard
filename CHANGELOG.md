@@ -1,5 +1,10 @@
 # Journal des versions
 
+## 2.12.1
+
+- **Correction importante, lecture de la musique** : depuis la 2.9, une musique au format m4a (le format des musiques téléchargées) lancée par un double-clic ne jouait que 0,4 seconde avant de passer à la suivante. Elle joue de nouveau normalement. La cause : le décodeur de Windows (Media Foundation) refusait d'être utilisé en arrière-plan après une première lecture faite par la fenêtre de l'application. Toute la lecture se fait maintenant en arrière-plan.
+- **Diagnostic** : si un fichier ne peut plus être décodé, l'erreur est notée dans le journal (`error.log`), et donc dans le rapport à copier pour signaler un problème.
+
 ## 2.12.0
 
 Vos réglages suivent le jeu.
