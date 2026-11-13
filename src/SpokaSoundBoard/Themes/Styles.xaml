@@ -89,6 +89,8 @@
     <conv:PercentConverter x:Key="Percent" />
     <conv:DbConverter x:Key="Db" />
     <conv:InverseBoolConverter x:Key="InverseBool" />
+    <conv:NullableBoolToIndexConverter x:Key="NullableBoolIndex" />
+    <conv:KeepChoiceConverter x:Key="KeepChoice" />
     <conv:MultiEqualsConverter x:Key="MultiEquals" />
     <conv:AllTrueToVisibilityConverter x:Key="AllTrueToVis" />
     <conv:CoverConverter x:Key="Cover" DecodeWidth="96" />

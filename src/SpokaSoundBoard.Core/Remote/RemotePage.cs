@@ -534,7 +534,8 @@ function updateLive() {
     else if (k === 'act:ptt') sub.textContent = state.radioMode ? (state.talking ? 'Votre voix passe' : 'Maintenir') : 'Mode radio désactivé';
     else if (k.startsWith('act:preset-')) sub.textContent = state.preset;
   });
-  if (connected) $('status').textContent = (state.micEnabled ? 'Micro actif' : 'Micro coupé') + ' · ' + (state.effectsEnabled ? state.preset : 'sans effet');
+  if (connected) $('status').textContent = (state.micEnabled ? 'Micro actif' : 'Micro coupé') + ' · ' + (state.effectsEnabled ? state.preset : 'sans effet')
+    + (state.profile ? ' · ' + state.profile : '');
   setToggle($('vMic'), state.micEnabled, 'microphone', 'microphone-off', 'Micro actif', 'Micro coupé');
   setToggle($('vFx'), state.effectsEnabled, 'sparkles', 'sparkles', 'Effets : ' + state.preset, 'Effets coupés');
   setToggle($('vRadio'), state.radioMode, 'radio', 'radio', 'Mode radio', 'Mode radio désactivé');

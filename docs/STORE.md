@@ -125,6 +125,7 @@ Microsoft relit la soumission, en général en quelques jours. S'il y a un refus
 - Suppression du bruit du micro (clavier, ventilateur), hors ligne
 - Mode radio : parler en maintenant une touche, avec bip de fin
 - Routage séparé pour le jeu et pour Discord
+- Profils par jeu : vos réglages changent tout seuls quand le jeu se lance
 - Télécommande depuis le téléphone, façon Stream Deck, avec trois thèmes
 - Compatible Stream Deck, Touch Portal et OBS (adresses HTTP locales)
 - Packs de soundboard à partager avec vos amis (.spokapack)

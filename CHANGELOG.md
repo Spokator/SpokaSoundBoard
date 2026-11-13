@@ -1,5 +1,14 @@
 # Journal des versions
 
+## 2.12.0
+
+Vos réglages suivent le jeu.
+
+- **Profils par jeu** (Configuration → Profils par jeu) : associez un jeu à ses réglages (effet de voix, onglet de sons, effets, mode radio, anti-bruit, musique dans le micro). Quand le jeu se lance, SpokaSoundBoard passe dessus tout seul, avec un message pour vous prévenir. Chaque réglage peut aussi rester « Ne pas changer ».
+- **Retour intelligent** : quelques secondes après la fermeture du jeu, vos réglages d'avant reviennent, y compris une voix réglée à la main. Ce que vous avez changé vous-même pendant la partie est gardé. Un alt-tab rapide ou un jeu qui redémarre ne fait pas clignoter les réglages.
+- **Simple à ajouter** : « Ajouter un jeu ouvert… » liste les programmes lancés, et « Choisir le programme du jeu… » permet de le prendre directement sur le disque. Un profil peut ne s'activer que quand le jeu est au premier plan.
+- **Télécommande** : le profil actif s'affiche sous le titre, sur le téléphone.
+
 ## 2.11.0
 
 Une voix propre, même dans une pièce bruyante.

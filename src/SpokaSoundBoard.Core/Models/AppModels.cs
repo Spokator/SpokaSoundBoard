@@ -426,6 +426,9 @@ public class AppSettings
 
     public RemoteSettings Remote { get; set; } = new();
 
+    /// <summary>Settings applied automatically while a game runs (2.12).</summary>
+    public ObservableCollection<GameProfile> GameProfiles { get; set; } = [];
+
     public string? SelectedPresetName { get; set; } = "Voix normale";
     public RepeatMode Repeat { get; set; } = RepeatMode.All;
     public bool Shuffle { get; set; }

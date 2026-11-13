@@ -308,6 +308,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             _ = RefreshStorageAsync();
             _ = RefreshBackupEstimateAsync();
+            RefreshProfileChoices();
         }
     }
 
@@ -434,6 +435,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _ = RefreshAutostartAsync();
         _meterTimer.Start();
         _saveTimer.Start();
+        StartGameProfiles();
         if (setupRequested || !Settings.FirstRunDone || Settings.SetupResumeStep != null)
             Setup.Open(Settings.SetupResumeStep ?? SetupWizardViewModel.StepWelcome);
         else if (!Devices.HasVirtualCable)
@@ -737,6 +739,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _meterTimer.Stop();
         _deviceWatcher?.Dispose();
         DisposeRemote();
+        // Put back what a game profile changed before saving, so it is not kept by mistake.
+        StopGameProfiles();
         _saveTimer.Stop();
         Save();
         BlindTest.Shutdown();

@@ -78,6 +78,16 @@ public partial class VoiceViewModel : ObservableObject
         _main.Save();
     }
 
+    /// <summary>Applies a preset without a toast (game profiles announce their own changes). False if it no longer exists.</summary>
+    public bool ApplyPresetByName(string name)
+    {
+        var preset = Presets.FirstOrDefault(p => p.Name == name);
+        if (preset == null) return false;
+        Settings.CopyEffectsFrom(preset.Settings);
+        SelectedPresetName = preset.Name;
+        return true;
+    }
+
     /// <summary>Hotkeys "effet suivant / précédent".</summary>
     public void CyclePreset(int direction)
     {

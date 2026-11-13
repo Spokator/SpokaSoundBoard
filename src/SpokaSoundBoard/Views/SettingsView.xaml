@@ -240,6 +240,99 @@
                 </StackPanel>
             </Border>
 
+            <!-- Game profiles -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE7FC;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
+                        <TextBlock Text="Profils par jeu" Style="{StaticResource SectionTitle}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
+                               Text="Quand un jeu se lance, SpokaSoundBoard passe tout seul sur ses réglages : son effet de voix, son onglet de sons, le mode radio… Quelques secondes après sa fermeture, vos réglages d'avant reviennent, sauf ceux que vous avez changés vous-même entre-temps." />
+                    <TextBlock Text="{Binding ActiveProfileText}" Style="{StaticResource Label}" Foreground="{DynamicResource Accent2Brush}" Margin="0,8,0,0"
+                               Visibility="{Binding HasGameProfiles, Converter={StaticResource BoolToVis}}" />
+
+                    <ItemsControl ItemsSource="{Binding GameProfiles}" Margin="0,6,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource SubCardBrush}" CornerRadius="8" Padding="12,10" Margin="0,6,0,0">
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE74D;" ToolTip="Supprimer ce profil"
+                                                    AutomationProperties.Name="Supprimer ce profil"
+                                                    Command="{Binding DataContext.RemoveProfileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" />
+                                            <CheckBox DockPanel.Dock="Left" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Enabled}" VerticalAlignment="Center"
+                                                      ToolTip="Profil actif ou en pause" AutomationProperties.Name="Profil activé" Margin="0,0,10,0" />
+                                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="10,0">
+                                                <Run Text="{Binding ProcessName, Mode=OneWay}" /><Run Text=".exe" />
+                                            </TextBlock>
+                                            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" MinWidth="160" VerticalAlignment="Center"
+                                                     AutomationProperties.Name="Nom du profil" />
+                                        </DockPanel>
+                                        <WrapPanel Margin="0,8,0,0">
+                                            <StackPanel Margin="0,0,12,6" Width="170">
+                                                <TextBlock Text="Effet de voix" Style="{StaticResource Caption}" />
+                                                <ComboBox ItemsSource="{Binding DataContext.ProfilePresetChoices, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                          DisplayMemberPath="Label" SelectedValuePath="Value"
+                                                          SelectedValue="{Binding Preset, Converter={StaticResource KeepChoice}}" AutomationProperties.Name="Effet de voix du profil" />
+                                            </StackPanel>
+                                            <StackPanel Margin="0,0,12,6" Width="150">
+                                                <TextBlock Text="Onglet de sons" Style="{StaticResource Caption}" />
+                                                <ComboBox ItemsSource="{Binding DataContext.ProfileCategoryChoices, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                          DisplayMemberPath="Label" SelectedValuePath="Value"
+                                                          SelectedValue="{Binding Category, Converter={StaticResource KeepChoice}}" AutomationProperties.Name="Onglet de sons du profil" />
+                                            </StackPanel>
+                                            <StackPanel Margin="0,0,12,6" Width="150">
+                                                <TextBlock Text="Effets de voix" Style="{StaticResource Caption}" />
+                                                <ComboBox SelectedIndex="{Binding Effects, Converter={StaticResource NullableBoolIndex}}" AutomationProperties.Name="Effets de voix pendant le jeu">
+                                                    <ComboBoxItem Content="Ne pas changer" /><ComboBoxItem Content="Activer" /><ComboBoxItem Content="Couper" />
+                                                </ComboBox>
+                                            </StackPanel>
+                                            <StackPanel Margin="0,0,12,6" Width="150">
+                                                <TextBlock Text="Mode radio" Style="{StaticResource Caption}" />
+                                                <ComboBox SelectedIndex="{Binding Radio, Converter={StaticResource NullableBoolIndex}}" AutomationProperties.Name="Mode radio pendant le jeu">
+                                                    <ComboBoxItem Content="Ne pas changer" /><ComboBoxItem Content="Activer" /><ComboBoxItem Content="Désactiver" />
+                                                </ComboBox>
+                                            </StackPanel>
+                                            <StackPanel Margin="0,0,12,6" Width="150">
+                                                <TextBlock Text="Anti-bruit" Style="{StaticResource Caption}" />
+                                                <ComboBox SelectedIndex="{Binding NoiseSuppression, Converter={StaticResource NullableBoolIndex}}" AutomationProperties.Name="Anti-bruit pendant le jeu">
+                                                    <ComboBoxItem Content="Ne pas changer" /><ComboBoxItem Content="Activer" /><ComboBoxItem Content="Désactiver" />
+                                                </ComboBox>
+                                            </StackPanel>
+                                            <StackPanel Margin="0,0,12,6" Width="170">
+                                                <TextBlock Text="Musique dans le micro" Style="{StaticResource Caption}" />
+                                                <ComboBox SelectedIndex="{Binding MediaToMic, Converter={StaticResource NullableBoolIndex}}" AutomationProperties.Name="Musique dans le micro pendant le jeu">
+                                                    <ComboBoxItem Content="Ne pas changer" /><ComboBoxItem Content="Partager" /><ComboBoxItem Content="Pour moi seul" />
+                                                </ComboBox>
+                                            </StackPanel>
+                                        </WrapPanel>
+                                        <CheckBox IsChecked="{Binding OnlyWhenForeground}" Margin="0,4,0,0"
+                                                  Content="Seulement quand le jeu est la fenêtre au premier plan (sinon : tant qu'il est ouvert)" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <WrapPanel Margin="0,10,0,0">
+                        <Button Style="{StaticResource FlatButton}" Margin="0,0,8,0" Click="OnAddRunningGameClick">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" FontSize="13" Margin="0,0,8,0" />
+                                <TextBlock Text="Ajouter un jeu ouvert…" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource FlatButton}" Command="{Binding AddGameProgramCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE8E5;" FontSize="13" Margin="0,0,8,0" />
+                                <TextBlock Text="Choisir le programme du jeu…" />
+                            </StackPanel>
+                        </Button>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
             <!-- Guide -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
@@ -251,7 +344,7 @@
                     <TextBlock Style="{StaticResource Caption}" FontSize="13" Margin="0,0,0,12" LineHeight="21">
                         1. Paramètres utilisateur → Voix et vidéo → Périphérique d'entrée : <Run Text="{Binding Devices.GuideMicName, Mode=OneWay}" Foreground="{DynamicResource Accent2Brush}" />
                         (ou <Run Text="{Binding Devices.GuideDiscordMicName, Mode=OneWay}" Foreground="{DynamicResource Accent2Brush}" /> si vous avez séparé Discord du jeu)<LineBreak />
-                        2. Traitement de la voix : Suppression du bruit = <Bold>Aucune</Bold>, et désactivez Annulation de l'écho, Activité vocale avancée et Contrôle automatique du gain. Ces filtres prennent la musique pour du bruit et la coupent.<LineBreak />
+                        2. Traitement de la voix : Suppression du bruit = <Bold>Aucune</Bold>, et désactivez Annulation de l'écho, Activité vocale avancée et Contrôle automatique du gain. Ces filtres prennent la musique pour du bruit et la coupent. Pour enlever le bruit de votre micro, utilisez plutôt la suppression du bruit de SpokaSoundBoard (Voix &amp; effets) : elle ne touche qu'à votre voix.<LineBreak />
                         3. Sensibilité d'entrée : désactivez « Déterminer automatiquement » et mettez le curseur <Bold>tout à gauche</Bold>, sinon Discord coupe le micro dans les passages calmes.<LineBreak />
                         4. Atténuation (en bas de la page) : mettez-la à <Bold>0 %</Bold>. SpokaSoundBoard rétablit aussi automatiquement le volume si Discord ou Windows le baissent.<LineBreak />
                         5. Astuce : « Qualité de la voix » au maximum dans les serveurs que vous gérez pour une musique plus claire.

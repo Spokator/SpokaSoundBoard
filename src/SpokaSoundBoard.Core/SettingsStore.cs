@@ -104,6 +104,7 @@ public sealed class SettingsStore
         nameof(AppSettings.TextToSpeech) => "synthèse vocale",
         nameof(AppSettings.CustomPresets) => "presets personnalisés",
         nameof(AppSettings.Remote) => "télécommande",
+        nameof(AppSettings.GameProfiles) => "profils par jeu",
         _ => "autres réglages",
     };
 
@@ -160,6 +161,9 @@ public sealed class SettingsStore
         s.TextToSpeech.Sanitize();
         s.Remote ??= new RemoteSettings();
         s.Remote.Sanitize();
+        s.GameProfiles ??= [];
+        foreach (var p in s.GameProfiles.Where(p => p == null).ToList()) s.GameProfiles.Remove(p);
+        foreach (var p in s.GameProfiles) p.Sanitize();
         if (s.SelectedPresetName == BuiltInPresets.OldDarkLordName) s.SelectedPresetName = BuiltInPresets.DarkLordName;
         s.CustomPresets ??= [];
         s.CustomPresets.RemoveAll(p => p is null);

@@ -103,6 +103,34 @@ public sealed class DbConverter : IValueConverter
         throw new NotSupportedException();
 }
 
+/// <summary>bool? ↔ index of « Ne pas changer / Activer / Désactiver » (game profiles).</summary>
+public sealed class NullableBoolToIndexConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value switch
+    {
+        true => 1,
+        false => 2,
+        _ => 0,
+    };
+
+    public object? ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => value switch
+    {
+        1 => true,
+        2 => false,
+        _ => null,
+    };
+}
+
+/// <summary>string? ↔ combo box value: null (« ne pas changer ») is carried by a token, a combo box cannot select null.</summary>
+public sealed class KeepChoiceConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value as string ?? ViewModels.ProfileChoice.Keep;
+
+    public object? ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is string s && s != ViewModels.ProfileChoice.Keep ? s : null;
+}
+
 public sealed class InverseBoolConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value is not true;

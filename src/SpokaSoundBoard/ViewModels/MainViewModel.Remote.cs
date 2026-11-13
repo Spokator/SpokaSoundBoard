@@ -297,7 +297,8 @@ public partial class MainViewModel
                 music,
                 BlindTestState(),
                 vm.Soundboard.Tts.IsAvailable,
-                mix.NoiseSuppressionEnabled);
+                mix.NoiseSuppressionEnabled,
+                vm.ActiveProfileName);
         });
 
         private RemoteBlindTest? BlindTestState()

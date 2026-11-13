@@ -40,7 +40,8 @@ public sealed record RemoteState(
     RemoteMusic Music,
     RemoteBlindTest? BlindTest,
     bool TtsAvailable,
-    bool NoiseSuppression = false);
+    bool NoiseSuppression = false,
+    string? Profile = null);
 
 /// <summary>Kept for 2.6 integrations (/api/status).</summary>
 public sealed record RemoteStatus(bool MicEnabled, bool EffectsEnabled, string Preset, string? Music, bool MusicPlaying);
