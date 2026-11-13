@@ -487,7 +487,7 @@
                                     <LineBreak /><LineBreak />
                                     <Run Text="/api/pads/NOM DU SON/play" /><Run Text="  jouer un son (son nom exact)" FontFamily="Segoe UI" /><LineBreak />
                                     <Run Text="/api/presets/NOM DE L'EFFET/apply" /><Run Text="  appliquer un effet de voix" FontFamily="Segoe UI" /><LineBreak />
-                                    <Run Text="/api/action/stop · mic · effects · radio" /><Run Text="  tout arrêter, micro, effets, mode radio" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/action/stop · mic · effects · radio · noise" /><Run Text="  tout arrêter, micro, effets, mode radio, suppression du bruit" FontFamily="Segoe UI" /><LineBreak />
                                     <Run Text="/api/action/preset-next · preset-previous" /><Run Text="  effet suivant / précédent" FontFamily="Segoe UI" /><LineBreak />
                                     <Run Text="/api/action/music-playpause · music-next · music-previous · media-to-mic" /><Run Text="  musique" FontFamily="Segoe UI" /><LineBreak />
                                     <Run Text="/api/action/bt-reveal · bt-next · bt-replay · bt-pause · bt-hint · bt-skip" /><Run Text="  blind test" FontFamily="Segoe UI" /><LineBreak />

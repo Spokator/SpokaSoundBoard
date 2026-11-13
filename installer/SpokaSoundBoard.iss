@@ -62,6 +62,9 @@ Name: "autostart"; Description: "{cm:Autostart}"; GroupDescription: "{cm:Options
 [Files]
 Source: "..\dist\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "deps\yt-dlp.exe"; DestDir: "{app}\tools"; Flags: ignoreversion
+; Microphone noise suppression (Xiph RNNoise, BSD-3-Clause): next to the exe, where DllImport looks first.
+Source: "..\src\SpokaSoundBoard.Core\native\win-x64\rnnoise.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\src\SpokaSoundBoard.Core\native\win-x64\RNNOISE-LICENSE.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; DestName: "LISEZ-MOI.md"; Flags: ignoreversion
 
 [Icons]

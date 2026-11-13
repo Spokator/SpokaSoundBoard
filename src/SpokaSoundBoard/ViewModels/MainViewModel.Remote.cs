@@ -296,7 +296,8 @@ public partial class MainViewModel
                 new RemoteMix(mix.MusicVolume, mix.PadsVolume, mix.MediaToMicVolume, mix.MonitorVolume, mix.MediaToMicEnabled),
                 music,
                 BlindTestState(),
-                vm.Soundboard.Tts.IsAvailable);
+                vm.Soundboard.Tts.IsAvailable,
+                mix.NoiseSuppressionEnabled);
         });
 
         private RemoteBlindTest? BlindTestState()
@@ -348,6 +349,11 @@ public partial class MainViewModel
                 case "stop": vm.Soundboard.StopAllCommand.Execute(null); return true;
                 case "mic": vm.ToggleMic(); return true;
                 case "effects": vm.ToggleEffects(); return true;
+                case "noise":
+                    if (!vm.NoiseSuppressionAvailable) return false;
+                    vm.Mix.NoiseSuppressionEnabled = !vm.Mix.NoiseSuppressionEnabled;
+                    vm.ShowToast(vm.Mix.NoiseSuppressionEnabled ? "Suppression du bruit activée" : "Suppression du bruit désactivée");
+                    return true;
                 case "radio":
                     vm.Mix.PushToTalkEnabled = !vm.Mix.PushToTalkEnabled;
                     vm.ShowToast(vm.Mix.PushToTalkEnabled ? "Mode radio activé : votre voix passe en maintenant la touche." : "Mode radio désactivé");

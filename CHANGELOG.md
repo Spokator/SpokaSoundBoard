@@ -1,5 +1,14 @@
 # Journal des versions
 
+## 2.11.0
+
+Une voix propre, même dans une pièce bruyante.
+
+- **Suppression du bruit** (Voix & effets → Micro) : le clavier, le ventilateur, le souffle et les bruits de fond disparaissent avant les effets, dans le jeu, sur Discord et dans vos enregistrements. Votre voix, elle, reste intacte. Elle fonctionne hors ligne avec RNNoise, une petite intelligence artificielle faite pour la voix (Xiph.Org, licence BSD).
+- **Mesuré sur une vraie voix** mêlée à un ventilateur, un clavier et un souffle : pendant les silences, le bruit baisse de 23 dB ; pendant que vous parlez, la voix ressort 7 dB au-dessus du bruit restant, sans être déformée. Elle ne coûte qu'environ 2 % d'un cœur du processeur et ajoute 30 ms de délai.
+- **Intensité réglable** : en dessous de 100 %, un peu du son d'origine est gardé, parfaitement aligné avec la voix nettoyée (pas d'effet métallique).
+- **Télécommande** : un bouton « Anti-bruit » dans l'onglet Voix du téléphone, et l'action `/api/action/noise` pour un Stream Deck.
+
 ## 2.10.0
 
 Une bibliothèque qui tient la charge, et tout SpokaSoundBoard dans un seul fichier.

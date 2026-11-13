@@ -29,6 +29,7 @@ public sealed class MixerCore
 
     private readonly MixSettings _mix;
     private readonly VoiceProcessor _voice;
+    private readonly NoiseSuppressor _denoiser = new(SampleRate);
     private readonly Ducker _ducker = new(SampleRate);
     private readonly Limiter _gameLimiter = new(SampleRate);
     private readonly Limiter _discordLimiter = new(SampleRate);
@@ -72,6 +73,12 @@ public sealed class MixerCore
     private VoiceRecorder? _recorder;
     public EngineMeters Meters { get; } = new();
 
+    /// <summary>False when rnnoise.dll could not be loaded (the option is then shown as unavailable).</summary>
+    public bool NoiseSuppressionAvailable => _denoiser.IsAvailable;
+
+    /// <summary>Speech probability of the last 10 ms (0..1) while noise suppression is on.</summary>
+    public float NoiseSuppressionVoiceProbability => _denoiser.IsRunning ? _denoiser.VoiceProbability : 0f;
+
     /// <summary>Radio-mode key state, set by the hotkey service.</summary>
     public volatile bool PushToTalkHeld;
 
@@ -108,6 +115,9 @@ public sealed class MixerCore
         {
             micSpan.Clear();
         }
+
+        // Noise removal first: the recording, the effects and every bus get the cleaned voice.
+        _denoiser.Process(micSpan, mix.NoiseSuppressionEnabled, mix.NoiseSuppressionAmount);
 
         Recorder?.Write(micSpan);
 

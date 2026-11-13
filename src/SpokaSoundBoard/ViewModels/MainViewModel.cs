@@ -99,6 +99,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     public AppSettings Settings { get; }
     public MixSettings Mix => Settings.Mix;
+
+    /// <summary>rnnoise.dll loaded: the « Suppression du bruit » switch can be used.</summary>
+    public bool NoiseSuppressionAvailable => Engine.Core.NoiseSuppressionAvailable;
+
+    public string NoiseSuppressionCaption => NoiseSuppressionAvailable
+        ? "Enlève le clavier, le ventilateur, le souffle et les bruits de fond avant les effets, sans couper votre voix (IA RNNoise, hors ligne). Ajoute 30 ms de délai."
+        : "Indisponible : le composant de suppression du bruit (rnnoise.dll) n'a pas pu être chargé.";
     public VoiceEffectSettings VoiceSettings => Settings.Voice;
     public HotkeySettings HotkeySettings => Settings.Hotkeys;
     public AudioEngine Engine { get; }

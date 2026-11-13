@@ -121,6 +121,7 @@ Les tests en ligne (téléchargements et recherches réels) s'activent avec `$en
 - [NAudio](https://github.com/naudio/NAudio) pour l'audio, [NVorbis](https://github.com/NVorbis/NVorbis) pour l'OGG, et [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet).
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) (Unlicense) pour la recherche et l'import par lien, et [FFmpeg](https://ffmpeg.org) pour les conversions (téléchargé si nécessaire).
 - Voix naturelles : [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (Apache-2.0) et [ONNX Runtime](https://github.com/microsoft/onnxruntime) (MIT) livrés avec l'application ; le modèle [Supertonic 3](https://huggingface.co/Supertone/supertonic-3) de Supertone (licence [OpenRAIL-M](https://huggingface.co/Supertone/supertonic-3/blob/main/LICENSE)) est téléchargé à la demande.
+- Suppression du bruit du micro : [RNNoise](https://github.com/xiph/rnnoise) de Xiph.Org et Jean-Marc Valin (BSD-3-Clause), compilé depuis la version officielle 0.2 (`native/rnnoise/build-rnnoise.ps1`) et livré avec l'application.
 - Icônes de la télécommande : [Tabler Icons](https://tabler.io/icons) (MIT), intégrées à l'application. Génération du QR code : [QRCoder](https://github.com/codebude/QRCoder) (MIT).
 - Micros virtuels : [VB-CABLE](https://vb-audio.com/Cable/) de VB-Audio (donationware) et [Virtual Audio Cable](https://vac.muzychenko.net/) d'Eugene Muzychenko. Ils ne sont pas redistribués : ils sont téléchargés depuis leurs sites officiels.
 

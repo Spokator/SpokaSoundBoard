@@ -213,6 +213,7 @@ nav.bottom button.hidden{display:none}
       <button class="chip" id="vMic"></button>
       <button class="chip" id="vFx"></button>
       <button class="chip" id="vRadio"></button>
+      <button class="chip" id="vNoise"></button>
     </div>
     <button class="ptt" id="ptt"><svg class="ic"><use href="#i-broadcast"/></svg><span>Maintenir pour parler</span><span class="note" id="pttNote"></span></button>
     <div class="card" style="margin-top:12px">
@@ -297,6 +298,7 @@ let catalog = null, state = null, version = '', view = 'deck', padTab = '', edit
 const ACTIONS = {
   'stop': ['player-stop', 'Tout arrêter', '#ff4d6d', '#c9184a'], 'mic': ['microphone', 'Micro', '#34d399', '#059669'],
   'effects': ['sparkles', 'Effets de voix', '#c084fc', '#7c3aed'], 'radio': ['radio', 'Mode radio', '#2dd4bf', '#0f766e'],
+  'noise': ['wave-sine', 'Suppression du bruit', '#a3e635', '#4d7c0f'],
   'ptt': ['broadcast', 'Parler (maintenir)', '#22d3ee', '#0891b2'], 'preset-next': ['player-skip-forward', 'Effet suivant', '#c084fc', '#7c3aed'],
   'preset-previous': ['player-skip-back', 'Effet précédent', '#c084fc', '#7c3aed'], 'music-playpause': ['music', 'Musique', '#60a5fa', '#2563eb'],
   'music-next': ['player-skip-forward', 'Morceau suivant', '#60a5fa', '#2563eb'], 'music-previous': ['player-skip-back', 'Morceau précédent', '#60a5fa', '#2563eb'],
@@ -526,6 +528,7 @@ function updateLive() {
     else if (k === 'act:mic') stateTile(t, state.micEnabled, 'microphone', 'microphone-off', 'Actif', 'Coupé', ACTIONS.mic);
     else if (k === 'act:effects') stateTile(t, state.effectsEnabled, 'sparkles', 'sparkles', state.preset, 'Coupés', ACTIONS.effects);
     else if (k === 'act:radio') stateTile(t, state.radioMode, 'radio', 'radio', 'Activé', 'Désactivé', ACTIONS.radio);
+    else if (k === 'act:noise') stateTile(t, state.noiseSuppression, 'wave-sine', 'wave-sine', 'Activée', 'Désactivée', ACTIONS.noise);
     else if (k === 'act:media-to-mic') stateTile(t, state.mix.mediaToMic, 'speakerphone', 'headphones', 'Partagée', 'Pour vous seul', ACTIONS['media-to-mic']);
     else if (k === 'act:music-playpause') { setIcon(t.querySelector('.ico svg'), state.music.playing ? 'player-pause' : 'player-play'); sub.textContent = state.music.hasTrack ? (state.music.title || '') : 'Aucune musique'; }
     else if (k === 'act:ptt') sub.textContent = state.radioMode ? (state.talking ? 'Votre voix passe' : 'Maintenir') : 'Mode radio désactivé';
@@ -535,6 +538,7 @@ function updateLive() {
   setToggle($('vMic'), state.micEnabled, 'microphone', 'microphone-off', 'Micro actif', 'Micro coupé');
   setToggle($('vFx'), state.effectsEnabled, 'sparkles', 'sparkles', 'Effets : ' + state.preset, 'Effets coupés');
   setToggle($('vRadio'), state.radioMode, 'radio', 'radio', 'Mode radio', 'Mode radio désactivé');
+  setToggle($('vNoise'), state.noiseSuppression, 'wave-sine', 'wave-sine', 'Anti-bruit', 'Anti-bruit coupé');
   $('ptt').disabled = !state.radioMode;
   $('pttNote').textContent = state.radioMode ? (state.talking ? 'Votre voix passe' : 'Votre voix ne passe que pendant l’appui') : 'Activez le mode radio pour l’utiliser';
   $('sayBtn').disabled = !state.ttsAvailable;
@@ -544,6 +548,7 @@ function updateLive() {
 $('vMic').onclick = () => { buzz(); call('/api/action/mic').catch(() => {}); };
 $('vFx').onclick = () => { buzz(); call('/api/action/effects').catch(() => {}); };
 $('vRadio').onclick = () => { buzz(); call('/api/action/radio').catch(() => {}); };
+$('vNoise').onclick = () => { buzz(); call('/api/action/noise').catch(() => {}); };
 $('pPrev').onclick = () => { buzz(); call('/api/action/preset-previous').catch(() => {}); };
 $('pNext').onclick = () => { buzz(); call('/api/action/preset-next').catch(() => {}); };
 $('stopAll').onclick = () => { buzz(25); call('/api/action/stop').catch(() => {}); };

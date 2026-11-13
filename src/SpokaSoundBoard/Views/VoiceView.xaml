@@ -122,6 +122,19 @@
                                     <TextBlock Text="Coupe le micro sous le seuil (clavier, ventilateur…)" Style="{StaticResource Caption}" />
                                 </StackPanel>
                             </CheckBox>
+                            <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Mix.NoiseSuppressionEnabled}" Margin="0,12,0,0"
+                                      IsEnabled="{Binding NoiseSuppressionAvailable}" AutomationProperties.Name="Suppression du bruit">
+                                <StackPanel>
+                                    <TextBlock Text="Suppression du bruit" Style="{StaticResource Label}" />
+                                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
+                                               Text="{Binding NoiseSuppressionCaption}" />
+                                </StackPanel>
+                            </CheckBox>
+                            <local:SliderRow Label="Intensité" Minimum="0" Maximum="1" Step="0.05" Format="%" Margin="0,4,0,0"
+                                             Value="{Binding Mix.NoiseSuppressionAmount}"
+                                             IsEnabled="{Binding Mix.NoiseSuppressionEnabled}"
+                                             Visibility="{Binding NoiseSuppressionAvailable, Converter={StaticResource BoolToVis}}"
+                                             Description="Moins de 100 % garde un peu du son d'origine, si votre voix vous semble trop « traitée »." />
                             <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Mix.ListenToSelf}" Margin="0,12,0,0">
                                 <StackPanel>
                                     <TextBlock Text="M'écouter (test)" Style="{StaticResource Label}" />

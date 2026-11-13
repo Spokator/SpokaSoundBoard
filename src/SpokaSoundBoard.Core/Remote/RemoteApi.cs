@@ -39,7 +39,8 @@ public sealed record RemoteState(
     RemoteMix Mix,
     RemoteMusic Music,
     RemoteBlindTest? BlindTest,
-    bool TtsAvailable);
+    bool TtsAvailable,
+    bool NoiseSuppression = false);
 
 /// <summary>Kept for 2.6 integrations (/api/status).</summary>
 public sealed record RemoteStatus(bool MicEnabled, bool EffectsEnabled, string Preset, string? Music, bool MusicPlaying);
@@ -86,7 +87,7 @@ public static class RemoteApi
     /// <summary>Named actions for <c>/api/action/{name}</c> (and the deck's « act: » buttons).</summary>
     public static readonly IReadOnlyList<string> Actions =
     [
-        "stop", "mic", "effects", "radio", "preset-next", "preset-previous",
+        "stop", "mic", "effects", "radio", "noise", "preset-next", "preset-previous",
         "music-playpause", "music-next", "music-previous", "media-to-mic",
         "bt-reveal", "bt-next", "bt-replay", "bt-pause", "bt-hint", "bt-skip", "bt-resume",
     ];

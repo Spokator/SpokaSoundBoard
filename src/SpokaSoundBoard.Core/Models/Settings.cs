@@ -201,6 +201,12 @@ public partial class MixSettings : ObservableObject
     /// <summary>Radio mode: the voice only goes through while the push-to-talk key is held.</summary>
     [ObservableProperty] private bool _pushToTalkEnabled;
 
+    /// <summary>Removes keyboard, fan and background noise from the microphone (RNNoise), before the effects.</summary>
+    [ObservableProperty] private bool _noiseSuppressionEnabled;
+
+    /// <summary>0 = untouched voice, 1 = full noise removal (the denoised voice is blended with the original).</summary>
+    [ObservableProperty] private float _noiseSuppressionAmount = 1f;
+
     // Routing matrix "who hears what". The game bus is the main virtual mic, the Discord bus a second one.
     [ObservableProperty] private bool _gameVoice = true;
     [ObservableProperty] private bool _gameVoiceEffects = true;
@@ -223,6 +229,7 @@ public partial class MixSettings : ObservableObject
         DuckingAmountDb = SettingsMath.Clamp(DuckingAmountDb, -40, 0, d.DuckingAmountDb);
         DuckingAttackMs = SettingsMath.Clamp(DuckingAttackMs, 10, 500, d.DuckingAttackMs);
         DuckingReleaseMs = SettingsMath.Clamp(DuckingReleaseMs, 100, 3000, d.DuckingReleaseMs);
+        NoiseSuppressionAmount = SettingsMath.Clamp(NoiseSuppressionAmount, 0, 1, d.NoiseSuppressionAmount);
     }
 }
 

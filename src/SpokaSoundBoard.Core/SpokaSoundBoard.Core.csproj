@@ -19,4 +19,10 @@
     <InternalsVisibleTo Include="SpokaSoundBoard.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Microphone noise suppression: Xiph RNNoise 0.2 (BSD-3-Clause), built by native/rnnoise/build-rnnoise.ps1. -->
+    <None Include="native/win-x64/rnnoise.dll" Link="rnnoise.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="native/win-x64/RNNOISE-LICENSE.txt" Link="RNNOISE-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
