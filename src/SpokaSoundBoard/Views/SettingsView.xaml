@@ -529,6 +529,36 @@
             <Border Style="{StaticResource Card}">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE777;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
+                        <TextBlock Text="Sauvegarde complète" Style="{StaticResource SectionTitle}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Label}" TextWrapping="Wrap"
+                               Text="Tout SpokaSoundBoard dans un seul fichier, pour changer de PC, passer de la version installeur à celle du Microsoft Store (ou l'inverse), ou garder une copie de sécurité." />
+                    <TextBlock Text="{Binding BackupSummary}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                    <CheckBox Content="{Binding BackupMusicText}" IsChecked="{Binding BackupIncludeMusic}" Margin="0,10,0,0"
+                              ToolTip="Sans cette case, les musiques venues d'Internet se téléchargent à nouveau quand vous les écoutez ; vos fichiers personnels restent là où ils sont." />
+                    <WrapPanel Margin="0,10,0,0">
+                        <Button Style="{StaticResource AccentButton}" Margin="0,0,8,8" Command="{Binding CreateBackupCommand}" IsEnabled="{Binding BackupBusy, Converter={StaticResource InverseBool}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE74E;" FontSize="13" Margin="0,0,8,0" />
+                                <TextBlock Text="Créer une sauvegarde…" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource FlatButton}" Margin="0,0,8,8" Command="{Binding RestoreBackupCommand}" IsEnabled="{Binding BackupBusy, Converter={StaticResource InverseBool}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE777;" FontSize="13" Margin="0,0,8,0" />
+                                <TextBlock Text="Restaurer une sauvegarde…" />
+                            </StackPanel>
+                        </Button>
+                    </WrapPanel>
+                    <ProgressBar Height="4" Maximum="1" Value="{Binding BackupProgress}" Margin="0,2,0,0"
+                                 Visibility="{Binding BackupBusy, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBlock Style="{StaticResource Icon}" Text="&#xE9D9;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" />
                         <TextBlock Text="Diagnostic audio" Style="{StaticResource SectionTitle}" />
                     </StackPanel>

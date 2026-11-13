@@ -17,8 +17,15 @@ public partial class App : Application
     private static string PendingPacksPath { get; } = Path.Combine(
         Core.AppEnvironment.DataDirectory, "pending-packs.txt");
 
+    /// <summary>Message for the first toast (a backup was restored at start), null otherwise.</summary>
+    public static string? StartupNotice { get; private set; }
+
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Restart after « Restaurer une sauvegarde »: let the previous instance finish saving and exit first.
+        var after = Array.IndexOf(e.Args, "--after");
+        if (after >= 0 && after + 1 < e.Args.Length && int.TryParse(e.Args[after + 1], out var pid)) WaitForExit(pid);
+
         _singleInstance = new Mutex(true, "SpokaSoundBoard.SingleInstance" + Core.AppEnvironment.InstanceSuffix, out var isFirst);
         var startArgs = e.Args.Select(a => a.ToLowerInvariant()).ToHashSet();
         // Double-click on a .spokapack (file association of the MSIX manifest) or "Ouvrir avec".
@@ -74,9 +81,50 @@ public partial class App : Application
             new FrameworkPropertyMetadata(System.Windows.Markup.XmlLanguage.GetLanguage("fr-FR")));
 
         base.OnStartup(e);
+        ApplyPendingRestore();
         var window = new MainWindow(startArgs.Contains("--setup"), startMinimized && packToImport == null, packToImport);
         MainWindow = window;
         window.Show();
+    }
+
+    private static void WaitForExit(int pid)
+    {
+        try
+        {
+            using var previous = System.Diagnostics.Process.GetProcessById(pid);
+            previous.WaitForExit(20_000);
+        }
+        catch (ArgumentException)
+        {
+            // Already gone.
+        }
+        catch (Exception ex)
+        {
+            Log(ex);
+        }
+    }
+
+    /// <summary>Restores the backup chosen before the restart, before the settings and the library are loaded.</summary>
+    private static void ApplyPendingRestore()
+    {
+        var pending = ViewModels.MainViewModel.PendingRestorePath;
+        if (!File.Exists(pending)) return;
+        string? backup = null;
+        try
+        {
+            backup = File.ReadAllText(pending).Trim();
+            File.Delete(pending); // never retried in a loop, even if the restore fails
+            var version = (typeof(App).Assembly.GetName().Version ?? new Version(1, 0)).ToString(3);
+            var result = Core.FullBackup.Restore(backup, Core.AppEnvironment.DataDirectory, version,
+                Core.AppEnvironment.IsPackaged ? "Microsoft Store" : "Installeur");
+            StartupNotice = $"Sauvegarde du {result.Manifest.CreatedAt:d MMMM yyyy} restaurée : {result.Manifest.Sounds} son(s), " +
+                            $"{result.Manifest.Tracks} morceau(x), {result.Manifest.Playlists} playlist(s).";
+        }
+        catch (Exception ex)
+        {
+            Log(ex);
+            StartupNotice = "La sauvegarde n'a pas pu être restaurée : " + Core.FriendlyErrors.Describe(ex);
+        }
     }
 
     private static void QueuePack(string path)

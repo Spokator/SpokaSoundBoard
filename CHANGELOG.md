@@ -1,5 +1,15 @@
 # Journal des versions
 
+## 2.10.0
+
+Une bibliothèque qui tient la charge, et tout SpokaSoundBoard dans un seul fichier.
+
+- **Sauvegarde complète** (Configuration → Sauvegarde complète) : un fichier `.spokabackup` contient vos réglages, votre soundboard avec ses fichiers son, vos effets de voix, raccourcis, deck de télécommande, votre bibliothèque, vos playlists et votre historique. Vous pouvez aussi y inclure les fichiers de musique. Idéal pour changer de PC ou passer de la version installeur à celle du Microsoft Store.
+- **Restauration sûre** : « Restaurer une sauvegarde… » montre ce que contient le fichier, garde une copie de l'état actuel dans le dossier des réglages (« Sauvegardes »), puis redémarre l'application. Les sons sont remis à leur place, ou à côté des réglages si leur ancien dossier n'existe pas sur ce PC. Aucun fichier audio n'est supprimé.
+- **Import de playlists bien plus rapide** : ajouter 2 000 morceaux à une bibliothèque de 5 000 prend 0,1 seconde au lieu de 12 secondes, pendant lesquelles l'application était figée.
+- **Enregistrement sans à-coups** : la bibliothèque s'enregistre en arrière-plan. Pour 5 000 morceaux et 10 000 écoutes, l'interface est occupée 2 ms au lieu de 28 ms à chaque enregistrement, et rien n'est réécrit si rien n'a changé.
+- **Historique à part** : les écoutes vont dans leur propre fichier (`history.jsonl`), où elles s'ajoutent à la fin au lieu de tout réécrire. `library.json` est deux fois plus léger. La conversion se fait toute seule au premier lancement.
+
 ## 2.9.0
 
 Un son plus solide et plus réactif.

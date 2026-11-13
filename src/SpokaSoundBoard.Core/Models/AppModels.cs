@@ -135,7 +135,7 @@ public partial class TrackItem : ObservableObject
     private string? _sourceUrl;
 
     /// <summary>Search used to find the audio of an imported track ("artist - title"), when no URL is known.</summary>
-    public string? SearchQuery { get; set; }
+    [ObservableProperty] private string? _searchQuery;
 
     /// <summary>Cover / thumbnail (http URL or local file).</summary>
     [ObservableProperty]
@@ -161,6 +161,9 @@ public partial class TrackItem : ObservableObject
 
     public int PlayCount { get; set; }
     public DateTime? LastPlayedAt { get; set; }
+
+    /// <summary>Copy of every field (all immutable values), serialized off the UI thread while the original lives on.</summary>
+    internal TrackItem SnapshotCopy() => (TrackItem)MemberwiseClone();
 
     [JsonIgnore]
     [ObservableProperty] private bool _isCurrent;
@@ -219,11 +222,21 @@ public partial class MusicPlaylist : ObservableObject
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     public ObservableCollection<Guid> TrackIds { get; set; } = [];
+
+    internal MusicPlaylist SnapshotCopy()
+    {
+        var copy = (MusicPlaylist)MemberwiseClone();
+        copy.TrackIds = new ObservableCollection<Guid>(TrackIds);
+        return copy;
+    }
 }
 
 /// <summary>One listening, for the history, the statistics and the recommendations.</summary>
 public sealed class HistoryEntry
 {
+    /// <summary>Identifies the entry in history.jsonl (a later line with the same id updates it).</summary>
+    public Guid Id { get; set; } = Guid.NewGuid();
+
     public Guid TrackId { get; set; }
     public string Title { get; set; } = "";
     public string? Artist { get; set; }
@@ -232,6 +245,8 @@ public sealed class HistoryEntry
 
     /// <summary>Seconds actually listened (updated when the track ends or is skipped).</summary>
     public double ListenedSeconds { get; set; }
+
+    internal HistoryEntry SnapshotCopy() => (HistoryEntry)MemberwiseClone();
 }
 
 /// <summary>Persisted content of library.json (kept apart from settings.json, which stays small).</summary>
@@ -243,7 +258,15 @@ public sealed class MusicLibraryData
     public int Version { get; set; } = CurrentVersion;
     public ObservableCollection<TrackItem> Tracks { get; set; } = [];
     public ObservableCollection<MusicPlaylist> Playlists { get; set; } = [];
+
+    /// <summary>Listening history, oldest first. Stored apart, in history.jsonl (appended to, never rewritten whole).</summary>
+    [JsonIgnore]
     public List<HistoryEntry> History { get; set; } = [];
+
+    /// <summary>Where library.json kept the history before 2.10: read once, then moved to history.jsonl.</summary>
+    [JsonPropertyName("History")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<HistoryEntry>? LegacyHistory { get; set; }
 
     /// <summary>Artists / titles the user does not want recommended ("👎").</summary>
     public List<string> DislikedArtists { get; set; } = [];
@@ -253,6 +276,23 @@ public sealed class MusicLibraryData
     public List<Guid> SavedQueue { get; set; } = [];
     public int SavedQueueIndex { get; set; } = -1;
     public double SavedPositionSeconds { get; set; }
+
+    /// <summary>
+    /// Independent copy of what library.json holds (history excluded), taken on the UI thread in about a millisecond
+    /// so it can be serialized and written on a background thread while the UI keeps changing the original.
+    /// </summary>
+    internal MusicLibraryData SnapshotForSave()
+    {
+        var copy = (MusicLibraryData)MemberwiseClone();
+        copy.Tracks = new ObservableCollection<TrackItem>(Tracks.Select(t => t.SnapshotCopy()));
+        copy.Playlists = new ObservableCollection<MusicPlaylist>(Playlists.Select(p => p.SnapshotCopy()));
+        copy.History = [];
+        copy.LegacyHistory = null;
+        copy.DislikedArtists = [.. DislikedArtists];
+        copy.DislikedUrls = [.. DislikedUrls];
+        copy.SavedQueue = [.. SavedQueue];
+        return copy;
+    }
 }
 
 public enum RepeatMode

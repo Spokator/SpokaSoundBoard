@@ -17,6 +17,7 @@ public sealed class MusicLibrary
     {
         Data = data ?? new MusicLibraryData();
         Sanitize(Data);
+        _index = new TrackIndex(Data.Tracks);
     }
 
     public MusicLibraryData Data { get; }
@@ -28,7 +29,15 @@ public sealed class MusicLibrary
     /// <summary>Raised after any change worth saving.</summary>
     public event Action? Changed;
 
-    public TrackItem? Find(Guid id) => Tracks.FirstOrDefault(t => t.Id == id);
+    // Lookups by id, file, link and search text: a dictionary instead of a scan of every track.
+    private readonly TrackIndex _index;
+
+    // History entries added or updated since the last save (see TakeHistoryChanges).
+    private readonly List<HistoryEntry> _historyChanges = [];
+    private readonly HashSet<Guid> _historyChangeIds = [];
+    private bool _historyReset;
+
+    public TrackItem? Find(Guid id) => _index.ById(id);
 
     /// <summary>
     /// Finds a track by file path or source URL (YouTube links are compared by video id). A track known only by its
@@ -38,20 +47,9 @@ public sealed class MusicLibrary
     public TrackItem? FindExisting(string? filePath, string? sourceUrl, string? searchQuery = null)
     {
         if (string.IsNullOrEmpty(filePath) && string.IsNullOrEmpty(sourceUrl))
-        {
-            return string.IsNullOrWhiteSpace(searchQuery) ? null
-                : Tracks.FirstOrDefault(t => string.Equals(t.SearchQuery, searchQuery, StringComparison.OrdinalIgnoreCase));
-        }
-        if (!string.IsNullOrEmpty(filePath))
-        {
-            var byFile = Tracks.FirstOrDefault(t => string.Equals(t.FilePath, filePath, StringComparison.OrdinalIgnoreCase));
-            if (byFile != null) return byFile;
-        }
-        if (!string.IsNullOrEmpty(sourceUrl))
-        {
-            var key = SourceKey(sourceUrl);
-            return Tracks.FirstOrDefault(t => t.SourceUrl != null && SourceKey(t.SourceUrl) == key);
-        }
+            return string.IsNullOrWhiteSpace(searchQuery) ? null : _index.BySearch(searchQuery);
+        if (!string.IsNullOrEmpty(filePath) && _index.ByFile(filePath) is { } byFile) return byFile;
+        if (!string.IsNullOrEmpty(sourceUrl)) return _index.BySource(SourceKey(sourceUrl));
         return null;
     }
 
@@ -148,11 +146,8 @@ public sealed class MusicLibrary
         Changed?.Invoke();
     }
 
-    public List<TrackItem> TracksOf(MusicPlaylist playlist)
-    {
-        var byId = Tracks.ToDictionary(t => t.Id);
-        return playlist.TrackIds.Select(id => byId.GetValueOrDefault(id)).OfType<TrackItem>().ToList();
-    }
+    public List<TrackItem> TracksOf(MusicPlaylist playlist) =>
+        playlist.TrackIds.Select(_index.ById).OfType<TrackItem>().ToList();
 
     private static readonly StringComparer TextOrder =
         StringComparer.Create(new System.Globalization.CultureInfo("fr-FR"), System.Globalization.CompareOptions.IgnoreCase | System.Globalization.CompareOptions.IgnoreNonSpace);
@@ -300,14 +295,45 @@ public sealed class MusicLibrary
         };
         Data.History.Add(entry);
         if (Data.History.Count > MaxHistory) Data.History.RemoveRange(0, Data.History.Count - MaxHistory);
+        MarkHistoryChanged(entry);
         Changed?.Invoke();
         return entry;
+    }
+
+    /// <summary>Adds listened time to an entry (when the track ends, is skipped or paused for good).</summary>
+    public void AddListened(HistoryEntry entry, double seconds)
+    {
+        if (!double.IsFinite(seconds) || seconds <= 0) return;
+        entry.ListenedSeconds += seconds;
+        MarkHistoryChanged(entry);
+        Changed?.Invoke();
     }
 
     public void ClearHistory()
     {
         Data.History.Clear();
+        _historyChanges.Clear();
+        _historyChangeIds.Clear();
+        _historyReset = true;
         Changed?.Invoke();
+    }
+
+    private void MarkHistoryChanged(HistoryEntry entry)
+    {
+        if (_historyChangeIds.Add(entry.Id)) _historyChanges.Add(entry);
+    }
+
+    /// <summary>
+    /// What changed in the history since the previous call: the entries to append to history.jsonl, or « reset » when
+    /// the whole file must be rewritten (history cleared). Used by <see cref="LibraryStore.SaveInBackground"/>.
+    /// </summary>
+    public (bool Reset, List<HistoryEntry> Changed) TakeHistoryChanges()
+    {
+        var result = (_historyReset, _historyChanges.ToList());
+        _historyChanges.Clear();
+        _historyChangeIds.Clear();
+        _historyReset = false;
+        return result;
     }
 
     /// <summary>Distinct tracks, most recently played first.</summary>

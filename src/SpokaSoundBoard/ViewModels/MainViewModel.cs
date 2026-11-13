@@ -297,7 +297,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnCurrentPageChanged(string value)
     {
-        if (value == "settings") _ = RefreshStorageAsync();
+        if (value == "settings")
+        {
+            _ = RefreshStorageAsync();
+            _ = RefreshBackupEstimateAsync();
+        }
     }
 
     // ---- Storage (Configuration page) ---------------------------------------------------------------------
@@ -428,6 +432,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         else if (!Devices.HasVirtualCable)
             CurrentPage = "settings";
         if (_store.LoadProblem is { } problem) ShowToast(problem, 12);
+        else if (App.StartupNotice is { } notice) ShowToast(notice, 10);
         CleanDownloadCache();
     }
 
@@ -437,7 +442,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// </summary>
     private void CleanDownloadCache()
     {
-        if (_store.LoadProblem != null || !Music.LibraryLoaded) return;
+        if (_store.LoadProblem != null || !Music.LibraryLoaded || RestoredRecently()) return;
         var referenced = Settings.Pads.Select(p => (string?)p.FilePath)
             .Concat(Music.Library.Tracks.Select(t => t.FilePath))
             .ToList();

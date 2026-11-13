@@ -38,6 +38,7 @@ public partial class MusicViewModel : ObservableObject
         _main = main;
         _dispatcher = Dispatcher.CurrentDispatcher;
         _libraryStore = new LibraryStore(main.DataDirectory);
+        _libraryStore.SaveFailed += OnLibrarySaveFailed;
         Library = new MusicLibrary(_libraryStore.Load());
         if (LibraryStore.Migrate(main.Settings, Library))
         {
@@ -776,7 +777,7 @@ public partial class MusicViewModel : ObservableObject
     {
         if (_currentEntry == null) return;
         _listenClock.Stop();
-        _currentEntry.ListenedSeconds += _listenClock.Elapsed.TotalSeconds * Math.Max(0.1, Settings.Effects.Enabled ? Settings.Effects.Speed : 1f);
+        Library.AddListened(_currentEntry, _listenClock.Elapsed.TotalSeconds * Math.Max(0.1, Settings.Effects.Enabled ? Settings.Effects.Speed : 1f));
         _listenClock.Reset();
         _currentEntry = null;
         ScheduleLibrarySave();
@@ -832,7 +833,9 @@ public partial class MusicViewModel : ObservableObject
         _librarySaveTimer.Start();
     }
 
-    public void SaveLibrary()
+    /// <summary>Saves the library on the background writer (the UI only serializes a snapshot).</summary>
+    /// <param name="wait">Wait until the files are written (on exit, before a backup).</param>
+    public void SaveLibrary(bool wait = false)
     {
         try
         {
@@ -844,7 +847,8 @@ public partial class MusicViewModel : ObservableObject
             // During a blind test the player holds an excerpt: keep the position of the interrupted track.
             data.SavedPositionSeconds = IsExternalPlayback ? _externalResumeAt
                 : Player.HasTrack ? Player.Position.TotalSeconds : _resumePosition;
-            _libraryStore.Save(data);
+            _libraryStore.SaveInBackground(Library);
+            if (wait) _libraryStore.Flush();
         }
         catch (Exception ex)
         {
@@ -852,11 +856,14 @@ public partial class MusicViewModel : ObservableObject
         }
     }
 
+    private void OnLibrarySaveFailed(Exception ex) => _dispatcher.BeginInvoke(() =>
+        _main.ShowToast("Impossible d'enregistrer la bibliothèque : " + Core.FriendlyErrors.Describe(ex)));
+
     public void Shutdown()
     {
         FinishHistoryEntry();
         Library.PruneTransient(60, Queue.Items.Select(t => t.Id).ToHashSet());
-        SaveLibrary();
+        SaveLibrary(wait: true);
         MediaControls?.Dispose();
     }
 
