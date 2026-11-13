@@ -122,6 +122,7 @@ Microsoft relit la soumission, en général en quelques jours. S'il y a un refus
 - Synthèse vocale dans le micro, avec des voix naturelles hors ligne
 - La musique baisse automatiquement quand vous parlez
 - 22 effets de voix en temps réel, et vos propres presets
+- Suppression du bruit du micro (clavier, ventilateur), hors ligne
 - Mode radio : parler en maintenant une touche, avec bip de fin
 - Routage séparé pour le jeu et pour Discord
 - Télécommande depuis le téléphone, façon Stream Deck, avec trois thèmes
