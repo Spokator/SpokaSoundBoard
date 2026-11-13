@@ -128,6 +128,7 @@ Microsoft relit la soumission, en général en quelques jours. S'il y a un refus
 - Compatible Stream Deck, Touch Portal et OBS (adresses HTTP locales)
 - Packs de soundboard à partager avec vos amis (.spokapack)
 - Thèmes sombre, noir OLED et clair
+- Sauvegarde complète en un fichier, pour changer de PC ou d'édition
 - Assistant de configuration, zone de notification, lancement avec Windows
 
 **Mots-clés** (7 au plus) : soundboard, effets de voix, modificateur de voix, discord, micro, musique, radio
