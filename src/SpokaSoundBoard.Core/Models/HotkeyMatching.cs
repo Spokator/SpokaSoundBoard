@@ -9,14 +9,15 @@ public static class HotkeyMatching
     /// needs is held, so « F1 » still works while the player holds Shift to sprint. When several bindings share the
     /// key, only the most specific ones fire: with « F1 » and « Maj + F1 » bound, Shift+F1 plays only the second.
     /// </summary>
-    public static List<int> Select(IReadOnlyList<HotkeyBinding> bindings, int virtualKey, HotkeyModifiers pressed)
+    /// <param name="device">Controller that sent the button (<see cref="ControllerButtons.DeviceKey"/>), null for keys.</param>
+    public static List<int> Select(IReadOnlyList<HotkeyBinding> bindings, int virtualKey, HotkeyModifiers pressed, string? device = null)
     {
         var result = new List<int>();
         var best = -1;
         for (var i = 0; i < bindings.Count; i++)
         {
             var b = bindings[i];
-            if (!b.IsSet || b.VirtualKey != virtualKey || (b.Modifiers & ~pressed) != 0) continue;
+            if (!b.IsSet || !b.SameInput(virtualKey, device) || (b.Modifiers & ~pressed) != 0) continue;
             var specificity = BitOperations.PopCount((uint)b.Modifiers);
             if (specificity > best)
             {
@@ -33,7 +34,7 @@ public static class HotkeyMatching
     {
         if (!binding.IsSet) yield break;
         foreach (var (other, owner) in others)
-            if (!ReferenceEquals(other, binding) && other.IsSet && other.VirtualKey == binding.VirtualKey && other.Modifiers == binding.Modifiers)
+            if (!ReferenceEquals(other, binding) && other.IsSet && other.SameInput(binding.VirtualKey, binding.Device) && other.Modifiers == binding.Modifiers)
                 yield return owner;
     }
 }

@@ -489,10 +489,10 @@
             <Border Style="{StaticResource Card}" Width="440" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="28">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Icon}" Text="&#xE765;" FontSize="38" Foreground="{DynamicResource Accent2Brush}" />
-                    <TextBlock Text="Appuyez sur une touche ou un bouton de souris" FontSize="18" FontWeight="SemiBold"
+                    <TextBlock Text="Appuyez sur une touche, un bouton de souris ou de manette" FontSize="18" FontWeight="SemiBold"
                                HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Margin="0,14,0,6" />
-                    <TextBlock Text="Combinaisons avec Ctrl / Maj / Alt acceptées. Boutons souris : molette, souris 4 et 5."
-                               Style="{StaticResource Caption}" TextAlignment="Center" />
+                    <TextBlock Text="Combinaisons avec Ctrl / Maj / Alt acceptées. Boutons souris : molette, souris 4 et 5. Manettes, joysticks et HOTAS : tous les boutons et les chapeaux, même avec plusieurs appareils branchés."
+                               Style="{StaticResource Caption}" TextAlignment="Center" TextWrapping="Wrap" />
                     <TextBlock Text="{Binding RecordingTarget}" Style="{StaticResource ValueText}" HorizontalAlignment="Center" Margin="0,12,0,0" />
                     <TextBlock Text="Échap : annuler   ·   Suppr : effacer le raccourci" Style="{StaticResource Caption}"
                                TextAlignment="Center" Margin="0,14,0,16" />

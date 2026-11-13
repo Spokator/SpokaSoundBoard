@@ -574,20 +574,30 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _toastTimer.Start();
     }
 
-    private IEnumerable<(HotkeyBinding, Action)> GetHotkeyBindings()
+    private IEnumerable<HotkeyAction> GetHotkeyBindings()
     {
         var h = Settings.Hotkeys;
-        yield return (h.PlayPause, () => Music.PlayPauseCommand.Execute(null));
-        yield return (h.NextTrack, () => Music.NextCommand.Execute(null));
-        yield return (h.StopAll, () => Soundboard.StopAllCommand.Execute(null));
-        yield return (h.ToggleMic, ToggleMic);
-        yield return (h.ToggleEffects, ToggleEffects);
-        yield return (h.ToggleMediaToMic, ToggleMediaToMic);
-        yield return (h.ToggleDiscordShare, ToggleDiscordShare);
-        yield return (h.NextPreset, () => Voice.CyclePreset(1));
-        yield return (h.PreviousPreset, () => Voice.CyclePreset(-1));
+        yield return new(h.PlayPause, () => Music.PlayPauseCommand.Execute(null));
+        yield return new(h.NextTrack, () => Music.NextCommand.Execute(null));
+        yield return new(h.MusicVolumeUp, () => StepMusicVolume(1), Repeat: true);
+        yield return new(h.MusicVolumeDown, () => StepMusicVolume(-1), Repeat: true);
+        yield return new(h.StopAll, () => Soundboard.StopAllCommand.Execute(null));
+        yield return new(h.ToggleMic, ToggleMic);
+        yield return new(h.ToggleEffects, ToggleEffects);
+        yield return new(h.ToggleMediaToMic, ToggleMediaToMic);
+        yield return new(h.ToggleDiscordShare, ToggleDiscordShare);
+        yield return new(h.NextPreset, () => Voice.CyclePreset(1));
+        yield return new(h.PreviousPreset, () => Voice.CyclePreset(-1));
         foreach (var pad in Settings.Pads.ToList())
-            yield return (pad.Hotkey, () => Soundboard.PlayPadCommand.Execute(pad));
+            yield return new(pad.Hotkey, () => Soundboard.PlayPadCommand.Execute(pad));
+    }
+
+    /// <summary>Music louder or quieter by 5 %, for every output (headphones, game, Discord).</summary>
+    public void StepMusicVolume(int direction)
+    {
+        var volume = MixSettings.StepVolume(Mix.MusicVolume, direction);
+        Mix.MusicVolume = volume;
+        ShowToast($"Volume de la musique : {volume * 100:0} %", 1.5);
     }
 
     private void Tick()

@@ -24,7 +24,7 @@ Diffusez votre playlist et vos sons **dans votre micro**, parlez par-dessus (la 
 
 | | |
 | --- | --- |
-| 🎛️ **Soundboard** | Tuiles colorées rangées en onglets (catégories), réorganisables par glisser-déposer. Volume, boucle et extrait par son, raccourci clavier ou souris (boutons 4 / 5, molette) utilisable en pleine partie, même en courant avec Maj. Au choix pour chaque son : l'arrêter, le relancer ou le superposer quand on rappuie, couper les autres sons, ou le jouer pour vous seul dans le casque. |
+| 🎛️ **Soundboard** | Tuiles colorées rangées en onglets (catégories), réorganisables par glisser-déposer. Volume, boucle et extrait par son, raccourci clavier, souris (boutons 4 / 5, molette) ou bouton de manette, joystick et HOTAS, utilisable en pleine partie, même en courant avec Maj. Au choix pour chaque son : l'arrêter, le relancer ou le superposer quand on rappuie, couper les autres sons, ou le jouer pour vous seul dans le casque. |
 | 📱 **Télécommande** | Votre téléphone devient un Stream Deck (QR code, même Wi-Fi), en trois thèmes au choix (Nuit, Coucher de soleil, Océan) avec une icône pour chaque son : votre deck de boutons, toute la soundboard, « maintenir pour parler », effets de voix, phrases dites dans le micro, musique et volumes, et l'animation du blind test avec la réponse visible seulement sur le téléphone. Marche aussi avec un Stream Deck, Touch Portal ou OBS. |
 | ⏺️ **Enregistrement** | Enregistrez un son avec votre micro en un clic : le silence au début et à la fin est coupé, il devient un son de la soundboard. |
 | 🔎 **Recherche intégrée** | Tapez « booba mona lisa » ou « vine boom » : résultats YouTube et MyInstants, ▶ pour écouter dans votre casque seulement, « Ajouter » en un clic. Les liens (YouTube, SoundCloud, TikTok, Twitch, MP3…) et les playlists fonctionnent aussi. |
@@ -38,6 +38,7 @@ Diffusez votre playlist et vos sons **dans votre micro**, parlez par-dessus (la 
 | 📊 **Statistiques** | Top morceaux et artistes, heures d'écoute, séries, rétrospective de l'année. |
 | 🗣️ **Ducking** | Quand vous parlez, la musique baisse pour que votre voix passe par-dessus, puis remonte doucement. |
 | 🎙️ **22 effets de voix** | Pilote d'hélico, tour de contrôle, talkie-walkie, astronaute NASA, pilote de chasse, téléphone, vieille radio, mégaphone, robot, seigneur noir, démon, fantôme, alien, sous l'eau, lo-fi 8 bits… Chaque réglage est modifiable et vous pouvez enregistrer vos propres presets. |
+| 🕹️ **Manettes et HOTAS** | Les boutons et chapeaux de vos manettes, joysticks, palonniers et HOTAS servent de raccourcis : sons, mode radio, effets, musique et son volume. Plusieurs appareils à la fois, sans pilote. |
 | 📻 **Mode radio** | Votre voix ne passe que quand vous maintenez la touche, avec le grésillement et le bip de fin (roger, NASA « Quindar »…). |
 | 🔀 **Jeu et Discord séparés** | Tableau « Qui entend quoi ? » : par exemple, la musique et l'effet pilote pour les passagers de l'hélico, et seulement votre voix naturelle sur Discord. |
 | 📦 **Packs de soundboard** | Exportez votre soundboard (sons inclus) en `.spokapack` et envoyez-la à vos amis. |

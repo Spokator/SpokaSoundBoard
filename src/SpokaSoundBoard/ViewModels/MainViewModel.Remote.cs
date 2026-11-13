@@ -364,6 +364,8 @@ public partial class MainViewModel
                 case "music-playpause": vm.Music.PlayPauseCommand.Execute(null); return true;
                 case "music-next": vm.Music.NextCommand.Execute(null); return true;
                 case "music-previous": vm.Music.PreviousCommand.Execute(null); return true;
+                case "music-volume-up": vm.StepMusicVolume(1); return true;
+                case "music-volume-down": vm.StepMusicVolume(-1); return true;
                 case "media-to-mic": vm.ToggleMediaToMic(); return true;
                 case "bt-reveal": return Execute(bt.RevealCommand);
                 case "bt-next": return Execute(bt.NextRoundCommand);

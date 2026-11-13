@@ -1,5 +1,15 @@
 # Journal des versions
 
+## 2.13.0
+
+Vos manettes, joysticks et HOTAS deviennent des raccourcis.
+
+- **Boutons de manette comme raccourcis** : tous les boutons et les chapeaux (POV) d'un HOTAS, d'un joystick, d'un palonnier ou d'une manette de jeu peuvent lancer un son de la soundboard ou n'importe quel raccourci global (mode radio compris). Appuyez simplement sur le bouton quand l'application vous le demande. Ils marchent en pleine partie, sans pilote à installer, et le jeu reçoit toujours le bouton.
+- **Plusieurs appareils** : le même numéro de bouton sur le manche et sur la manette des gaz donne deux raccourcis différents. Le raccourci affiche le nom de l'appareil (« T.16000M · Bouton 3 ») et reste valable si vous changez de port USB. Les diagonales d'un chapeau comptent pour les deux directions.
+- **Volume de la musique au raccourci** : « Musique plus fort » et « Musique moins fort » (Configuration → Raccourcis globaux) changent le volume de 5 % pour vous, le jeu et Discord, avec le volume affiché. Maintenez la touche ou le bouton pour aller plus vite.
+- **Sûr en jeu** : une manette débranchée pendant que vous parlez en mode radio coupe bien le micro, rien ne reste bloqué.
+- **Télécommande** : boutons « Musique plus fort » et « Musique moins fort » pour le deck du téléphone, et les actions `/api/action/music-volume-up` et `music-volume-down` pour un Stream Deck.
+
 ## 2.12.1
 
 - **Correction importante, lecture de la musique** : depuis la 2.9, une musique au format m4a (le format des musiques téléchargées) lancée par un double-clic ne jouait que 0,4 seconde avant de passer à la suivante. Elle joue de nouveau normalement. La cause : le décodeur de Windows (Media Foundation) refusait d'être utilisé en arrière-plan après une première lecture faite par la fenêtre de l'application. Toute la lecture se fait maintenant en arrière-plan.

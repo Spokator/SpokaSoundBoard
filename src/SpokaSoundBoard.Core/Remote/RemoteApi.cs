@@ -89,7 +89,7 @@ public static class RemoteApi
     public static readonly IReadOnlyList<string> Actions =
     [
         "stop", "mic", "effects", "radio", "noise", "preset-next", "preset-previous",
-        "music-playpause", "music-next", "music-previous", "media-to-mic",
+        "music-playpause", "music-next", "music-previous", "music-volume-up", "music-volume-down", "media-to-mic",
         "bt-reveal", "bt-next", "bt-replay", "bt-pause", "bt-hint", "bt-skip", "bt-resume",
     ];
 

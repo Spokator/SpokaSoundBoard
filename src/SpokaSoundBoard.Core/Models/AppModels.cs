@@ -17,24 +17,59 @@ public enum HotkeyModifiers
 public partial class HotkeyBinding : ObservableObject
 {
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Display), nameof(IsSet))]
+    [NotifyPropertyChangedFor(nameof(Display), nameof(ShortDisplay), nameof(IsSet), nameof(IsController), nameof(Glyph))]
     private int _virtualKey;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Display))]
+    [NotifyPropertyChangedFor(nameof(Display), nameof(ShortDisplay))]
     private HotkeyModifiers _modifiers;
+
+    /// <summary>Controller the button belongs to (<see cref="ControllerButtons.DeviceKey"/>), null for the keyboard and mouse.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Display))]
+    private string? _device;
+
+    /// <summary>Name of that controller (« T.16000M »), to show the shortcut even while it is unplugged.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Display))]
+    private string? _deviceName;
 
     [JsonIgnore]
     public bool IsSet => VirtualKey != 0;
 
     [JsonIgnore]
-    public string Display => IsSet ? KeyNames.Format(VirtualKey, Modifiers) : "Aucun";
+    public bool IsController => ControllerButtons.IsController(VirtualKey);
 
-    public void Set(int virtualKey, HotkeyModifiers modifiers)
+    [JsonIgnore]
+    public string Display => !IsSet ? "Aucun"
+        : IsController ? $"{(string.IsNullOrWhiteSpace(DeviceName) ? "Manette" : DeviceName)} · {ControllerButtons.Name(VirtualKey)}"
+        : KeyNames.Format(VirtualKey, Modifiers);
+
+    /// <summary>For small places (soundboard tiles): the button without the controller name.</summary>
+    [JsonIgnore]
+    public string ShortDisplay => IsSet && IsController ? ControllerButtons.Name(VirtualKey) : Display;
+
+    /// <summary>Segoe icon: keyboard, or game controller for controller buttons.</summary>
+    [JsonIgnore]
+    public string Glyph => IsController ? "\uE7FC" : "\uE765";
+
+    public void Set(int virtualKey, HotkeyModifiers modifiers) => Set(virtualKey, modifiers, null, null);
+
+    public void Set(int virtualKey, HotkeyModifiers modifiers, string? device, string? deviceName)
     {
         Modifiers = modifiers;
+        Device = ControllerButtons.IsController(virtualKey) ? device : null;
+        DeviceName = ControllerButtons.IsController(virtualKey) ? deviceName : null;
         VirtualKey = virtualKey;
     }
+
+    /// <summary>
+    /// Same input as this binding: the key or button, and for a controller button, the same device (a button saved
+    /// without device, e.g. edited by hand, works on any controller).
+    /// </summary>
+    public bool SameInput(int virtualKey, string? device) =>
+        VirtualKey == virtualKey && (!ControllerButtons.IsController(virtualKey) || string.IsNullOrEmpty(Device)
+                                     || string.Equals(Device, device, StringComparison.OrdinalIgnoreCase));
 
     public void Clear() => Set(0, HotkeyModifiers.None);
 }
@@ -314,6 +349,8 @@ public class HotkeySettings
     public HotkeyBinding ToggleDiscordShare { get; set; } = new();
     public HotkeyBinding NextPreset { get; set; } = new();
     public HotkeyBinding PreviousPreset { get; set; } = new();
+    public HotkeyBinding MusicVolumeUp { get; set; } = new();
+    public HotkeyBinding MusicVolumeDown { get; set; } = new();
 
     /// <summary>A binding written as null in settings.json (hand edit, older version) becomes "no shortcut".</summary>
     public void Sanitize()
@@ -328,6 +365,8 @@ public class HotkeySettings
         ToggleDiscordShare ??= new HotkeyBinding();
         NextPreset ??= new HotkeyBinding();
         PreviousPreset ??= new HotkeyBinding();
+        MusicVolumeUp ??= new HotkeyBinding();
+        MusicVolumeDown ??= new HotkeyBinding();
     }
 }
 

@@ -218,11 +218,25 @@ public partial class MixSettings : ObservableObject
     [ObservableProperty] private bool _discordMusic;
     [ObservableProperty] private bool _discordSounds;
 
+    public const float MaxVolume = 1.5f;
+
+    /// <summary>
+    /// Next volume for a « plus fort / moins fort » shortcut: steps of 5 %, snapped to the grid (83 % goes to 85 % or
+    /// 80 %), within 0–150 %.
+    /// </summary>
+    public static float StepVolume(float current, int direction, float step = 0.05f)
+    {
+        if (!float.IsFinite(current)) current = 0.8f;
+        var steps = current / step;
+        var target = direction > 0 ? MathF.Floor(steps + 1e-3f) + 1 : MathF.Ceiling(steps - 1e-3f) - 1;
+        return Math.Clamp(MathF.Round(target * step, 4), 0f, MaxVolume);
+    }
+
     /// <summary>Brings every value back into the range of its slider (NaN / infinity → default).</summary>
     public void Sanitize()
     {
         var d = new MixSettings();
-        MusicVolume = SettingsMath.Clamp(MusicVolume, 0, 1.5f, d.MusicVolume);
+        MusicVolume =SettingsMath.Clamp(MusicVolume, 0, 1.5f, d.MusicVolume);
         PadsVolume = SettingsMath.Clamp(PadsVolume, 0, 1.5f, d.PadsVolume);
         MediaToMicVolume = SettingsMath.Clamp(MediaToMicVolume, 0, 1.5f, d.MediaToMicVolume);
         MonitorVolume = SettingsMath.Clamp(MonitorVolume, 0, 1.5f, d.MonitorVolume);

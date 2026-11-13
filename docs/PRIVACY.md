@@ -22,9 +22,9 @@ Vous pouvez couper le micro à tout moment dans l'application, ou retirer l'auto
 
 La version installeur range ces fichiers dans `%AppData%\SpokaSoundBoard`. La version Microsoft Store les range dans le dossier privé que Windows lui réserve, supprimé quand vous la désinstallez.
 
-## Les raccourcis clavier et souris
+## Les raccourcis clavier, souris et manette
 
-Pour que vos raccourcis marchent en pleine partie, SpokaSoundBoard observe les touches et les boutons de souris pressés dans Windows. Il compare chaque touche à vos raccourcis puis l'oublie aussitôt : **rien n'est enregistré ni envoyé**, et la touche continue d'arriver normalement au jeu.
+Pour que vos raccourcis marchent en pleine partie, SpokaSoundBoard observe les touches, les boutons de souris et les boutons de manette, joystick ou HOTAS pressés dans Windows. Il compare chaque touche ou bouton à vos raccourcis puis l'oublie aussitôt : **rien n'est enregistré ni envoyé**, et la touche continue d'arriver normalement au jeu. Pour un raccourci de manette, seuls le nom de l'appareil et ses identifiants USB (fabricant, modèle) sont gardés dans vos réglages, pour reconnaître l'appareil.
 
 ## Quand l'application se connecte à Internet
 

@@ -295,7 +295,8 @@
                                                                     <Binding Path="DataContext.ShowHotkeys" ElementName="PadList" />
                                                                 </MultiBinding>
                                                             </Border.Visibility>
-                                                            <TextBlock Text="{Binding Hotkey.Display}" FontSize="11" Foreground="{DynamicResource SubtleTextBrush}" />
+                                                            <TextBlock Text="{Binding Hotkey.ShortDisplay}" ToolTip="{Binding Hotkey.Display}" FontSize="11"
+                                                                       TextTrimming="CharacterEllipsis" Foreground="{DynamicResource SubtleTextBrush}" />
                                                         </Border>
                                                     </DockPanel>
                                                 </Grid>

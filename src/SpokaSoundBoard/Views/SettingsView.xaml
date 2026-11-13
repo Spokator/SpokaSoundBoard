@@ -210,7 +210,7 @@
                         <TextBlock Text="Raccourcis globaux" Style="{StaticResource SectionTitle}" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,12"
-                               Text="Fonctionnent même quand vous êtes en jeu. La touche n'est pas bloquée : le jeu la reçoit aussi. Les raccourcis des sons se règlent sur chaque son de la soundboard." />
+                               Text="Fonctionnent même quand vous êtes en jeu. Touches du clavier, boutons de souris, et boutons de manette, joystick ou HOTAS (chapeaux compris). La touche n'est pas bloquée : le jeu la reçoit aussi. Les raccourcis des sons se règlent sur chaque son de la soundboard." />
                     <ItemsControl x:Name="HotkeyList" ItemsSource="{Binding Devices.HotkeyRows}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
@@ -226,10 +226,10 @@
                                     </StackPanel>
                                     <Button Grid.Column="1" Style="{StaticResource FlatButton}" HorizontalContentAlignment="Left"
                                             Command="{Binding DataContext.RecordHotkeyCommand, ElementName=HotkeyList}" CommandParameter="{Binding Binding}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE765;" FontSize="13" Margin="0,0,10,0" />
-                                            <TextBlock Text="{Binding Binding.Display}" />
-                                        </StackPanel>
+                                        <DockPanel ToolTip="{Binding Binding.Display}">
+                                            <TextBlock Style="{StaticResource Icon}" Text="{Binding Binding.Glyph}" FontSize="13" Margin="0,0,10,0" />
+                                            <TextBlock Text="{Binding Binding.Display}" TextTrimming="CharacterEllipsis" />
+                                        </DockPanel>
                                     </Button>
                                     <Button Grid.Column="2" Style="{StaticResource IconButton}" Content="&#xE74D;" Margin="6,0,0,0" ToolTip="Effacer"
                                             Command="{Binding DataContext.ClearHotkeyCommand, ElementName=HotkeyList}" CommandParameter="{Binding Binding}" />
@@ -583,6 +583,7 @@
                                     <Run Text="/api/action/stop · mic · effects · radio · noise" /><Run Text="  tout arrêter, micro, effets, mode radio, suppression du bruit" FontFamily="Segoe UI" /><LineBreak />
                                     <Run Text="/api/action/preset-next · preset-previous" /><Run Text="  effet suivant / précédent" FontFamily="Segoe UI" /><LineBreak />
                                     <Run Text="/api/action/music-playpause · music-next · music-previous · media-to-mic" /><Run Text="  musique" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/action/music-volume-up · music-volume-down" /><Run Text="  volume de la musique (par 5 %)" FontFamily="Segoe UI" /><LineBreak />
                                     <Run Text="/api/action/bt-reveal · bt-next · bt-replay · bt-pause · bt-hint · bt-skip" /><Run Text="  blind test" FontFamily="Segoe UI" /><LineBreak />
                                     <Run Text="/api/say?text=Bonjour" /><Run Text="  dire une phrase dans le micro" FontFamily="Segoe UI" /><LineBreak />
                                     <Run Text="/api/mix?key=music&amp;value=0.8" /><Run Text="  volume (music, pads, tomic, monitor ; 0 à 1,5)" FontFamily="Segoe UI" /><LineBreak />

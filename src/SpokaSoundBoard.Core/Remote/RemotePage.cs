@@ -302,6 +302,7 @@ const ACTIONS = {
   'ptt': ['broadcast', 'Parler (maintenir)', '#22d3ee', '#0891b2'], 'preset-next': ['player-skip-forward', 'Effet suivant', '#c084fc', '#7c3aed'],
   'preset-previous': ['player-skip-back', 'Effet précédent', '#c084fc', '#7c3aed'], 'music-playpause': ['music', 'Musique', '#60a5fa', '#2563eb'],
   'music-next': ['player-skip-forward', 'Morceau suivant', '#60a5fa', '#2563eb'], 'music-previous': ['player-skip-back', 'Morceau précédent', '#60a5fa', '#2563eb'],
+  'music-volume-up': ['volume', 'Musique plus fort', '#60a5fa', '#2563eb'], 'music-volume-down': ['volume', 'Musique moins fort', '#60a5fa', '#2563eb'],
   'media-to-mic': ['speakerphone', 'Musique dans le micro', '#fbbf24', '#f97316'], 'bt-reveal': ['eye', 'Révéler (blind test)', '#fb923c', '#e11d48'],
   'bt-next': ['chevron-right', 'Manche suivante', '#fb923c', '#e11d48'], 'bt-replay': ['repeat', 'Rejouer l’extrait', '#fb923c', '#e11d48'],
   'bt-pause': ['player-pause', 'Pause blind test', '#fb923c', '#e11d48'], 'bt-hint': ['bulb', 'Indice', '#fbbf24', '#d97706'],
@@ -533,6 +534,7 @@ function updateLive() {
     else if (k === 'act:music-playpause') { setIcon(t.querySelector('.ico svg'), state.music.playing ? 'player-pause' : 'player-play'); sub.textContent = state.music.hasTrack ? (state.music.title || '') : 'Aucune musique'; }
     else if (k === 'act:ptt') sub.textContent = state.radioMode ? (state.talking ? 'Votre voix passe' : 'Maintenir') : 'Mode radio désactivé';
     else if (k.startsWith('act:preset-')) sub.textContent = state.preset;
+    else if (k.startsWith('act:music-volume-')) sub.textContent = Math.round(state.mix.music * 100) + ' %';
   });
   if (connected) $('status').textContent = (state.micEnabled ? 'Micro actif' : 'Micro coupé') + ' · ' + (state.effectsEnabled ? state.preset : 'sans effet')
     + (state.profile ? ' · ' + state.profile : '');

@@ -113,6 +113,7 @@ Microsoft relit la soumission, en général en quelques jours. S'il y a un refus
 **Fonctionnalités** (une par ligne dans Partner Center)
 
 - Soundboard en onglets, avec raccourcis clavier et souris utilisables en jeu
+- Boutons de manette, joystick et HOTAS comme raccourcis
 - Sons « moi seulement » joués dans votre casque, écoute avant diffusion
 - Enregistrement d'un son avec votre micro
 - Recherche intégrée : sons MyInstants, musiques YouTube et SoundCloud
@@ -126,8 +127,7 @@ Microsoft relit la soumission, en général en quelques jours. S'il y a un refus
 - Mode radio : parler en maintenant une touche, avec bip de fin
 - Routage séparé pour le jeu et pour Discord
 - Profils par jeu : vos réglages changent tout seuls quand le jeu se lance
-- Télécommande depuis le téléphone, façon Stream Deck, avec trois thèmes
-- Compatible Stream Deck, Touch Portal et OBS (adresses HTTP locales)
+- Télécommande depuis le téléphone, compatible Stream Deck, Touch Portal et OBS
 - Packs de soundboard à partager avec vos amis (.spokapack)
 - Thèmes sombre, noir OLED et clair
 - Sauvegarde complète en un fichier, pour changer de PC ou d'édition

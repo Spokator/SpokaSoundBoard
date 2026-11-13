@@ -28,6 +28,8 @@ public partial class DevicesViewModel : ObservableObject
             new("Mode radio (appuyer pour parler)", "Maintenir pour parler quand le mode radio est actif", h.PushToTalk),
             new("Lecture / pause musique", "Démarre ou met en pause le lecteur", h.PlayPause),
             new("Musique suivante", "Passe au morceau suivant", h.NextTrack),
+            new("Musique plus fort", "Monte la musique de 5 % pour vous, le jeu et Discord (maintenir pour continuer)", h.MusicVolumeUp),
+            new("Musique moins fort", "Baisse la musique de 5 % pour vous, le jeu et Discord (maintenir pour continuer)", h.MusicVolumeDown),
             new("Arrêter tous les sons", "Coupe tous les sons de la soundboard", h.StopAll),
             new("Couper / activer le micro", "Votre voix uniquement, la musique continue", h.ToggleMic),
             new("Activer / désactiver les effets", "Bascule rapide entre voix normale et effet", h.ToggleEffects),
