@@ -351,6 +351,7 @@ public class HotkeySettings
     public HotkeyBinding PreviousPreset { get; set; } = new();
     public HotkeyBinding MusicVolumeUp { get; set; } = new();
     public HotkeyBinding MusicVolumeDown { get; set; } = new();
+    public HotkeyBinding ToggleLiveVoice { get; set; } = new();
 
     /// <summary>A binding written as null in settings.json (hand edit, older version) becomes "no shortcut".</summary>
     public void Sanitize()
@@ -367,6 +368,7 @@ public class HotkeySettings
         PreviousPreset ??= new HotkeyBinding();
         MusicVolumeUp ??= new HotkeyBinding();
         MusicVolumeDown ??= new HotkeyBinding();
+        ToggleLiveVoice ??= new HotkeyBinding();
     }
 }
 

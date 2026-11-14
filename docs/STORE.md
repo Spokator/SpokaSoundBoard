@@ -120,7 +120,7 @@ Microsoft relit la soumission, en général en quelques jours. S'il y a un refus
 - Lecteur de musique avec file d'attente, fondu enchaîné, paroles et volume égalisé
 - Import de playlists Spotify, Deezer, Apple Music, YouTube et SoundCloud
 - Blind test à animer dans Discord, avec scores et podium
-- Synthèse vocale dans le micro, avec des voix naturelles hors ligne
+- Synthèse vocale : tapez ou parlez, une voix naturelle le dit dans le micro
 - La musique baisse automatiquement quand vous parlez
 - 22 effets de voix en temps réel, et vos propres presets
 - Suppression du bruit du micro (clavier, ventilateur), hors ligne

@@ -37,6 +37,7 @@ public partial class DevicesViewModel : ObservableObject
             new("Discord : partager musique & sons", "Vos amis Discord entendent (ou non) la musique et les sons", h.ToggleDiscordShare),
             new("Effet de voix suivant", "Passe au preset suivant (ex. normale → pilote → robot…)", h.NextPreset),
             new("Effet de voix précédent", "Revient au preset précédent", h.PreviousPreset),
+            new("Parler avec la voix de synthèse", "Votre voix est remplacée par la voix choisie dans « Synthèse vocale » (on/off)", h.ToggleLiveVoice),
         ];
     }
 

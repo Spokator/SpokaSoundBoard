@@ -49,11 +49,13 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
             .. NeuralVoiceCatalog.Voices.Select(v => TtsVoiceOption.FromNatural(v, installed)),
             .. Speech.Voices.Select(TtsVoiceOption.FromWindows),
         ];
-        VoicesView = new ListCollectionView(Voices.ToList());
-        VoicesView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(TtsVoiceOption.Group)));
+        NaturalVoices = Voices.Where(v => v.IsNatural).ToList();
+        WindowsVoices = Voices.Where(v => !v.IsNatural).ToList();
         _selectedVoice = Voices.FirstOrDefault(v => v.Id == Settings.VoiceId) ?? AutomaticVoice();
+        _showNatural = _selectedVoice?.IsNatural ?? true;
         _selectedLanguage = Languages.FirstOrDefault(l => l.Code == Settings.Language) ?? Languages[0];
         Speech.Models.Changed += _ => _dispatcher.BeginInvoke(RefreshInstalled);
+        InitializeLive();
 
         foreach (var h in Settings.History) History.Add(h);
         _playingTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(150), DispatcherPriority.Background, (_, _) => RefreshPlaying(),
@@ -70,8 +72,67 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
     /// <summary>Natural voices first, then Windows voices.</summary>
     public IReadOnlyList<TtsVoiceOption> Voices { get; }
 
-    /// <summary><see cref="Voices"/> grouped by « Voix naturelles » / « Voix Windows » for the picker.</summary>
-    public ListCollectionView VoicesView { get; }
+    public IReadOnlyList<TtsVoiceOption> NaturalVoices { get; }
+    public IReadOnlyList<TtsVoiceOption> WindowsVoices { get; }
+
+    /// <summary>
+    /// Which family the voice list shows: « Voix naturelles » or « Voix Windows ». (The grouped drop-down it
+    /// replaces showed only the group titles with the .NET 9 Fluent theme: no voice could be picked.)
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(VisibleVoices), nameof(ShowWindowsHint), nameof(ShowNaturalLocked), nameof(ShowWindows))]
+    private bool _showNatural;
+
+    /// <summary>The « Voix Windows » tab (the other side of <see cref="ShowNatural"/>).</summary>
+    public bool ShowWindows
+    {
+        get => !ShowNatural;
+        set => ShowNatural = !value;
+    }
+
+    public IReadOnlyList<TtsVoiceOption> VisibleVoices => ShowNatural ? NaturalVoices : WindowsVoices;
+
+    public string NaturalTabText => $"Voix naturelles · {NaturalVoices.Count}";
+    public string WindowsTabText => $"Voix Windows · {WindowsVoices.Count}";
+
+    /// <summary>Windows tab: how to get more voices (and the only text when there are none).</summary>
+    public bool ShowWindowsHint => !ShowNatural;
+
+    /// <summary>Natural tab before the download: the voices are shown, but cannot speak yet.</summary>
+    public bool ShowNaturalLocked => ShowNatural && !IsNaturalInstalled;
+
+    partial void OnShowNaturalChanged(bool value)
+    {
+        // Switching family picks a voice of that family, when one can speak.
+        if (SelectedVoice?.IsNatural == value) return;
+        var pick = value
+            ? IsNaturalInstalled ? NaturalVoices.FirstOrDefault(v => v.Id == NeuralVoiceCatalog.DefaultVoice.Id) : null
+            : WindowsVoices.FirstOrDefault(v => v.Windows!.IsFrench) ?? WindowsVoices.FirstOrDefault();
+        if (pick == null) return;
+        SelectedVoice = pick;
+        _main.Save();
+    }
+
+    [RelayCommand]
+    private void SelectVoice(TtsVoiceOption? voice)
+    {
+        if (voice == null) return;
+        SelectedVoice = voice;
+        _main.Save();
+    }
+
+    [RelayCommand]
+    private void OpenWindowsVoiceSettings()
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo("ms-settings:speech") { UseShellExecute = true });
+        }
+        catch
+        {
+            // Settings app missing: nothing else to open.
+        }
+    }
 
     public IReadOnlyList<SpeechLanguage> Languages => NeuralVoiceCatalog.Languages;
 
@@ -120,7 +181,7 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
     [ObservableProperty] private SpeechLanguage? _selectedLanguage;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsAvailable), nameof(HasNoFrenchVoice), nameof(ShowNaturalOffer), nameof(SelectedNeedsDownload))]
+    [NotifyPropertyChangedFor(nameof(IsAvailable), nameof(HasNoFrenchVoice), nameof(ShowNaturalOffer), nameof(SelectedNeedsDownload), nameof(ShowNaturalLocked))]
     [NotifyCanExecuteChangedFor(nameof(DownloadNaturalCommand), nameof(DeleteNaturalCommand))]
     private bool _isNaturalInstalled;
 
@@ -145,7 +206,12 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
     /// <summary>« Télécharger les voix naturelles » block (until they are installed).</summary>
     public bool ShowNaturalOffer => !IsNaturalInstalled && !IsDownloading;
 
-    partial void OnSelectedVoiceChanged(TtsVoiceOption? value) => Settings.VoiceId = value?.Id;
+    partial void OnSelectedVoiceChanged(TtsVoiceOption? value)
+    {
+        Settings.VoiceId = value?.Id;
+        foreach (var v in Voices) v.IsSelected = ReferenceEquals(v, value);
+        if (value != null && value.IsNatural != ShowNatural) ShowNatural = value.IsNatural;
+    }
 
     partial void OnSelectedLanguageChanged(SpeechLanguage? value)
     {
@@ -286,9 +352,9 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
 
     // ---- Preview ---------------------------------------------------------------------------------------------
 
-    /// <summary>Plays a sample phrase with the selected voice in the headphones only (never into the microphone).</summary>
+    /// <summary>Plays a sample phrase in the headphones only (never into the microphone): the given voice, or the selected one.</summary>
     [RelayCommand]
-    private async Task PreviewVoice()
+    private async Task PreviewVoice(TtsVoiceOption? choice)
     {
         if (_main.Settings.MonitorDeviceId == null)
         {
@@ -296,7 +362,12 @@ public sealed partial class TextToSpeechViewModel : ObservableObject
             return;
         }
         if (!IsAvailable) return;
-        var voice = SelectedVoice;
+        var voice = choice ?? SelectedVoice;
+        if (voice is { IsNatural: true, IsInstalled: false })
+        {
+            _main.ShowToast($"Téléchargez d'abord les voix naturelles ({PackSizeText}) pour écouter cette voix.");
+            return;
+        }
         var language = voice?.Windows is { } windows ? windows.Language : Settings.Language;
         IsBusy = true;
         try

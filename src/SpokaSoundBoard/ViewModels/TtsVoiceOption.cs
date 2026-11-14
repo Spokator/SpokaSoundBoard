@@ -43,5 +43,32 @@ public sealed partial class TtsVoiceOption : ObservableObject
         ? IsInstalled ? Natural.Name : $"{Natural.Name} (à télécharger)"
         : Windows!.Display;
 
+    /// <summary>The voice currently chosen (drawn highlighted in the voice list).</summary>
+    [ObservableProperty] private bool _isSelected;
+
+    /// <summary>Name on the voice card (« Femme 1 », « Microsoft Denise »).</summary>
+    public string Title => Natural?.Name ?? Windows!.Name;
+
+    /// <summary>Second line of the voice card.</summary>
+    public string Subtitle => Natural != null
+        ? Natural.Description.Length > 0 ? Natural.Description : Natural.IsFemale ? "Voix féminine" : "Voix masculine"
+        : LanguageName(Windows!.Language);
+
+    /// <summary>Segoe icon: a person for natural voices, the Windows logo otherwise.</summary>
+    public string Glyph => Natural != null ? "\uE77B" : "\uE770";
+
+    private static string LanguageName(string tag)
+    {
+        try
+        {
+            var name = new System.Globalization.CultureInfo(tag).DisplayName;
+            return name.Length > 0 ? char.ToUpper(name[0]) + name[1..] : tag;
+        }
+        catch (System.Globalization.CultureNotFoundException)
+        {
+            return tag;
+        }
+    }
+
     public override string ToString() => Display;
 }

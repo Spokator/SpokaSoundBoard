@@ -588,6 +588,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         yield return new(h.ToggleDiscordShare, ToggleDiscordShare);
         yield return new(h.NextPreset, () => Voice.CyclePreset(1));
         yield return new(h.PreviousPreset, () => Voice.CyclePreset(-1));
+        yield return new(h.ToggleLiveVoice, () => Soundboard.Tts.ToggleLiveCommand.Execute(null));
         foreach (var pad in Settings.Pads.ToList())
             yield return new(pad.Hotkey, () => Soundboard.PlayPadCommand.Execute(pad));
     }
@@ -754,6 +755,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _saveTimer.Stop();
         Save();
         BlindTest.Shutdown();
+        Soundboard.Tts.ShutdownLive();
         Music.Shutdown();
         Hotkeys.Dispose();
         Loudness.Dispose();

@@ -1,10 +1,69 @@
-<UserControl x:Class="SpokaSoundBoard.Views.TextToSpeechView"
+﻿<UserControl x:Class="SpokaSoundBoard.Views.TextToSpeechView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:SpokaSoundBoard.Views"
              x:Name="Root" IsVisibleChanged="OnVisibleChanged">
     <!-- DataContext: TextToSpeechViewModel -->
     <UserControl.Resources>
+        <Style x:Key="FamilyTab" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{DynamicResource SubtleTextBrush}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd" Padding="14,8" CornerRadius="18" BorderThickness="1"
+                                Background="{DynamicResource ControlBrush}" BorderBrush="{DynamicResource ControlBorderBrush}">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource ControlBorderHoverBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- A voice: the whole card selects it; the chosen one is drawn in the accent color. -->
+        <Style x:Key="VoiceCard" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Padding="12,10" CornerRadius="10" BorderThickness="1" MinHeight="56"
+                                Background="{DynamicResource ControlBrush}" BorderBrush="{DynamicResource ControlBorderBrush}">
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource ControlBorderHoverBrush}" />
+                            </Trigger>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsInstalled}" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.6" />
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="ChipButton" TargetType="Button" BasedOn="{StaticResource FlatButton}">
             <Setter Property="Padding" Value="12,6" />
             <Setter Property="FontSize" Value="13" />
@@ -119,45 +178,76 @@
             <Border Style="{StaticResource Card}">
                 <StackPanel>
                     <TextBlock Text="Voix" Style="{StaticResource SectionTitle}" Margin="0,0,0,12" />
-                    <Grid>
+
+                    <!-- Family of voices, then every voice of that family as a card. -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <RadioButton Style="{StaticResource FamilyTab}" IsChecked="{Binding ShowNatural}" AutomationProperties.Name="Voix naturelles">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE77B;" FontSize="13" Margin="0,0,8,0" />
+                                <TextBlock Text="{Binding NaturalTabText}" />
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton Style="{StaticResource FamilyTab}" IsChecked="{Binding ShowWindows}" AutomationProperties.Name="Voix Windows">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE770;" FontSize="13" Margin="0,0,8,0" />
+                                <TextBlock Text="{Binding WindowsTabText}" />
+                            </StackPanel>
+                        </RadioButton>
+                    </StackPanel>
+
+                    <ItemsControl ItemsSource="{Binding VisibleVoices}" AutomationProperties.Name="Voix disponibles">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Width="214" Margin="0,0,10,10">
+                                    <Button Style="{StaticResource VoiceCard}" Command="{Binding DataContext.SelectVoiceCommand, ElementName=Root}" CommandParameter="{Binding}"
+                                            AutomationProperties.Name="{Binding Title}" ToolTip="Choisir cette voix">
+                                        <DockPanel Margin="0,0,34,0">
+                                            <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="{Binding Glyph}" FontSize="16" Margin="0,0,10,0"
+                                                       VerticalAlignment="Center" Foreground="{DynamicResource Accent2Brush}" />
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}" />
+                                                <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Caption}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource IconButton}" Content="&#xE768;" FontSize="11" Padding="7" Margin="0,0,8,0"
+                                            HorizontalAlignment="Right" VerticalAlignment="Center"
+                                            Command="{Binding DataContext.PreviewVoiceCommand, ElementName=Root}" CommandParameter="{Binding}"
+                                            ToolTip="Écouter cette voix dans le casque (pas dans le micro)" AutomationProperties.Name="Écouter cette voix" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,4"
+                               Visibility="{Binding ShowNaturalLocked, Converter={StaticResource BoolToVis}}">
+                        <Run Text="Ces 10 voix sont à télécharger une seule fois (" /><Run Text="{Binding PackSizeText, Mode=OneWay}" /><Run Text=", juste en dessous). En attendant, la voix Windows parle." />
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,4"
+                               Visibility="{Binding ShowWindowsHint, Converter={StaticResource BoolToVis}}">
+                        <Run Text="Les voix Windows dépendent des langues installées sur votre PC." />
+                        <Hyperlink Command="{Binding OpenWindowsVoiceSettingsCommand}" Foreground="{DynamicResource Accent2Brush}">Ajouter des voix Windows…</Hyperlink>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,4" TextWrapping="Wrap"
+                               Visibility="{Binding HasNoFrenchVoice, Converter={StaticResource BoolToVis}}"
+                               Text="Pas de voix Windows française : téléchargez les voix naturelles ou installez-la dans Paramètres Windows → Heure et langue → Voix." />
+
+                    <Grid Margin="0,12,0,0">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1.3*" />
-                            <ColumnDefinition Width="20" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="20" />
+                            <ColumnDefinition Width="24" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="20" />
+                            <ColumnDefinition Width="24" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel VerticalAlignment="Top" Margin="0,6,0,0">
-                            <TextBlock Text="Voix" Style="{StaticResource Label}" Margin="0,0,0,6" />
-                            <DockPanel>
-                                <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE768;" FontSize="12" Padding="8" Margin="6,0,0,0"
-                                        Command="{Binding PreviewVoiceCommand}" IsEnabled="{Binding IsAvailable}"
-                                        ToolTip="Écouter un aperçu de la voix dans le casque (pas dans le micro)" AutomationProperties.Name="Écouter un aperçu de la voix" />
-                                <ComboBox ItemsSource="{Binding VoicesView}" SelectedItem="{Binding SelectedVoice}" DisplayMemberPath="Display"
-                                          IsEnabled="{Binding IsAvailable}" AutomationProperties.Name="Voix">
-                                    <ComboBox.GroupStyle>
-                                        <GroupStyle>
-                                            <GroupStyle.HeaderTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding Name}" Style="{StaticResource Caption}" FontWeight="SemiBold" Margin="10,8,0,4" />
-                                                </DataTemplate>
-                                            </GroupStyle.HeaderTemplate>
-                                        </GroupStyle>
-                                    </ComboBox.GroupStyle>
-                                </ComboBox>
-                            </DockPanel>
-                            <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
-                                       Visibility="{Binding SelectedNeedsDownload, Converter={StaticResource BoolToVis}}"
-                                       Text="Cette voix naturelle n'est pas encore téléchargée : la voix Windows parle en attendant." />
-                            <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
-                                       Visibility="{Binding HasNoFrenchVoice, Converter={StaticResource BoolToVis}}"
-                                       Text="Pas de voix Windows française : téléchargez les voix naturelles ou installez-la dans Paramètres Windows → Heure et langue → Voix." />
-                        </StackPanel>
-                        <local:SliderRow Grid.Column="2" Label="Vitesse" Minimum="0.5" Maximum="{Binding MaxRate}" Step="0.1" Format="{}{0:0.0} ×"
+                        <local:SliderRow Label="Vitesse" Minimum="0.5" Maximum="{Binding MaxRate}" Step="0.1" Format="{}{0:0.0} ×"
                                          Value="{Binding Settings.Rate}" />
-                        <Grid Grid.Column="4">
+                        <Grid Grid.Column="2">
                             <local:SliderRow Label="Hauteur" Minimum="0.3" Maximum="2" Step="0.1" Format="{}{0:0.0}"
                                              Value="{Binding Settings.Pitch}" Description="Grave ← 1 → aigu"
                                              Visibility="{Binding ShowPitch, Converter={StaticResource BoolToVis}}" />
@@ -167,7 +257,7 @@
                                            Text="Non réglable avec les voix naturelles : choisissez plutôt une autre voix (femme ou homme)." />
                             </StackPanel>
                         </Grid>
-                        <local:SliderRow Grid.Column="6" Label="Volume" Minimum="0" Maximum="2" Step="0.05" Format="%"
+                        <local:SliderRow Grid.Column="4" Label="Volume" Minimum="0" Maximum="2" Step="0.05" Format="%"
                                          Value="{Binding Settings.Volume}" />
                     </Grid>
 
@@ -228,6 +318,102 @@
                             </TextBlock>
                         </StackPanel>
                     </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ================= Speak with this voice ================= -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,6">
+                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding LiveSwitch}" VerticalAlignment="Center"
+                                  IsEnabled="{Binding IsRecognitionDownloading, Converter={StaticResource InverseBool}}"
+                                  AutomationProperties.Name="Parler avec la voix choisie" />
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE720;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Parler avec la voix choisie" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,12">
+                        <Run Text="Parlez normalement dans votre micro : vos phrases sont écrites sur votre PC, puis dites par « " /><Run Text="{Binding SelectedVoice.Title, Mode=OneWay}" FontWeight="SemiBold" /><Run Text=" » dans le jeu et sur Discord. Votre vraie voix ne passe plus tant que c'est activé. La voix répond environ une seconde après la fin de chaque phrase. Le mode radio, la vitesse et le volume ci-dessus s'appliquent aussi." />
+                    </TextBlock>
+
+                    <DockPanel Margin="0,0,0,10">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Langue parlée" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <ComboBox ItemsSource="{Binding LiveLanguages}" SelectedItem="{Binding SelectedLiveLanguage}" DisplayMemberPath="Name" MinWidth="130"
+                                      AutomationProperties.Name="Langue parlée" ToolTip="La langue dans laquelle vous parlez (la voix la lit aussi)" />
+                        </StackPanel>
+                        <Ellipse Width="10" Height="10" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="{DynamicResource IdleDotBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsLive}" Value="True">
+                                            <Setter Property="Fill" Value="{DynamicResource SuccessBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsHearing}" Value="True">
+                                            <Setter Property="Fill" Value="{DynamicResource DangerBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding LiveStatus}" Style="{StaticResource Label}" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding LiveDelayText}" Style="{StaticResource Caption}"
+                                       Visibility="{Binding IsLive, Converter={StaticResource BoolToVis}}" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Recognition model: offer, progress -->
+                    <Border Background="{DynamicResource SubCardBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="14,12" Margin="0,0,0,10"
+                            Visibility="{Binding IsRecognitionInstalled, Converter={StaticResource InverseBoolToVis}}">
+                        <StackPanel>
+                            <DockPanel Visibility="{Binding IsRecognitionDownloading, Converter={StaticResource InverseBoolToVis}}">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Padding="12,6" Margin="12,0,0,0" VerticalAlignment="Center"
+                                        Command="{Binding DownloadRecognitionCommand}" AutomationProperties.Name="Télécharger la reconnaissance vocale">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE896;" FontSize="12" Margin="0,0,8,0" />
+                                        <TextBlock>
+                                            <Run Text="Télécharger (" /><Run Text="{Binding RecognitionSizeText, Mode=OneWay}" /><Run Text=")" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Button>
+                                <StackPanel>
+                                    <TextBlock Text="Reconnaissance vocale hors ligne" Style="{StaticResource Label}" FontWeight="SemiBold" />
+                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" TextWrapping="Wrap"
+                                               Text="À télécharger une seule fois. Elle comprend le français, l'anglais, l'espagnol et l'allemand, avec la ponctuation, et fonctionne sans Internet." />
+                                </StackPanel>
+                            </DockPanel>
+                            <DockPanel Visibility="{Binding IsRecognitionDownloading, Converter={StaticResource BoolToVis}}">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Padding="10,5" Margin="12,0,0,0" VerticalAlignment="Center"
+                                        Command="{Binding CancelRecognitionDownloadCommand}" Content="Annuler" />
+                                <StackPanel>
+                                    <TextBlock Text="{Binding RecognitionStatus}" Style="{StaticResource Label}" />
+                                    <ProgressBar Height="4" Margin="0,8,0,0" Minimum="0" Maximum="100" Value="{Binding RecognitionPercent, Mode=OneWay}" />
+                                </StackPanel>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Last phrases heard -->
+                    <ItemsControl ItemsSource="{Binding LivePhrases}" Visibility="{Binding LivePhrases.Count, Converter={StaticResource CountToVis}}"
+                                  Margin="0,0,0,8" AutomationProperties.Name="Phrases entendues">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource InsetBrush}" CornerRadius="8" Padding="12,8" Margin="0,0,0,6">
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding State}" Style="{StaticResource Caption}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" FontSize="11">
+                        <Run Text="Raccourci global et bouton de télécommande : « Parler avec la voix de synthèse » (Configuration → Raccourcis globaux). Avec des enceintes plutôt qu'un casque, l'écho de la voix est reconnu et ignoré. " /><Run Text="{Binding RecognitionLicenseText, Mode=OneWay}" />
+                        <Hyperlink Command="{Binding OpenRecognitionLicenseCommand}" Foreground="{DynamicResource Accent2Brush}">Lire la licence</Hyperlink>
+                    </TextBlock>
                 </StackPanel>
             </Border>
         </StackPanel>

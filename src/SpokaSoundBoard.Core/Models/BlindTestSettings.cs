@@ -147,6 +147,9 @@ public partial class TextToSpeechSettings : ObservableObject
     /// <summary>Playback volume, 0 to 2.</summary>
     [ObservableProperty] private double _volume = 1;
 
+    /// <summary>Language you speak in « Parler avec cette voix » (fr, en, es, de); the voice reads in it too.</summary>
+    [ObservableProperty] private string _liveLanguage = NeuralVoiceCatalog.DefaultLanguage;
+
     /// <summary>Voice, speed and phrase shortcuts shown (the text box is always visible).</summary>
     [ObservableProperty] private bool _isExpanded;
 
@@ -169,6 +172,7 @@ public partial class TextToSpeechSettings : ObservableObject
         Pitch = double.IsFinite(Pitch) ? Math.Clamp(Pitch, 0.3, 2) : 1;
         Volume = double.IsFinite(Volume) ? Math.Clamp(Volume, 0, 2) : 1;
         Language = NeuralVoiceCatalog.NormalizeLanguage(Language);
+        LiveLanguage = SpeechRecognitionCatalog.NormalizeLanguage(LiveLanguage);
         // A natural voice removed from the catalog falls back to automatic.
         if (NeuralVoiceCatalog.IsNeuralVoiceId(VoiceId) && NeuralVoiceCatalog.FindVoice(VoiceId) == null) VoiceId = null;
         History ??= [];

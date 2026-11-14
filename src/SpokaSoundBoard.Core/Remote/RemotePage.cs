@@ -303,6 +303,7 @@ const ACTIONS = {
   'preset-previous': ['player-skip-back', 'Effet précédent', '#c084fc', '#7c3aed'], 'music-playpause': ['music', 'Musique', '#60a5fa', '#2563eb'],
   'music-next': ['player-skip-forward', 'Morceau suivant', '#60a5fa', '#2563eb'], 'music-previous': ['player-skip-back', 'Morceau précédent', '#60a5fa', '#2563eb'],
   'music-volume-up': ['volume', 'Musique plus fort', '#60a5fa', '#2563eb'], 'music-volume-down': ['volume', 'Musique moins fort', '#60a5fa', '#2563eb'],
+  'live-voice': ['message-circle', 'Voix de synthèse', '#f472b6', '#db2777'],
   'media-to-mic': ['speakerphone', 'Musique dans le micro', '#fbbf24', '#f97316'], 'bt-reveal': ['eye', 'Révéler (blind test)', '#fb923c', '#e11d48'],
   'bt-next': ['chevron-right', 'Manche suivante', '#fb923c', '#e11d48'], 'bt-replay': ['repeat', 'Rejouer l’extrait', '#fb923c', '#e11d48'],
   'bt-pause': ['player-pause', 'Pause blind test', '#fb923c', '#e11d48'], 'bt-hint': ['bulb', 'Indice', '#fbbf24', '#d97706'],

@@ -71,6 +71,22 @@ public sealed class MixerCore
     }
 
     private VoiceRecorder? _recorder;
+
+    /// <summary>
+    /// « Parler avec cette voix »: receives the cleaned microphone (null otherwise). In radio mode, only while the key
+    /// is held; silence is written otherwise, so a phrase ends when the key is released.
+    /// </summary>
+    public FloatRingBuffer? SpeechTap
+    {
+        get => Volatile.Read(ref _speechTap);
+        set => Volatile.Write(ref _speechTap, value);
+    }
+
+    private FloatRingBuffer? _speechTap;
+
+    /// <summary>The real voice is not sent while a synthetic voice speaks for it (the microphone keeps listening).</summary>
+    public volatile bool VoiceReplaced;
+
     public EngineMeters Meters { get; } = new();
 
     /// <summary>False when rnnoise.dll could not be loaded (the option is then shown as unavailable).</summary>
@@ -121,12 +137,28 @@ public sealed class MixerCore
 
         Recorder?.Write(micSpan);
 
+        var keyHeld = PushToTalkHeld || RemotePushToTalkHeld;
+        var tap = SpeechTap;
+        if (tap != null && mix.MicEnabled)
+        {
+            if (!mix.PushToTalkEnabled || keyHeld)
+            {
+                tap.Write(micSpan);
+            }
+            else
+            {
+                var silence = _voiceDry.AsSpan(0, frames);
+                silence.Clear();
+                tap.Write(silence);
+            }
+        }
+
         // The natural voice is only needed when some bus actually uses it.
         var needDry = !game.IsEmpty && mix.GameVoice && !mix.GameVoiceEffects
                       || !discord.IsEmpty && mix.DiscordVoice && !mix.DiscordVoiceEffects;
         var wetSpan = _voiceWet.AsSpan(0, frames);
         var drySpan = needDry ? _voiceDry.AsSpan(0, frames) : Span<float>.Empty;
-        _voice.Process(micSpan, wetSpan, drySpan, mix.MicEnabled, mix.PushToTalkEnabled, PushToTalkHeld || RemotePushToTalkHeld);
+        _voice.Process(micSpan, wetSpan, drySpan, mix.MicEnabled && !VoiceReplaced, mix.PushToTalkEnabled, keyHeld);
 
         Music.Read(_music, 0, frames * 2);
         Pads.Read(_pads, 0, frames * 2);

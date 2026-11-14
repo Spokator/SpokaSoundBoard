@@ -584,6 +584,7 @@
                                     <Run Text="/api/action/preset-next · preset-previous" /><Run Text="  effet suivant / précédent" FontFamily="Segoe UI" /><LineBreak />
                                     <Run Text="/api/action/music-playpause · music-next · music-previous · media-to-mic" /><Run Text="  musique" FontFamily="Segoe UI" /><LineBreak />
                                     <Run Text="/api/action/music-volume-up · music-volume-down" /><Run Text="  volume de la musique (par 5 %)" FontFamily="Segoe UI" /><LineBreak />
+                                    <Run Text="/api/action/live-voice" /><Run Text="  parler avec la voix de synthèse (on/off)" FontFamily="Segoe UI" /><LineBreak />
                                     <Run Text="/api/action/bt-reveal · bt-next · bt-replay · bt-pause · bt-hint · bt-skip" /><Run Text="  blind test" FontFamily="Segoe UI" /><LineBreak />
                                     <Run Text="/api/say?text=Bonjour" /><Run Text="  dire une phrase dans le micro" FontFamily="Segoe UI" /><LineBreak />
                                     <Run Text="/api/mix?key=music&amp;value=0.8" /><Run Text="  volume (music, pads, tomic, monitor ; 0 à 1,5)" FontFamily="Segoe UI" /><LineBreak />

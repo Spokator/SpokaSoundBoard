@@ -367,6 +367,7 @@ public partial class MainViewModel
                 case "music-volume-up": vm.StepMusicVolume(1); return true;
                 case "music-volume-down": vm.StepMusicVolume(-1); return true;
                 case "media-to-mic": vm.ToggleMediaToMic(); return true;
+                case "live-voice": vm.Soundboard.Tts.ToggleLiveCommand.Execute(null); return true;
                 case "bt-reveal": return Execute(bt.RevealCommand);
                 case "bt-next": return Execute(bt.NextRoundCommand);
                 case "bt-replay": return Execute(bt.ReplayCommand);

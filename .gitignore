@@ -9,3 +9,6 @@ installer/deps/
 .claude/worktrees/
 dist-store/
 packaging/deps/
+
+# WPF temporary build projects
+*_wpftmp.csproj

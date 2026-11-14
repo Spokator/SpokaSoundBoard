@@ -5,10 +5,14 @@ public enum NeuralModelKind
 {
     /// <summary>Supertonic (flow matching, character input: no phonemizer, so no GPL espeak-ng).</summary>
     Supertonic,
+
+    /// <summary>NVIDIA Canary speech recognition (with a Silero voice activity detector), see <see cref="SpeechRecognitionCatalog"/>.</summary>
+    Canary,
 }
 
 /// <summary>One file of a voice model pack, checked by size and SHA-256 after download.</summary>
-public sealed record VoiceModelFile(string Name, long Size, string Sha256);
+/// <param name="Url">Full URL when the file does not live in the pack's <c>BaseUrl</c> folder.</param>
+public sealed record VoiceModelFile(string Name, long Size, string Sha256, string? Url = null);
 
 /// <summary>
 /// A downloadable voice model (data only, never executable code). Several voices can share one pack: a
@@ -28,12 +32,13 @@ public sealed record VoiceModelPack(
 {
     public long TotalSize => Files.Sum(f => f.Size);
 
-    public Uri UrlOf(VoiceModelFile file) => new($"{BaseUrl.TrimEnd('/')}/{file.Name}");
+    public Uri UrlOf(VoiceModelFile file) => new(file.Url ?? $"{BaseUrl.TrimEnd('/')}/{file.Name}");
 }
 
 /// <summary>A natural (neural) voice: one speaker of a <see cref="VoiceModelPack"/>.</summary>
 /// <param name="Key">Stable short key, part of the persisted voice id (never change it).</param>
-public sealed record NeuralVoice(string Key, string PackId, int SpeakerId, string Name, bool IsFemale)
+/// <param name="Description">Character of the voice, measured on French phrases (pitch and pace), shown on its card.</param>
+public sealed record NeuralVoice(string Key, string PackId, int SpeakerId, string Name, bool IsFemale, string Description = "")
 {
     public const string IdPrefix = "neural:";
 
@@ -81,20 +86,22 @@ public static class NeuralVoiceCatalog
     public static IReadOnlyList<VoiceModelPack> Packs { get; } = [Supertonic3];
 
     /// <summary>
-    /// Speaker ids follow sherpa-onnx's voice.bin, built from the sorted style files: F1…F5 then M1…M5.
+    /// Speaker ids follow sherpa-onnx's voice.bin, built from the sorted style files: F1…F5 then M1…M5. Descriptions
+    /// come from measurements on two French phrases (median pitch: F 167–222 Hz, M 96–144 Hz; pace in characters
+    /// per second), not from the model's documentation.
     /// </summary>
     public static IReadOnlyList<NeuralVoice> Voices { get; } =
     [
-        new("F1", Supertonic3.Id, 0, "Femme 1", true),
-        new("F2", Supertonic3.Id, 1, "Femme 2", true),
-        new("F3", Supertonic3.Id, 2, "Femme 3", true),
-        new("F4", Supertonic3.Id, 3, "Femme 4", true),
-        new("F5", Supertonic3.Id, 4, "Femme 5", true),
-        new("M1", Supertonic3.Id, 5, "Homme 1", false),
-        new("M2", Supertonic3.Id, 6, "Homme 2", false),
-        new("M3", Supertonic3.Id, 7, "Homme 3", false),
-        new("M4", Supertonic3.Id, 8, "Homme 4", false),
-        new("M5", Supertonic3.Id, 9, "Homme 5", false),
+        new("F1", Supertonic3.Id, 0, "Femme 1", true, "Médium, posée"),
+        new("F2", Supertonic3.Id, 1, "Femme 2", true, "Aiguë, expressive"),
+        new("F3", Supertonic3.Id, 2, "Femme 3", true, "Douce, plutôt grave"),
+        new("F4", Supertonic3.Id, 3, "Femme 4", true, "Claire, rapide"),
+        new("F5", Supertonic3.Id, 4, "Femme 5", true, "Grave"),
+        new("M1", Supertonic3.Id, 5, "Homme 1", false, "Claire, expressive"),
+        new("M2", Supertonic3.Id, 6, "Homme 2", false, "Grave, posée"),
+        new("M3", Supertonic3.Id, 7, "Homme 3", false, "Grave, rapide"),
+        new("M4", Supertonic3.Id, 8, "Homme 4", false, "Médium"),
+        new("M5", Supertonic3.Id, 9, "Homme 5", false, "Très grave"),
     ];
 
     /// <summary>Default natural voice once the pack is downloaded.</summary>

@@ -1,5 +1,14 @@
 # Journal des versions
 
+## 2.14.0
+
+Parlez, une autre voix le dit pour vous.
+
+- **Parler avec la voix choisie** (Synthèse vocale) : parlez normalement dans votre micro. Vos phrases sont écrites sur votre PC, puis dites par la voix de synthèse choisie, dans le jeu et sur Discord, environ une seconde après la fin de chaque phrase. Votre vraie voix ne passe plus tant que c'est activé. Compatible avec le mode radio (seulement quand vous maintenez la touche) et avec un raccourci global ou un bouton de la télécommande pour l'activer en pleine partie.
+- **Reconnaissance vocale hors ligne** : NVIDIA Canary (licence CC BY 4.0), à télécharger une fois (208 Mo). Elle comprend le français, l'anglais, l'espagnol et l'allemand, avec la ponctuation. Rien n'est envoyé sur Internet. Avec des enceintes plutôt qu'un casque, la voix de synthèse réentendue par le micro est reconnue et ignorée.
+- **Correction, choix de la voix** : la liste des voix ne montrait que « Voix naturelles » et « Voix Windows », sans aucune voix à choisir. Les voix s'affichent maintenant en cartes, par famille, chacune avec ▶ pour l'écouter dans le casque.
+- **Voix naturelles décrites** : chaque voix a un court portrait (« Médium, posée », « Très grave », « Claire, rapide »…), mesuré sur des phrases en français. Un lien mène aux réglages de Windows pour ajouter des voix Windows.
+
 ## 2.13.0
 
 Vos manettes, joysticks et HOTAS deviennent des raccourcis.
