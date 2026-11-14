@@ -10,12 +10,31 @@ using SpokaSoundBoard.Core.Speech;
 
 namespace SpokaSoundBoard.ViewModels;
 
-/// <summary>One voice card of the AI voice changer.</summary>
-public sealed partial class VoiceChangerOption(VoiceChangerVoice voice) : ObservableObject
+/// <summary>One voice card of the AI voice changer: a built-in voice or one of « Mes voix ».</summary>
+public sealed partial class VoiceChangerOption : ObservableObject
 {
-    public VoiceChangerVoice Voice { get; } = voice;
-    public string Title => Voice.Name;
-    public string Subtitle => Voice.Description;
+    public VoiceChangerOption(VoiceChangerVoice voice)
+    {
+        BuiltIn = voice;
+        Key = voice.Key;
+        Title = voice.Name;
+        Subtitle = voice.Description;
+    }
+
+    public VoiceChangerOption(CustomVoice voice)
+    {
+        Custom = voice;
+        Key = voice.Key;
+        Title = voice.Name;
+        Subtitle = $"Ma voix · {voice.SpeechSeconds:0} s de voix";
+    }
+
+    public VoiceChangerVoice? BuiltIn { get; }
+    public CustomVoice? Custom { get; }
+    public bool IsCustom => Custom != null;
+    public string Key { get; }
+    public string Title { get; }
+    public string Subtitle { get; }
 
     [ObservableProperty] private bool _isSelected;
 
@@ -42,9 +61,9 @@ public sealed partial class VoiceChangerViewModel : ObservableObject
         _main = main;
         _dispatcher = Dispatcher.CurrentDispatcher;
         _store = new VoiceModelStore(Path.Combine(main.DataDirectory, VoiceModelStore.FolderName));
-        Voices = VoiceChangerCatalog.Voices.Select(v => new VoiceChangerOption(v)).ToList();
+        Library = new CustomVoiceLibrary(Path.Combine(main.DataDirectory, VoiceModelStore.FolderName));
         _isInstalled = _store.IsInstalled(Pack);
-        MarkSelected();
+        RefreshVoices();
     }
 
     public static VoiceModelPack Pack => VoiceChangerCatalog.SeedVc;
@@ -56,7 +75,54 @@ public sealed partial class VoiceChangerViewModel : ObservableObject
             : Path.Combine(AppContext.BaseDirectory, "voice-engine", "SpokaVoiceEngine.exe");
 
     public VoiceChangerSettings Settings => _main.Settings.VoiceChanger;
-    public IReadOnlyList<VoiceChangerOption> Voices { get; }
+    public System.Collections.ObjectModel.ObservableCollection<VoiceChangerOption> Voices { get; } = [];
+    public CustomVoiceLibrary Library { get; }
+
+    /// <summary>Built-in voices, then « Mes voix » (oldest first).</summary>
+    public void RefreshVoices()
+    {
+        Voices.Clear();
+        foreach (var v in VoiceChangerCatalog.Voices) Voices.Add(new VoiceChangerOption(v));
+        foreach (var v in Library.Load()) Voices.Add(new VoiceChangerOption(v));
+        MarkSelected();
+    }
+
+    private string VoicePath(VoiceChangerOption option) =>
+        option.Custom is { } custom ? Library.PathOf(custom) : _store.FilePath(Pack, option.BuiltIn!.FileName);
+
+    /// <summary>The chosen voice, or the default one when it no longer exists (deleted « Ma voix »).</summary>
+    private VoiceChangerOption CurrentVoice() =>
+        Voices.FirstOrDefault(v => v.Key == Settings.VoiceKey) ?? Voices.First(v => v.Key == VoiceChangerCatalog.DefaultVoiceKey);
+
+    /// <summary>« Réactif » chip (the other one is « Stable »).</summary>
+    public bool IsReactive
+    {
+        get => Settings.Mode == VoiceChangerMode.Reactive;
+        set => SetMode(value ? VoiceChangerMode.Reactive : VoiceChangerMode.Stable);
+    }
+
+    public bool IsStable
+    {
+        get => Settings.Mode == VoiceChangerMode.Stable;
+        set => SetMode(value ? VoiceChangerMode.Stable : VoiceChangerMode.Reactive);
+    }
+
+    private void SetMode(VoiceChangerMode mode)
+    {
+        if (Settings.Mode == mode) return;
+        Settings.Mode = mode;
+        OnPropertyChanged(nameof(IsReactive));
+        OnPropertyChanged(nameof(IsStable));
+        _main.Save();
+        // Running: restart with the new settings (a second of silence).
+        if (IsOn) _ = RestartAsync();
+    }
+
+    private async Task RestartAsync()
+    {
+        Stop(notify: false);
+        await StartAsync();
+    }
     public string PackSizeText => VoiceModelStore.FormatSize(Pack.TotalSize);
     public bool IsEngineAvailable => File.Exists(EnginePath);
 
@@ -154,19 +220,20 @@ public sealed partial class VoiceChangerViewModel : ObservableObject
     private void SelectVoice(VoiceChangerOption? option)
     {
         if (option == null) return;
-        Settings.VoiceKey = option.Voice.Key;
+        Settings.VoiceKey = option.Key;
         MarkSelected();
         _main.Save();
         if (_session is { IsRunning: true } session && IsOn)
         {
-            session.SetVoice(_store.FilePath(Pack, option.Voice.FileName));
+            session.SetVoice(VoicePath(option));
             _main.ShowToast($"Votre voix devient « {option.Title} ».");
         }
     }
 
     private void MarkSelected()
     {
-        foreach (var v in Voices) v.IsSelected = v.Voice.Key == Settings.VoiceKey;
+        var current = Voices.FirstOrDefault(v => v.Key == Settings.VoiceKey);
+        foreach (var v in Voices) v.IsSelected = ReferenceEquals(v, current);
     }
 
     [RelayCommand]
@@ -195,8 +262,8 @@ public sealed partial class VoiceChangerViewModel : ObservableObject
         session.Failed += e => _dispatcher.BeginInvoke(() => OnFailed(e));
         try
         {
-            var voice = VoiceChangerCatalog.FindVoice(Settings.VoiceKey);
-            var ready = await session.StartAsync(_store.FilePath(Pack, voice.FileName));
+            var voice = CurrentVoice();
+            var ready = await session.StartAsync(VoicePath(voice), VoiceChangerProfile.For(Settings.Mode));
             GpuName = ready.Gpu;
             if (ready.TooSlow)
             {
@@ -210,7 +277,7 @@ public sealed partial class VoiceChangerViewModel : ObservableObject
             UpdateLiveInfo(ready.MsPerBlock / ready.BlockMs);
             _main.Engine.Core.VoiceChanger = session.Link;
             IsOn = true;
-            _main.ShowToast($"Changeur de voix actif : vous parlez avec la voix « {voice.Name} » (délai d'environ {session.EstimatedDelayMs(ready.MsPerBlock) / 1000.0:0.0} s).", 6);
+            _main.ShowToast($"Changeur de voix actif : vous parlez avec la voix « {voice.Title} » (délai d'environ {session.EstimatedDelayMs(ready.MsPerBlock) / 1000.0:0.0} s).", 6);
         }
         catch (Exception ex)
         {

@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Text.Json;
 using SpokaSoundBoard.Core.Music;
+using SpokaSoundBoard.Core.Speech;
 
 namespace SpokaSoundBoard.Core;
 
@@ -17,6 +18,9 @@ public sealed class BackupManifest
     public int Tracks { get; set; }
     public int Playlists { get; set; }
     public int HistoryEntries { get; set; }
+
+    /// <summary>Voices of « Mes voix » (2.16).</summary>
+    public int CustomVoices { get; set; }
     public bool IncludesMusic { get; set; }
 
     /// <summary>Audio files in the archive: original full path → entry name.</summary>
@@ -46,6 +50,7 @@ public static class FullBackup
     private const string ManifestName = "manifest.json";
     private const string SettingsName = "settings.json";
     private const string LibraryName = "library.json";
+    private const string VoicesFolder = "mes-voix";
 
     private static readonly JsonSerializerOptions ManifestOptions = new() { WriteIndented = true };
 
@@ -97,6 +102,16 @@ public static class FullBackup
             {
                 foreach (var (name, path) in new[] { (SettingsName, settingsPath), (LibraryName, libraryPath), (HistoryStore.FileName, historyPath) })
                     if (File.Exists(path)) zip.CreateEntryFromFile(path, name, CompressionLevel.Optimal);
+
+                // « Mes voix »: the index and the imprints (small), not the drafts.
+                var voices = Path.Combine(dataDirectory, VoiceModelStore.FolderName, CustomVoiceLibrary.FolderName);
+                if (Directory.Exists(voices))
+                    foreach (var file in Directory.GetFiles(voices).Where(f => f.EndsWith(".bin", StringComparison.OrdinalIgnoreCase)
+                                                                             || f.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        zip.CreateEntryFromFile(file, VoicesFolder + "/" + Path.GetFileName(file), CompressionLevel.Optimal);
+                        if (file.EndsWith(".bin", StringComparison.OrdinalIgnoreCase)) manifest.CustomVoices++;
+                    }
 
                 var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var index = 0;
@@ -177,6 +192,14 @@ public static class FullBackup
             entry.ExtractToFile(target, false);
             if (!string.Equals(target, original, StringComparison.OrdinalIgnoreCase)) moved[original] = target;
             extracted++;
+        }
+
+        // « Mes voix » back in place (the voices of the backup win; other voices of this PC stay).
+        var voicesTarget = Path.Combine(dataDirectory, VoiceModelStore.FolderName, CustomVoiceLibrary.FolderName);
+        foreach (var entry in zip.Entries.Where(e => e.FullName.StartsWith(VoicesFolder + "/", StringComparison.Ordinal) && e.Name.Length > 0))
+        {
+            Directory.CreateDirectory(voicesTarget);
+            entry.ExtractToFile(Path.Combine(voicesTarget, Path.GetFileName(entry.Name)), true);
         }
 
         // 3. Settings and library with their paths updated, history as is.

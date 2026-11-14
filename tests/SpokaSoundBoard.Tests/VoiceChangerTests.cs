@@ -210,7 +210,7 @@ public sealed class VoiceChangerTests
         using var session = new VoiceChangerSession(engine, models);
         var ready = await session.StartAsync(Path.Combine(models, "voice_M5.bin"));
         Assert.False(ready.TooSlow);
-        Assert.InRange(ready.BlockMs, 300, 600);
+        Assert.InRange(ready.BlockMs, 200, 600);
 
         // Real speech at 48 kHz, fed in real time (20 ms at a time) like the mixer does.
         float[] voice;

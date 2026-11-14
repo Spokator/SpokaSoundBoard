@@ -19,6 +19,27 @@ if ($LASTEXITCODE -ne 0) { throw "La publication du moteur du changeur de voix a
 
 # Debug layers and import libraries are not needed at run time.
 Get-ChildItem $out -Include "*.pdb", "*.lib", "DirectML.Debug.dll", "createdump.exe" -Recurse | Remove-Item -Force
+
+# onnxruntime.dll needs the Visual C++ runtime (MSVCP140, MSVCP140_1, VCRUNTIME140, VCRUNTIME140_1), which a fresh
+# Windows does not have: without it the engine cannot start (TypeInitializationException in NativeMethods). These
+# files are redistributable app-locally (Visual Studio « REDIST » list). Taken from the newest installed toolset, never
+# older than 14.40 (ONNX Runtime 1.20+ needs it).
+$crtRoots = @(
+    "${env:ProgramFiles}\Microsoft Visual Studio\2022\*\VC\Redist\MSVC\*\x64\Microsoft.VC143.CRT",
+    "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\*\VC\Redist\MSVC\*\x64\Microsoft.VC143.CRT",
+    "$root\packaging\deps\vc-crt"
+)
+$crt = $crtRoots | ForEach-Object { Get-Item $_ -ErrorAction SilentlyContinue } |
+    Where-Object { Test-Path (Join-Path $_.FullName "msvcp140_1.dll") } |
+    Sort-Object { (Get-Item (Join-Path $_.FullName "msvcp140.dll")).VersionInfo.FileVersionRaw } -Descending |
+    Select-Object -First 1
+if (-not $crt) { throw "Runtime Visual C++ (Microsoft.VC143.CRT) introuvable : installez les outils C++ de Visual Studio 2022 ou copiez les DLL dans packaging\deps\vc-crt." }
+$crtVersion = (Get-Item (Join-Path $crt.FullName "msvcp140.dll")).VersionInfo.FileVersionRaw
+if ($crtVersion -lt [version]"14.40") { throw "Runtime Visual C++ trop ancien ($crtVersion) : ONNX Runtime demande 14.40 ou plus." }
+foreach ($dll in "msvcp140.dll", "msvcp140_1.dll", "vcruntime140.dll", "vcruntime140_1.dll") {
+    Copy-Item (Join-Path $crt.FullName $dll) $out -Force
+}
+Write-Host "Runtime Visual C++ $crtVersion copié ($($crt.FullName))"
 Copy-Item "$root\engine\LICENSE" (Join-Path $out "LICENSE.txt")
 Copy-Item "$root\engine\README.md" (Join-Path $out "LISEZ-MOI.md")
 @"

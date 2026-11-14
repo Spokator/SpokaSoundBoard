@@ -25,10 +25,13 @@ public static class Program
     public const uint Init = 1, Audio = 2, Voice = 3, Reset = 4, Quit = 5;
     public const uint Ready = 101, AudioOut = 102, Stats = 103, Error = 104;
 
-    private static readonly int[] BlockSteps = [300, 400, 500, 600];
+    // Block lengths tried in order when the GPU cannot keep up (reactive mode starts at 200 ms, stable at 300 ms).
+    private static readonly int[] BlockSteps = [200, 250, 300, 400, 500, 600];
 
     public static int Main(string[] args)
     {
+        // Messages are French: UTF-8 on stderr whatever the console code page (SpokaSoundBoard reads it as UTF-8).
+        Console.SetError(new StreamWriter(Console.OpenStandardError(), new System.Text.UTF8Encoding(false)) { AutoFlush = true });
         try
         {
             if (args.Length > 0 && args[0] == "--list-gpus")
@@ -36,23 +39,49 @@ public static class Program
                 foreach (var a in Gpu.List()) Console.WriteLine($"{a.Index}: {a.Name} ({a.DedicatedMemory / (1 << 20)} Mo){(a.IsUsable ? "" : " [logiciel]")}");
                 return 0;
             }
-            if (args.Length >= 5 && args[0] == "--convert") return ConvertFile(args[1], args[2], args[3], args[4], args.Length > 5 ? int.Parse(args[5]) : 300, args.Length > 6 ? ulong.Parse(args[6]) : 1234);
+            if (args.Length >= 6 && args[0] == "--imprint")
+            {
+                // --imprint <voice changer models> <voice creation models> <speech 22.05 kHz.wav> <speech 16 kHz.wav> <out.bin>
+                var s22 = Wav.Read(args[3], out var r22);
+                var s16 = Wav.Read(args[4], out var r16);
+                if (r22 != 22050 || r16 != 16000) throw new InvalidDataException("Entrées attendues à 22,05 kHz et 16 kHz.");
+                var result = ImprintBuilder.Build(args[1], args[2], s22, s16, args[5]);
+                Console.WriteLine(JsonSerializer.Serialize(new ImprintResult(result.Frames, result.StyleWindows, Math.Round(result.SpeechSeconds, 1)),
+                    EngineJson.Default.ImprintResult));
+                return 0;
+            }
+            if (args.Length >= 5 && args[0] == "--convert") return ConvertFile(args[1], args[2], args[3], args[4], args.Length > 5 ? int.Parse(args[5]) : 300, args.Length > 6 ? ulong.Parse(args[6]) : 1234,
+                args.Length > 7 ? double.Parse(args[7], System.Globalization.CultureInfo.InvariantCulture) : 2.5,
+                args.Length > 8 ? double.Parse(args[8], System.Globalization.CultureInfo.InvariantCulture) : 2.0,
+                args.Length > 9 ? int.Parse(args[9]) : 4);
             return Serve();
         }
         catch (Exception ex)
         {
+            // First line: what SpokaSoundBoard shows. Then the details for error.log.
+            Console.Error.WriteLine(Describe(ex));
             Console.Error.WriteLine(ex);
             return 1;
         }
     }
 
+    /// <summary>A French sentence for the user; the runtime missing is the one failure they can act on.</summary>
+    internal static string Describe(Exception ex)
+    {
+        for (var e = ex; e != null; e = e.InnerException)
+            if (e is DllNotFoundException or BadImageFormatException ||
+                (e is TypeInitializationException t && t.TypeName?.Contains("OnnxRuntime", StringComparison.Ordinal) == true))
+                return "ONNX Runtime n'a pas pu démarrer (fichiers du moteur incomplets ou runtime Visual C++ manquant) : réinstallez SpokaSoundBoard.";
+        return ex.Message;
+    }
+
     // ---- Offline conversion of a file (tests, diagnostics) ----------------------------------------------------
 
-    private static int ConvertFile(string models, string voice, string input, string output, int blockMs, ulong seed)
+    private static int ConvertFile(string models, string voice, string input, string output, int blockMs, ulong seed, double contentContext, double promptSeconds, int steps)
     {
         var gpu = Gpu.Best() ?? throw new InvalidOperationException("Aucune carte graphique DirectX 12.");
-        using var converter = new VoiceConverter(models, new ConverterOptions(BlockMs: blockMs), gpu.Index, seed);
-        converter.SetVoice(VoiceImprint.Load(voice, (int)(2.0 * VoiceConverter.OutputRate / 256)));
+        using var converter = new VoiceConverter(models, new ConverterOptions(BlockMs: blockMs, Steps: steps, PromptSeconds: promptSeconds, ContentContextSeconds: contentContext), gpu.Index, seed);
+        converter.SetVoice(VoiceImprint.Load(voice, (int)(promptSeconds * VoiceConverter.OutputRate / 256)));
         var samples = Wav.Read(input, out var rate);
         if (rate != 16000) throw new InvalidDataException("Entrée attendue à 16 kHz.");
         var outSamples = new List<float>();
@@ -64,6 +93,11 @@ public static class Program
             times.Add(sw.Elapsed.TotalMilliseconds);
         }
         Wav.Write(output, outSamples.ToArray(), VoiceConverter.OutputRate);
+        if (Environment.GetEnvironmentVariable("SPOKA_VC_PROFILE") == "1")
+        {
+            var profile = converter.TakeProfile();
+            Console.Error.WriteLine(string.Join("  ", profile.Select(kv => $"{kv.Key} {kv.Value / Math.Max(1, times.Count):0.0}")));
+        }
         var steady = times.Skip(3).DefaultIfEmpty(0).ToList();
         Console.WriteLine(JsonSerializer.Serialize(new ConvertResult(gpu.Name, converter.BlockMs, Math.Round(steady.Average(), 1),
             Math.Round(steady.Order().ElementAt((int)(steady.Count * 0.95)), 1), Math.Round(steady.Average() / converter.BlockMs, 3)),
@@ -115,7 +149,8 @@ public static class Program
                         var sw = Stopwatch.StartNew();
                         blockIndex = Math.Max(0, Array.IndexOf(BlockSteps, init.BlockMs));
                         converter?.Dispose();
-                        converter = new VoiceConverter(init.Models, new ConverterOptions(BlockSteps[blockIndex], init.Steps, init.PromptSeconds), gpu.Index);
+                        converter = new VoiceConverter(init.Models, new ConverterOptions(BlockSteps[blockIndex], init.Steps, init.PromptSeconds,
+                            ContentContextSeconds: init.ContentContextSeconds), gpu.Index);
                         converter.SetVoice(VoiceImprint.Load(init.Voice, (int)(init.PromptSeconds * VoiceConverter.OutputRate / 256)));
                         var loadMs = sw.ElapsedMilliseconds;
 
@@ -202,10 +237,11 @@ public static class Program
         }
         catch (Exception ex)
         {
+            Console.Error.WriteLine(Describe(ex));
             Console.Error.WriteLine(ex);
             try
             {
-                SendJson(Error, new ErrorMessage(true, "engine", ex.Message), EngineJson.Default.ErrorMessage);
+                SendJson(Error, new ErrorMessage(true, "engine", Describe(ex)), EngineJson.Default.ErrorMessage);
             }
             catch
             {
@@ -220,7 +256,8 @@ public static class Program
     }
 }
 
-public sealed record InitMessage(string Models, string Voice, int BlockMs = 300, int Steps = 4, double PromptSeconds = 2.0, bool AutoBlock = true);
+public sealed record InitMessage(string Models, string Voice, int BlockMs = 300, int Steps = 4, double PromptSeconds = 2.0, bool AutoBlock = true,
+    double ContentContextSeconds = 2.5);
 
 public sealed record VoiceMessage(string Voice);
 
@@ -232,6 +269,8 @@ public sealed record ErrorMessage(bool Fatal, string Code, string Message);
 
 public sealed record ConvertResult(string Gpu, int BlockMs, double MsMean, double MsP95, double Rtf);
 
+public sealed record ImprintResult(int Frames, int StyleWindows, double SpeechSeconds);
+
 /// <summary>Source-generated JSON (camelCase, like the web): safe with trimming.</summary>
 [System.Text.Json.Serialization.JsonSourceGenerationOptions(System.Text.Json.JsonSerializerDefaults.Web)]
 [System.Text.Json.Serialization.JsonSerializable(typeof(InitMessage))]
@@ -240,6 +279,7 @@ public sealed record ConvertResult(string Gpu, int BlockMs, double MsMean, doubl
 [System.Text.Json.Serialization.JsonSerializable(typeof(StatsMessage))]
 [System.Text.Json.Serialization.JsonSerializable(typeof(ErrorMessage))]
 [System.Text.Json.Serialization.JsonSerializable(typeof(ConvertResult))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(ImprintResult))]
 public sealed partial class EngineJson : System.Text.Json.Serialization.JsonSerializerContext;
 
 /// <summary>Minimal mono WAV reader / writer (16-bit PCM or float32) for the file mode.</summary>

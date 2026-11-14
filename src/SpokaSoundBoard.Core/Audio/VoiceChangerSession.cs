@@ -4,6 +4,17 @@ using SpokaSoundBoard.Core.Dsp;
 
 namespace SpokaSoundBoard.Core.Audio;
 
+/// <summary>Settings of the conversion: block length, diffusion steps, contexts, playback margin.</summary>
+public sealed record VoiceChangerProfile(int BlockMs, int Steps, double PromptSeconds, double ContentContextSeconds, int MarginMs)
+{
+    /// <summary>Measured on real French speech: same intelligibility as <see cref="Stable"/>, timbre a hair less close.</summary>
+    public static readonly VoiceChangerProfile Reactive = new(200, 3, 1.5, 1.5, 120);
+
+    public static readonly VoiceChangerProfile Stable = new(300, 4, 2.0, 2.5, 150);
+
+    public static VoiceChangerProfile For(Models.VoiceChangerMode mode) => mode == Models.VoiceChangerMode.Stable ? Stable : Reactive;
+}
+
 /// <summary>The engine is loaded: which graphics card, and how fast it converts.</summary>
 public sealed record VoiceChangerReady(string Gpu, int BlockMs, double MsPerBlock, bool TooSlow);
 
@@ -25,7 +36,7 @@ public sealed class VoiceChangerSession : IDisposable
     internal const uint ReadyMessage = 101, AudioOut = 102, Stats = 103, Error = 104;
 
     /// <summary>Safety margin played on top of one block, against the jitter of the GPU.</summary>
-    public const int MarginMs = 150;
+    public int MarginMs { get; private set; } = VoiceChangerProfile.Reactive.MarginMs;
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -58,8 +69,12 @@ public sealed class VoiceChangerSession : IDisposable
     public int EstimatedDelayMs(double msPerBlock) => BlockMs + (int)msPerBlock + MarginMs;
 
     /// <summary>Starts the engine, loads the models on the GPU and waits until it is ready (up to 2 minutes).</summary>
-    public async Task<VoiceChangerReady> StartAsync(string voiceFile, CancellationToken ct = default)
+    public async Task<VoiceChangerReady> StartAsync(string voiceFile, CancellationToken ct = default) =>
+        await StartAsync(voiceFile, VoiceChangerProfile.Reactive, ct).ConfigureAwait(false);
+
+    public async Task<VoiceChangerReady> StartAsync(string voiceFile, VoiceChangerProfile profile, CancellationToken ct = default)
     {
+        MarginMs = profile.MarginMs;
         if (!File.Exists(_enginePath)) throw new FileNotFoundException("Le moteur du changeur de voix est introuvable.", _enginePath);
         _stopping = false;
         Link.Reset();
@@ -70,6 +85,7 @@ public sealed class VoiceChangerSession : IDisposable
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
+            StandardErrorEncoding = System.Text.Encoding.UTF8,
             WorkingDirectory = Path.GetDirectoryName(_enginePath)!,
         };
         _process = Process.Start(psi) ?? throw new InvalidOperationException("Le moteur du changeur de voix n'a pas démarré.");
@@ -92,7 +108,11 @@ public sealed class VoiceChangerSession : IDisposable
         _reader = new Thread(ReadLoop) { IsBackground = true, Name = "SpokaSoundBoard voice changer (receive)" };
         _reader.Start();
 
-        SendJson(Init, new { models = _modelDirectory, voice = voiceFile, blockMs = 300, steps = 4, promptSeconds = 2.0, autoBlock = true });
+        SendJson(Init, new
+        {
+            models = _modelDirectory, voice = voiceFile, blockMs = profile.BlockMs, steps = profile.Steps,
+            promptSeconds = profile.PromptSeconds, contentContextSeconds = profile.ContentContextSeconds, autoBlock = true,
+        });
 
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromMinutes(2));

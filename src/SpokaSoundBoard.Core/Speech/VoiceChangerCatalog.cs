@@ -42,6 +42,25 @@ public static class VoiceChangerCatalog
         LicenseUrl: "https://github.com/Spokator/SpokaSoundBoard/blob/main/engine/README.md",
         SourceUrl: "https://github.com/Plachtaa/seed-vc");
 
+    /// <summary>
+    /// « Mes voix »: what turns recordings into a voice (CAMPPlus timbre encoder, Apache-2.0, plus the filter banks of
+    /// its features and of the prompt spectrogram). Downloaded the first time a voice is created (28 MB).
+    /// </summary>
+    public static readonly VoiceModelPack Creator = new(
+        Id: "voicecreator1",
+        Name: "Création de voix",
+        Kind: NeuralModelKind.SeedVc,
+        BaseUrl: Release,
+        Files:
+        [
+            new("fbank.bin", 82240, "7a5ab6166a6fd620719ff98979180b3430e1ba52c2be5b0fdac40ba2d8557e4c"),
+            new("melbasis.bin", 164160, "f14d2226bfa12a82a41bfd605cbc7d77b4ab657a62df16c851eea72fff950803"),
+            new("campplus.onnx", 28150914, "fff0a24841eace5ad6098351f8bdd2c6c42e50659659c02e2cf344bb727b44d5"),
+        ],
+        License: "Apache-2.0 (CAMPPlus, 3D-Speaker)",
+        LicenseUrl: "https://github.com/Spokator/SpokaSoundBoard/blob/main/engine/README.md",
+        SourceUrl: "https://huggingface.co/funasr/campplus");
+
     /// <summary>The ten voices, named and described like the natural voices they come from.</summary>
     public static IReadOnlyList<VoiceChangerVoice> Voices { get; } =
         NeuralVoiceCatalog.Voices.Select(v => new VoiceChangerVoice(v.Key, v.Name, v.IsFemale, v.Description)).ToList();

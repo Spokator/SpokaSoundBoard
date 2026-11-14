@@ -9,8 +9,28 @@ namespace SpokaSoundBoard.Core.Models;
 /// </summary>
 public partial class VoiceChangerSettings : ObservableObject
 {
-    /// <summary>Key of the target voice (<see cref="VoiceChangerCatalog.Voices"/>).</summary>
+    /// <summary>
+    /// Key of the target voice: a built-in voice (<see cref="VoiceChangerCatalog.Voices"/>) or one of « Mes voix »
+    /// (<see cref="CustomVoice.KeyPrefix"/> + id; checked against the library when the voice changer starts).
+    /// </summary>
     [ObservableProperty] private string _voiceKey = VoiceChangerCatalog.DefaultVoiceKey;
 
-    public void Sanitize() => VoiceKey = VoiceChangerCatalog.FindVoice(VoiceKey).Key;
+    /// <summary>Shorter delay (default) or a little more faithful.</summary>
+    [ObservableProperty] private VoiceChangerMode _mode = VoiceChangerMode.Reactive;
+
+    public void Sanitize()
+    {
+        if (string.IsNullOrWhiteSpace(VoiceKey) || !VoiceKey.StartsWith(CustomVoice.KeyPrefix, StringComparison.Ordinal))
+            VoiceKey = VoiceChangerCatalog.FindVoice(VoiceKey).Key;
+        if (!Enum.IsDefined(Mode)) Mode = VoiceChangerMode.Reactive;
+    }
+}
+
+public enum VoiceChangerMode
+{
+    /// <summary>About half a second: 200 ms blocks, 3 steps, shorter contexts.</summary>
+    Reactive,
+
+    /// <summary>About 0.7 s: Seed-VC's real-time settings (300 ms blocks, 4 steps).</summary>
+    Stable,
 }

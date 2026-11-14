@@ -1,5 +1,15 @@
 # Journal des versions
 
+## 2.16.0
+
+Vos propres voix, et moins de délai.
+
+- **Mes voix** (Voix & effets → Changeur de voix IA → « Créer une voix ») : créez une voix à partir de vos enregistrements, au micro ou en important des fichiers (dialogues, répliques d'un personnage…). 20 à 60 secondes suffisent, et les silences sont écartés tout seuls. La voix rejoint la liste et s'utilise en direct comme les autres, idéal pour donner une voix à chacun de vos personnages.
+- **Fidèle** : sur une vraie voix de 30 s, la voix convertie ressemble à l'originale avec un score de 0,68 sur 1, mesuré sur un autre passage de cette même voix (au départ : 0,04). La création prend quelques secondes, sans carte graphique, et les voix créées font partie de la sauvegarde complète.
+- **Avec accord** : la création demande de confirmer qu'il s'agit de votre voix, d'un personnage que vous avez créé ou d'une personne qui a donné son accord.
+- **Mode réactif** (par défaut) : la voix arrive en environ 0,5 s au lieu de 0,7 s, avec la même compréhension mesurée (13,5 % de mots mal reconnus contre 14,1 %). Le mode « Stable » reste au choix, un peu plus fidèle. Si le jeu occupe trop la carte graphique, le changeur prend tout seul plus de marge.
+- **Correction** : sur un PC sans le « runtime Visual C++ » de Microsoft, le changeur de voix IA ne démarrait pas. Le moteur l'emporte maintenant avec lui, et ses messages d'erreur sont en français clair.
+
 ## 2.15.0
 
 Votre voix, celle d'un autre.

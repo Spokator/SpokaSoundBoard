@@ -30,7 +30,7 @@
                         <TextBlock Text="Changeur de voix IA" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
                     </DockPanel>
                     <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,10"
-                               Text="Votre voix prend le timbre de la voix choisie, en direct, en gardant votre intonation, vos rires et vos cris : dans le jeu et sur Discord, c'est elle qu'on entend. Les effets plus bas (radio, écho…) s'appliquent en plus. Il faut une carte graphique (DirectX 12) ; la voix arrive avec un peu plus d'une demi-seconde de délai." />
+                               Text="Votre voix prend le timbre de la voix choisie, en direct, en gardant votre intonation, vos rires et vos cris : dans le jeu et sur Discord, c'est elle qu'on entend. Choisissez une des 10 voix ou créez les vôtres à partir d'enregistrements. Les effets plus bas (radio, écho…) s'appliquent en plus. Il faut une carte graphique (DirectX 12)." />
 
                     <DockPanel Margin="0,0,0,12">
                         <Ellipse Width="10" Height="10" Margin="0,0,10,0" VerticalAlignment="Center">
@@ -51,6 +51,14 @@
                         <TextBlock Text="{Binding VoiceChanger.Status}" Style="{StaticResource Label}" TextWrapping="Wrap" VerticalAlignment="Center" />
                     </DockPanel>
 
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="Délai" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                        <RadioButton GroupName="ChangerMode" IsChecked="{Binding VoiceChanger.IsReactive}" Margin="0,0,16,0" VerticalAlignment="Center"
+                                     Content="Réactif (environ 0,5 s)" ToolTip="Le plus court délai. La voix est un tout petit peu moins fidèle." />
+                        <RadioButton GroupName="ChangerMode" IsChecked="{Binding VoiceChanger.IsStable}" VerticalAlignment="Center"
+                                     Content="Stable (environ 0,7 s)" ToolTip="Un peu plus de délai, une voix un peu plus fidèle et plus de marge si le jeu charge la carte graphique." />
+                    </StackPanel>
+
                     <ItemsControl x:Name="ChangerVoices" ItemsSource="{Binding VoiceChanger.Voices}" AutomationProperties.Name="Voix du changeur de voix">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -59,36 +67,134 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Width="178" Margin="0,0,10,10" Cursor="Hand" AutomationProperties.Name="{Binding Title}" ToolTip="Parler avec cette voix"
-                                        Command="{Binding DataContext.VoiceChanger.SelectVoiceCommand, ElementName=ChangerVoices}" CommandParameter="{Binding}">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="Bg" CornerRadius="10" BorderThickness="1" Padding="12,9" MinHeight="52"
-                                                    Background="{DynamicResource SubCardBrush}" BorderBrush="{DynamicResource CardBorderBrush}">
-                                                <DockPanel>
-                                                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE77B;" FontSize="15" Margin="0,0,10,0"
-                                                               VerticalAlignment="Center" Foreground="{DynamicResource Accent2Brush}" />
-                                                    <StackPanel VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis" />
-                                                        <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Caption}" FontSize="11" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
-                                                    </StackPanel>
-                                                </DockPanel>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Bg" Property="Background" Value="{DynamicResource CardHoverBrush}" />
-                                                </Trigger>
-                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter TargetName="Bg" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-                                                    <Setter TargetName="Bg" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
-                                                </DataTrigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
+                                <Grid Width="178" Margin="0,0,10,10">
+                                    <Button Cursor="Hand" AutomationProperties.Name="{Binding Title}" ToolTip="Parler avec cette voix"
+                                            Command="{Binding DataContext.VoiceChanger.SelectVoiceCommand, ElementName=ChangerVoices}" CommandParameter="{Binding}">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="Bg" CornerRadius="10" BorderThickness="1" Padding="12,9" MinHeight="52"
+                                                        Background="{DynamicResource SubCardBrush}" BorderBrush="{DynamicResource CardBorderBrush}">
+                                                    <DockPanel>
+                                                        <Grid DockPanel.Dock="Left" Margin="0,0,10,0" VerticalAlignment="Center">
+                                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE77B;" FontSize="15" Foreground="{DynamicResource Accent2Brush}"
+                                                                       Visibility="{Binding IsCustom, Converter={StaticResource InverseBoolToVis}}" />
+                                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE720;" FontSize="15" Foreground="{DynamicResource SuccessBrush}"
+                                                                       Visibility="{Binding IsCustom, Converter={StaticResource BoolToVis}}" />
+                                                        </Grid>
+                                                        <StackPanel VerticalAlignment="Center" Margin="0,0,18,0">
+                                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Caption}" FontSize="11" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+                                                        </StackPanel>
+                                                    </DockPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Bg" Property="Background" Value="{DynamicResource CardHoverBrush}" />
+                                                    </Trigger>
+                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter TargetName="Bg" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                                        <Setter TargetName="Bg" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                    <Button Style="{StaticResource IconButton}" Content="&#xE74D;" FontSize="10" Padding="5" Margin="0,0,6,0"
+                                            HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip="Supprimer cette voix" AutomationProperties.Name="Supprimer cette voix"
+                                            Visibility="{Binding IsCustom, Converter={StaticResource BoolToVis}}"
+                                            Command="{Binding DataContext.VoiceChanger.DeleteVoiceCommand, ElementName=ChangerVoices}" CommandParameter="{Binding}" />
+                                </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+
+                    <Button Style="{StaticResource FlatButton}" HorizontalAlignment="Left" Padding="14,8" Margin="0,0,0,10"
+                            Command="{Binding VoiceChanger.OpenCreatorCommand}" AutomationProperties.Name="Créer une voix"
+                            Visibility="{Binding VoiceChanger.IsCreating, Converter={StaticResource InverseBoolToVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" FontSize="12" Margin="0,0,8,0" />
+                            <TextBlock Text="Créer une voix (la vôtre, celle d'un personnage…)" />
+                        </StackPanel>
+                    </Button>
+
+                    <!-- « Mes voix »: making a voice from recordings or files -->
+                    <Border Background="{DynamicResource SubCardBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"
+                            CornerRadius="10" Padding="16,14" Margin="0,0,0,12"
+                            Visibility="{Binding VoiceChanger.IsCreating, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Text="Nouvelle voix" Style="{StaticResource SectionTitle}" Margin="0,0,0,4" />
+                            <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,12"
+                                       Text="Enregistrez-vous, ou importez des fichiers où l'on entend surtout cette voix (dialogues, répliques d'un personnage…). Le mieux : 20 à 60 secondes, au calme, avec des phrases variées et le ton voulu. Les silences et la musique de fond sont mis de côté autant que possible." />
+
+                            <TextBlock Text="Nom" Style="{StaticResource Label}" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding VoiceChanger.NewVoiceName, UpdateSourceTrigger=PropertyChanged}" MaxLength="40" Padding="8,5"
+                                     Margin="0,0,0,12" AutomationProperties.Name="Nom de la nouvelle voix" />
+
+                            <WrapPanel Margin="0,0,0,8">
+                                <Button Style="{StaticResource AccentButton}" Padding="12,7" Margin="0,0,10,6" Command="{Binding VoiceChanger.ToggleRecordingCommand}"
+                                        AutomationProperties.Name="Enregistrer avec le micro"
+                                        Visibility="{Binding VoiceChanger.IsRecording, Converter={StaticResource InverseBoolToVis}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE720;" FontSize="12" Margin="0,0,8,0" />
+                                        <TextBlock Text="Enregistrer avec le micro" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DangerButton}" Padding="12,7" Margin="0,0,10,6" Command="{Binding VoiceChanger.ToggleRecordingCommand}"
+                                        AutomationProperties.Name="Arrêter l'enregistrement"
+                                        Visibility="{Binding VoiceChanger.IsRecording, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE71A;" FontSize="12" Margin="0,0,8,0" />
+                                        <TextBlock>
+                                            <Run Text="Arrêter (" /><Run Text="{Binding VoiceChanger.RecordingSeconds, Mode=OneWay, StringFormat={}{0:0} s}" /><Run Text=")" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource FlatButton}" Padding="12,7" Margin="0,0,10,6" Command="{Binding VoiceChanger.ImportClipsCommand}"
+                                        AutomationProperties.Name="Importer des fichiers de voix">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8E5;" FontSize="12" Margin="0,0,8,0" />
+                                        <TextBlock Text="Importer des fichiers…" />
+                                    </StackPanel>
+                                </Button>
+                            </WrapPanel>
+                            <ProgressBar Height="4" Minimum="0" Maximum="1" Value="{Binding VoiceChanger.RecordingLevel, Mode=OneWay}" Margin="0,0,0,8"
+                                         Visibility="{Binding VoiceChanger.IsRecording, Converter={StaticResource BoolToVis}}" />
+
+                            <ItemsControl ItemsSource="{Binding VoiceChanger.Clips}" x:Name="ClipList" AutomationProperties.Name="Extraits de la nouvelle voix">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{DynamicResource InsetBrush}" CornerRadius="6" Padding="10,5" Margin="0,0,0,4">
+                                            <DockPanel>
+                                                <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE711;" FontSize="10" Padding="4"
+                                                        ToolTip="Retirer" AutomationProperties.Name="Retirer cet extrait"
+                                                        Command="{Binding DataContext.VoiceChanger.RemoveClipCommand, ElementName=ClipList}" CommandParameter="{Binding}" />
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding Seconds, StringFormat={}{0:0} s}" Style="{StaticResource Caption}"
+                                                           Margin="10,0" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding Label}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="{Binding VoiceChanger.ClipsSummary}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,10" />
+
+                            <CheckBox IsChecked="{Binding VoiceChanger.Consent}" Margin="0,0,0,12" AutomationProperties.Name="Consentement">
+                                <TextBlock TextWrapping="Wrap"
+                                           Text="C'est ma voix, ou j'ai l'accord de la personne à qui elle appartient (ou c'est un personnage que j'ai créé). Imiter quelqu'un sans son accord est interdit." />
+                            </CheckBox>
+
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Padding="14,7" Margin="10,0,0,0"
+                                        Command="{Binding VoiceChanger.CreateVoiceCommand}" Content="Créer la voix" AutomationProperties.Name="Créer la voix" />
+                                <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Padding="12,7"
+                                        Command="{Binding VoiceChanger.CancelCreatorCommand}" Content="Annuler" />
+                                <StackPanel VerticalAlignment="Center" Visibility="{Binding VoiceChanger.IsBuilding, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{Binding VoiceChanger.BuildStatus}" Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                                    <ProgressBar Height="3" IsIndeterminate="True" Margin="0,4,12,0" />
+                                </StackPanel>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
 
                     <!-- Models: offer, progress, installed -->
                     <Border Background="{DynamicResource SubCardBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
