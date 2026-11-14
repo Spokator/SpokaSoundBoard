@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:SpokaSoundBoard.Views"
              xmlns:models="clr-namespace:SpokaSoundBoard.Core.Models;assembly=SpokaSoundBoard.Core"
-             x:Name="Root">
+             x:Name="Root" IsVisibleChanged="OnVisibleChanged">
     <!-- DataContext: MainViewModel -->
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="28,24,28,24">
@@ -19,6 +19,124 @@
                                Text="Choisissez un effet prêt à l'emploi puis ajustez chaque réglage. Activez « M'écouter » (avec un casque) pour entendre le résultat en direct." />
                 </StackPanel>
             </DockPanel>
+
+            <!-- AI voice changer -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,6">
+                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding VoiceChanger.IsSwitchOn}" VerticalAlignment="Center"
+                                  IsEnabled="{Binding VoiceChanger.CanTurnOn}" AutomationProperties.Name="Changeur de voix IA" />
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE945;" Foreground="{DynamicResource Accent2Brush}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Changeur de voix IA" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,10"
+                               Text="Votre voix prend le timbre de la voix choisie, en direct, en gardant votre intonation, vos rires et vos cris : dans le jeu et sur Discord, c'est elle qu'on entend. Les effets plus bas (radio, écho…) s'appliquent en plus. Il faut une carte graphique (DirectX 12) ; la voix arrive avec un peu plus d'une demi-seconde de délai." />
+
+                    <DockPanel Margin="0,0,0,12">
+                        <Ellipse Width="10" Height="10" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="{DynamicResource IdleDotBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding VoiceChanger.IsOn}" Value="True">
+                                            <Setter Property="Fill" Value="{DynamicResource SuccessBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding VoiceChanger.NoGpu}" Value="True">
+                                            <Setter Property="Fill" Value="{DynamicResource WarningBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock Text="{Binding VoiceChanger.Status}" Style="{StaticResource Label}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    </DockPanel>
+
+                    <ItemsControl x:Name="ChangerVoices" ItemsSource="{Binding VoiceChanger.Voices}" AutomationProperties.Name="Voix du changeur de voix">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Width="178" Margin="0,0,10,10" Cursor="Hand" AutomationProperties.Name="{Binding Title}" ToolTip="Parler avec cette voix"
+                                        Command="{Binding DataContext.VoiceChanger.SelectVoiceCommand, ElementName=ChangerVoices}" CommandParameter="{Binding}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Bg" CornerRadius="10" BorderThickness="1" Padding="12,9" MinHeight="52"
+                                                    Background="{DynamicResource SubCardBrush}" BorderBrush="{DynamicResource CardBorderBrush}">
+                                                <DockPanel>
+                                                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE77B;" FontSize="15" Margin="0,0,10,0"
+                                                               VerticalAlignment="Center" Foreground="{DynamicResource Accent2Brush}" />
+                                                    <StackPanel VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Caption}" FontSize="11" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bg" Property="Background" Value="{DynamicResource CardHoverBrush}" />
+                                                </Trigger>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter TargetName="Bg" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                                    <Setter TargetName="Bg" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Models: offer, progress, installed -->
+                    <Border Background="{DynamicResource SubCardBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="14,12" Margin="0,4,0,8">
+                        <StackPanel>
+                            <DockPanel Visibility="{Binding VoiceChanger.ShowDownload, Converter={StaticResource BoolToVis}}">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Padding="12,6" Margin="12,0,0,0" VerticalAlignment="Center"
+                                        Command="{Binding VoiceChanger.DownloadCommand}" AutomationProperties.Name="Télécharger le changeur de voix">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE896;" FontSize="12" Margin="0,0,8,0" />
+                                        <TextBlock>
+                                            <Run Text="Télécharger (" /><Run Text="{Binding VoiceChanger.PackSizeText, Mode=OneWay}" /><Run Text=")" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Button>
+                                <StackPanel>
+                                    <TextBlock Text="Modèles du changeur de voix" Style="{StaticResource Label}" FontWeight="SemiBold" />
+                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" TextWrapping="Wrap"
+                                               Text="À télécharger une seule fois. Ils fonctionnent ensuite hors ligne, sur votre carte graphique." />
+                                </StackPanel>
+                            </DockPanel>
+                            <DockPanel Visibility="{Binding VoiceChanger.IsDownloading, Converter={StaticResource BoolToVis}}">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Padding="10,5" Margin="12,0,0,0" VerticalAlignment="Center"
+                                        Command="{Binding VoiceChanger.CancelDownloadCommand}" Content="Annuler" />
+                                <StackPanel>
+                                    <TextBlock Text="{Binding VoiceChanger.DownloadStatus}" Style="{StaticResource Label}" />
+                                    <ProgressBar Height="4" Margin="0,8,0,0" Minimum="0" Maximum="100" Value="{Binding VoiceChanger.DownloadPercent, Mode=OneWay}" />
+                                </StackPanel>
+                            </DockPanel>
+                            <DockPanel Visibility="{Binding VoiceChanger.IsInstalled, Converter={StaticResource BoolToVis}}">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE74D;" FontSize="12" Padding="8" Margin="8,0,0,0"
+                                        VerticalAlignment="Center" Command="{Binding VoiceChanger.DeleteCommand}"
+                                        ToolTip="Supprimer les modèles du changeur de voix" AutomationProperties.Name="Supprimer les modèles du changeur de voix" />
+                                <TextBlock Style="{StaticResource Label}" FontWeight="SemiBold" VerticalAlignment="Center">
+                                    <Run Text="&#xE73E;" FontFamily="{StaticResource IconFont}" Foreground="{DynamicResource SuccessBrush}" />
+                                    <Run Text=" Modèles installés (" /><Run Text="{Binding VoiceChanger.PackSizeText, Mode=OneWay}" /><Run Text=")" />
+                                </TextBlock>
+                            </DockPanel>
+                            <TextBlock Style="{StaticResource Caption}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="11">
+                                <Run Text="{Binding VoiceChanger.LicenseText, Mode=OneWay}" />
+                                <Hyperlink Command="{Binding VoiceChanger.OpenLicenseCommand}" Foreground="{DynamicResource Accent2Brush}">Lire les licences</Hyperlink>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" FontSize="11"
+                               Text="Raccourci global et bouton de télécommande : « Changeur de voix IA » (Configuration → Raccourcis globaux). Il ne s'active jamais tout seul au démarrage." />
+                </StackPanel>
+            </Border>
 
             <!-- Presets -->
             <Border Style="{StaticResource Card}">

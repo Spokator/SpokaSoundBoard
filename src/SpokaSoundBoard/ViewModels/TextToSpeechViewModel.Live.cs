@@ -141,6 +141,8 @@ public sealed partial class TextToSpeechViewModel
         {
             if (!await InstallRecognitionAsync()) return;
         }
+        // One voice replacement at a time.
+        if (_main.VoiceChanger.IsOn) _main.VoiceChanger.Stop(notify: false);
         IsLiveStarting = true;
         try
         {

@@ -8,6 +8,9 @@ public enum NeuralModelKind
 
     /// <summary>NVIDIA Canary speech recognition (with a Silero voice activity detector), see <see cref="SpeechRecognitionCatalog"/>.</summary>
     Canary,
+
+    /// <summary>Seed-VC voice conversion, run by the separate SpokaVoiceEngine program, see <see cref="VoiceChangerCatalog"/>.</summary>
+    SeedVc,
 }
 
 /// <summary>One file of a voice model pack, checked by size and SHA-256 after download.</summary>

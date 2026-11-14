@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    SpokaVoiceEngine: real-time voice conversion (Seed-VC) for SpokaSoundBoard.
+    Licensed under GPL-3.0-or-later (see LICENSE in this folder), like the Seed-VC model it runs. It is a separate
+    program: SpokaSoundBoard (MIT) starts it and exchanges audio with it through its standard input and output.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <Version>1.0.0</Version>
+    <Product>SpokaVoiceEngine</Product>
+    <Copyright>GPL-3.0-or-later</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
+  </ItemGroup>
+
+</Project>

@@ -352,6 +352,7 @@ public class HotkeySettings
     public HotkeyBinding MusicVolumeUp { get; set; } = new();
     public HotkeyBinding MusicVolumeDown { get; set; } = new();
     public HotkeyBinding ToggleLiveVoice { get; set; } = new();
+    public HotkeyBinding ToggleVoiceChanger { get; set; } = new();
 
     /// <summary>A binding written as null in settings.json (hand edit, older version) becomes "no shortcut".</summary>
     public void Sanitize()
@@ -369,6 +370,7 @@ public class HotkeySettings
         MusicVolumeUp ??= new HotkeyBinding();
         MusicVolumeDown ??= new HotkeyBinding();
         ToggleLiveVoice ??= new HotkeyBinding();
+        ToggleVoiceChanger ??= new HotkeyBinding();
     }
 }
 
@@ -464,6 +466,7 @@ public class AppSettings
 
     public BlindTestSettings BlindTest { get; set; } = new();
     public TextToSpeechSettings TextToSpeech { get; set; } = new();
+    public VoiceChangerSettings VoiceChanger { get; set; } = new();
 
     public RemoteSettings Remote { get; set; } = new();
 

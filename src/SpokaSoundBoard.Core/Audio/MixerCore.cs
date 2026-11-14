@@ -87,6 +87,15 @@ public sealed class MixerCore
     /// <summary>The real voice is not sent while a synthetic voice speaks for it (the microphone keeps listening).</summary>
     public volatile bool VoiceReplaced;
 
+    /// <summary>AI voice changer: the microphone goes to it and its converted voice comes back in place of the real one.</summary>
+    public VoiceChangerLink? VoiceChanger
+    {
+        get => Volatile.Read(ref _voiceChanger);
+        set => Volatile.Write(ref _voiceChanger, value);
+    }
+
+    private VoiceChangerLink? _voiceChanger;
+
     public EngineMeters Meters { get; } = new();
 
     /// <summary>False when rnnoise.dll could not be loaded (the option is then shown as unavailable).</summary>
@@ -152,6 +161,9 @@ public sealed class MixerCore
                 tap.Write(silence);
             }
         }
+
+        // Converted voice in place of the real one, before the effects (radio, gate… still apply on top).
+        VoiceChanger?.Exchange(micSpan, mix.MicEnabled);
 
         // The natural voice is only needed when some bus actually uses it.
         var needDry = !game.IsEmpty && mix.GameVoice && !mix.GameVoiceEffects

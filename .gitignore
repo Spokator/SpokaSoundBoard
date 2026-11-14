@@ -12,3 +12,6 @@ packaging/deps/
 
 # WPF temporary build projects
 *_wpftmp.csproj
+
+# Local listening files of the voice conversion prototype
+prototype-voix/

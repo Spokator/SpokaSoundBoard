@@ -46,6 +46,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Music = new MusicViewModel(this);
         BlindTest = new BlindTestViewModel(this);
         Voice = new VoiceViewModel(this);
+        VoiceChanger = new VoiceChangerViewModel(this);
         Devices = new DevicesViewModel(this);
         Setup = new SetupWizardViewModel(this);
         Appearance = new AppearanceViewModel(this);
@@ -246,6 +247,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>Writable data folder (%AppData%\SpokaSoundBoard, or the package's private copy).</summary>
     public string DataDirectory => _store.Directory;
     public VoiceViewModel Voice { get; }
+    public VoiceChangerViewModel VoiceChanger { get; }
     public DevicesViewModel Devices { get; }
     public SetupWizardViewModel Setup { get; }
     public AppearanceViewModel Appearance { get; }
@@ -589,6 +591,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         yield return new(h.NextPreset, () => Voice.CyclePreset(1));
         yield return new(h.PreviousPreset, () => Voice.CyclePreset(-1));
         yield return new(h.ToggleLiveVoice, () => Soundboard.Tts.ToggleLiveCommand.Execute(null));
+        yield return new(h.ToggleVoiceChanger, () => VoiceChanger.ToggleCommand.Execute(null));
         foreach (var pad in Settings.Pads.ToList())
             yield return new(pad.Hotkey, () => Soundboard.PlayPadCommand.Execute(pad));
     }
@@ -756,6 +759,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Save();
         BlindTest.Shutdown();
         Soundboard.Tts.ShutdownLive();
+        VoiceChanger.Shutdown();
         Music.Shutdown();
         Hotkeys.Dispose();
         Loudness.Dispose();

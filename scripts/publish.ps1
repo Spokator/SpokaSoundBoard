@@ -26,4 +26,7 @@ dotnet publish "$root\src\SpokaSoundBoard\SpokaSoundBoard.csproj" `
 if ($LASTEXITCODE -ne 0) { throw "La publication a échoué." }
 
 Get-ChildItem $dist | Where-Object { $_.Extension -ne ".exe" } | Remove-Item -Recurse -Force
+
+# The AI voice changer's engine: a separate GPL-3.0 program, next to the app.
+& "$PSScriptRoot\publish-engine.ps1" -Destination $dist -Configuration $Configuration
 Write-Host "OK -> $dist\SpokaSoundBoard.exe" -ForegroundColor Green

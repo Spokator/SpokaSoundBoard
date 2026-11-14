@@ -102,6 +102,7 @@ public sealed class SettingsStore
         nameof(AppSettings.Appearance) => "apparence",
         nameof(AppSettings.BlindTest) => "blind test",
         nameof(AppSettings.TextToSpeech) => "synthèse vocale",
+        nameof(AppSettings.VoiceChanger) => "changeur de voix",
         nameof(AppSettings.CustomPresets) => "presets personnalisés",
         nameof(AppSettings.Remote) => "télécommande",
         nameof(AppSettings.GameProfiles) => "profils par jeu",
@@ -159,6 +160,8 @@ public sealed class SettingsStore
         s.BlindTest.Sanitize();
         s.TextToSpeech ??= new TextToSpeechSettings();
         s.TextToSpeech.Sanitize();
+        s.VoiceChanger ??= new VoiceChangerSettings();
+        s.VoiceChanger.Sanitize();
         s.Remote ??= new RemoteSettings();
         s.Remote.Sanitize();
         s.GameProfiles ??= [];

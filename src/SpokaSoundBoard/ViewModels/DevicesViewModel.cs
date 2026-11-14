@@ -38,6 +38,7 @@ public partial class DevicesViewModel : ObservableObject
             new("Effet de voix suivant", "Passe au preset suivant (ex. normale → pilote → robot…)", h.NextPreset),
             new("Effet de voix précédent", "Revient au preset précédent", h.PreviousPreset),
             new("Parler avec la voix de synthèse", "Votre voix est remplacée par la voix choisie dans « Synthèse vocale » (on/off)", h.ToggleLiveVoice),
+            new("Changeur de voix IA", "Votre voix prend le timbre de la voix choisie dans « Voix & effets » (on/off)", h.ToggleVoiceChanger),
         ];
     }
 

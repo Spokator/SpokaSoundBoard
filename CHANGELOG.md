@@ -1,5 +1,16 @@
 # Journal des versions
 
+## 2.15.0
+
+Votre voix, celle d'un autre.
+
+- **Changeur de voix IA** (Voix & effets) : votre voix prend le timbre d'une des 10 voix (les mêmes personnages que les voix naturelles), en temps réel. Votre intonation, votre rythme, vos rires et vos cris sont gardés : c'est vous qui parlez, avec une autre voix, dans le jeu et sur Discord. Les effets (radio, écho…) s'appliquent en plus.
+- **Sur la carte graphique** (DirectX 12 : NVIDIA, AMD ou Intel), hors ligne. Les modèles se téléchargent une fois (420 Mo). Sur une GeForce RTX 5070, la conversion prend environ 175 ms pour 300 ms de voix, et la voix arrive avec un peu plus d'une demi-seconde de délai.
+- **Mesuré sur de vraies voix françaises** : la parole reste compréhensible, avec 5 à 9 % de mots mal reconnus sur des voix d'hommes et environ 14 % en moyenne. La mélodie de la voix est suivie, sans erreur d'octave.
+- **Pensé pour le jeu** : quand le jeu occupe la carte graphique, le changeur prend tout seul des blocs plus longs (un peu plus de délai, mais sans coupure). Pendant les silences, il ne calcule rien. Il ne démarre jamais tout seul, et s'arrête proprement en cas de problème : votre vraie voix repasse alors.
+- **Raccourci global et télécommande** : « Changeur de voix IA » (Configuration → Raccourcis globaux) et l'action `/api/action/voice-changer`.
+- **Licence** : la conversion tourne dans SpokaVoiceEngine, un programme séparé sous licence GPL-3.0 comme le modèle Seed-VC qu'il exécute. Son code et les scripts qui produisent ses modèles sont dans le dossier `engine` du dépôt. SpokaSoundBoard reste sous licence MIT.
+
 ## 2.14.0
 
 Parlez, une autre voix le dit pour vous.

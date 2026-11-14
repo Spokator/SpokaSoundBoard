@@ -116,6 +116,7 @@ Invoke-Tool dotnet @(
     "-p:DebugType=none", "-p:GenerateDocumentationFile=false",
     "-o", $staging, "--nologo") "La publication"
 
+& "$PSScriptRoot\publish-engine.ps1" -Destination $staging -Configuration $Configuration
 $tools = Join-Path $staging "tools"
 New-Item -ItemType Directory $tools -Force | Out-Null
 Copy-Item $ytdlp, $ffmpeg $tools

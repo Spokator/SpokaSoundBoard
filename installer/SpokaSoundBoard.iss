@@ -66,6 +66,8 @@ Source: "deps\yt-dlp.exe"; DestDir: "{app}\tools"; Flags: ignoreversion
 Source: "..\src\SpokaSoundBoard.Core\native\win-x64\rnnoise.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\src\SpokaSoundBoard.Core\native\win-x64\RNNOISE-LICENSE.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; DestName: "LISEZ-MOI.md"; Flags: ignoreversion
+; AI voice changer engine: separate GPL-3.0 program (source: engine\ in the repository).
+Source: "..\dist\voice-engine\*"; DestDir: "{app}\voice-engine"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"; Comment: "Soundboard et effets de voix"

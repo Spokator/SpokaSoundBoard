@@ -37,6 +37,7 @@ Diffusez votre playlist et vos sons **dans votre micro**, parlez par-dessus (la 
 | 🗨️ **Synthèse vocale** | Tapez une phrase, elle est dite dans votre micro, et devient un son de la soundboard en un clic. Ou parlez : vos phrases sont reconnues sur votre PC et redites par la voix choisie, à la place de votre vraie voix. 10 voix naturelles neuronales hors ligne (téléchargement unique de 139 Mo) ou voix Windows. |
 | 📊 **Statistiques** | Top morceaux et artistes, heures d'écoute, séries, rétrospective de l'année. |
 | 🗣️ **Ducking** | Quand vous parlez, la musique baisse pour que votre voix passe par-dessus, puis remonte doucement. |
+| 🎭 **Changeur de voix IA** | Votre voix prend le timbre d'une autre, en temps réel, en gardant votre intonation, vos rires et vos cris. 10 voix, sur la carte graphique (DirectX 12), hors ligne. |
 | 🎙️ **22 effets de voix** | Pilote d'hélico, tour de contrôle, talkie-walkie, astronaute NASA, pilote de chasse, téléphone, vieille radio, mégaphone, robot, seigneur noir, démon, fantôme, alien, sous l'eau, lo-fi 8 bits… Chaque réglage est modifiable et vous pouvez enregistrer vos propres presets. |
 | 🕹️ **Manettes et HOTAS** | Les boutons et chapeaux de vos manettes, joysticks, palonniers et HOTAS servent de raccourcis : sons, mode radio, effets, musique et son volume. Plusieurs appareils à la fois, sans pilote. |
 | 📻 **Mode radio** | Votre voix ne passe que quand vous maintenez la touche, avec le grésillement et le bip de fin (roger, NASA « Quindar »…). |
@@ -123,6 +124,8 @@ Les tests en ligne (téléchargements et recherches réels) s'activent avec `$en
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) (Unlicense) pour la recherche et l'import par lien, et [FFmpeg](https://ffmpeg.org) pour les conversions (téléchargé si nécessaire).
 - Voix naturelles : [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (Apache-2.0) et [ONNX Runtime](https://github.com/microsoft/onnxruntime) (MIT) livrés avec l'application ; le modèle [Supertonic 3](https://huggingface.co/Supertone/supertonic-3) de Supertone (licence [OpenRAIL-M](https://huggingface.co/Supertone/supertonic-3/blob/main/LICENSE)) est téléchargé à la demande.
 - Suppression du bruit du micro : [RNNoise](https://github.com/xiph/rnnoise) de Xiph.Org et Jean-Marc Valin (BSD-3-Clause), compilé depuis la version officielle 0.2 (`native/rnnoise/build-rnnoise.ps1`) et livré avec l'application.
+- Reconnaissance vocale : [NVIDIA Canary 180M Flash](https://huggingface.co/nvidia/canary-180m-flash) (CC BY 4.0) et [Silero VAD](https://github.com/snakers4/silero-vad) (MIT), téléchargés à la demande.
+- Changeur de voix IA : [Seed-VC](https://github.com/Plachtaa/seed-vc) (GPL-3.0), [XLS-R](https://huggingface.co/facebook/wav2vec2-xls-r-300m) (Apache-2.0) et le vocodeur HiFT de [CosyVoice](https://huggingface.co/FunAudioLLM/CosyVoice-300M) (Apache-2.0), téléchargés à la demande et exécutés par SpokaVoiceEngine avec ONNX Runtime et DirectML.
 - Icônes de la télécommande : [Tabler Icons](https://tabler.io/icons) (MIT), intégrées à l'application. Génération du QR code : [QRCoder](https://github.com/codebude/QRCoder) (MIT).
 - Micros virtuels : [VB-CABLE](https://vb-audio.com/Cable/) de VB-Audio (donationware) et [Virtual Audio Cable](https://vac.muzychenko.net/) d'Eugene Muzychenko. Ils ne sont pas redistribués : ils sont téléchargés depuis leurs sites officiels.
 
@@ -130,4 +133,4 @@ Respectez les droits des contenus que vous diffusez.
 
 ## Licence
 
-[MIT](LICENSE) © 2026 Spokator
+[MIT](LICENSE) © 2026 Spokator, sauf le dossier [engine](engine) : SpokaVoiceEngine, le moteur du changeur de voix IA, est un programme séparé sous licence [GPL-3.0](engine/LICENSE), comme le modèle Seed-VC qu'il exécute.

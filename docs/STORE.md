@@ -122,7 +122,7 @@ Microsoft relit la soumission, en général en quelques jours. S'il y a un refus
 - Blind test à animer dans Discord, avec scores et podium
 - Synthèse vocale : tapez ou parlez, une voix naturelle le dit dans le micro
 - La musique baisse automatiquement quand vous parlez
-- 22 effets de voix en temps réel, et vos propres presets
+- Changeur de voix IA en temps réel et 22 effets de voix
 - Suppression du bruit du micro (clavier, ventilateur), hors ligne
 - Mode radio : parler en maintenant une touche, avec bip de fin
 - Routage séparé pour le jeu et pour Discord
