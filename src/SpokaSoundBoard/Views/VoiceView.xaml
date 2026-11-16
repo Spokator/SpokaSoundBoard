@@ -30,7 +30,7 @@
                         <TextBlock Text="Changeur de voix IA" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
                     </DockPanel>
                     <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,10"
-                               Text="Votre voix prend le timbre de la voix choisie, en direct, en gardant votre intonation, vos rires et vos cris : dans le jeu et sur Discord, c'est elle qu'on entend. Choisissez une des 10 voix ou créez les vôtres à partir d'enregistrements. Les effets plus bas (radio, écho…) s'appliquent en plus. Il faut une carte graphique (DirectX 12)." />
+                               Text="Votre voix prend le timbre de la voix choisie, en direct, en gardant votre intonation, vos rires et vos cris : c'est elle que vos amis entendent, dans le jeu et sur Discord, à travers le micro virtuel. Choisissez une des 10 voix ou créez les vôtres à partir d'enregistrements. Les effets plus bas (radio, écho…) s'appliquent en plus. Il faut une carte graphique (DirectX 12)." />
 
                     <DockPanel Margin="0,0,0,12">
                         <Ellipse Width="10" Height="10" Margin="0,0,10,0" VerticalAlignment="Center">
@@ -50,6 +50,33 @@
                         </Ellipse>
                         <TextBlock Text="{Binding VoiceChanger.Status}" Style="{StaticResource Label}" TextWrapping="Wrap" VerticalAlignment="Center" />
                     </DockPanel>
+
+                    <!-- Where the voice goes: other programs only hear it through the virtual microphone -->
+                    <Border CornerRadius="8" Padding="12,8" Margin="0,0,0,12" AutomationProperties.Name="Où entendre cette voix">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="{DynamicResource InsetBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Devices.VoiceRoute.Warning}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource WarningSoftBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Content="Configurer" Padding="10,4" Margin="10,0,0,0"
+                                    VerticalAlignment="Center" Command="{Binding NavigateCommand}" CommandParameter="settings"
+                                    Visibility="{Binding Devices.VoiceRoute.CanOpenDiscord, Converter={StaticResource InverseBoolToVis}}" />
+                            <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Content="Réglages voix de Discord" Padding="10,4" Margin="10,0,0,0"
+                                    VerticalAlignment="Center" Command="{Binding Devices.OpenDiscordVoiceSettingsCommand}"
+                                    ToolTip="Ouvre Discord sur Paramètres → Voix et vidéo → Périphérique d'entrée"
+                                    Visibility="{Binding Devices.VoiceRoute.CanOpenDiscord, Converter={StaticResource BoolToVis}}" />
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE720;" FontSize="13" Margin="0,0,10,0" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource Accent2Brush}" />
+                            <TextBlock Text="{Binding Devices.VoiceRoute.Text}" TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}"
+                                       ToolTip="Si la voix sonne hachée dans Discord, désactivez sa « Suppression du bruit » : elle est faite pour une voix de micro, pas pour une voix déjà traitée." />
+                        </DockPanel>
+                    </Border>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                         <TextBlock Text="Délai" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,12,0" />

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SpokaSoundBoard.Core.Audio;
@@ -22,6 +23,10 @@ public partial class DevicesViewModel : ObservableObject
     public DevicesViewModel(MainViewModel main)
     {
         _main = main;
+        main.Settings.Mix.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(MixSettings.GameVoice) or nameof(MixSettings.DiscordVoice)) OnPropertyChanged(nameof(VoiceRoute));
+        };
         var h = main.Settings.Hotkeys;
         HotkeyRows =
         [
@@ -51,11 +56,11 @@ public partial class DevicesViewModel : ObservableObject
     private AudioDevice? _selectedMic;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(VirtualOutputWarning))]
+    [NotifyPropertyChangedFor(nameof(VirtualOutputWarning), nameof(VoiceRoute))]
     private AudioDevice? _selectedVirtualOutput;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(DiscordSameCableWarning), nameof(HasDiscordOutput), nameof(DiscordMicName))]
+    [NotifyPropertyChangedFor(nameof(DiscordSameCableWarning), nameof(HasDiscordOutput), nameof(DiscordMicName), nameof(VoiceRoute))]
     private AudioDevice? _selectedDiscordOutput;
 
     [ObservableProperty] private AudioDevice? _selectedMonitor;
@@ -65,7 +70,7 @@ public partial class DevicesViewModel : ObservableObject
     [ObservableProperty] private string? _secondInstallStatus;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(VirtualOutputWarning))]
+    [NotifyPropertyChangedFor(nameof(VirtualOutputWarning), nameof(VoiceRoute))]
     private bool _hasVirtualCable;
 
     [ObservableProperty] private bool _isInstalling;
@@ -76,6 +81,62 @@ public partial class DevicesViewModel : ObservableObject
     public bool VirtualOutputWarning => HasVirtualCable && SelectedVirtualOutput is { IsVirtualCable: false };
 
     public bool HasDiscordOutput => SelectedDiscordOutput != null;
+
+    /// <summary>Where the voice (effects, AI voice changer) goes, and which microphone to pick in Discord and games.</summary>
+    public VoiceRouteHint VoiceRoute => Core.Audio.VoiceRoute.Describe(HasVirtualCable,
+        SelectedVirtualOutput is { IsVirtualCable: true } game ? DeviceService.CableMicName(game, Inputs) : null,
+        SelectedDiscordOutput is { IsVirtualCable: true } discord ? DeviceService.CableMicName(discord, Inputs) : null,
+        _main.Settings.Mix.GameVoice, _main.Settings.Mix.DiscordVoice, DiscordMic);
+
+    /// <summary>What Discord is recording right now (checked while the voice page is open or the AI voice changer is on).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(VoiceRoute))]
+    private DiscordMicCheck _discordMic = DiscordMicCheck.Unknown;
+
+    private DispatcherTimer? _discordTimer;
+    private bool _probingDiscord;
+    private bool _warnedDiscord;
+
+    /// <summary>Starts checking, every few seconds, which microphone Discord records.</summary>
+    public void StartDiscordWatch()
+    {
+        _discordTimer = new DispatcherTimer(TimeSpan.FromSeconds(4), DispatcherPriority.Background, async (_, _) => await CheckDiscordAsync(),
+            Dispatcher.CurrentDispatcher);
+        _discordTimer.Start();
+    }
+
+    private async Task CheckDiscordAsync()
+    {
+        if (_probingDiscord) return;
+        // Only where it matters: nothing is enumerated while the user is elsewhere with the voice unchanged.
+        if (_main.CurrentPage != "voice" && !_main.VoiceChanger.IsOn)
+        {
+            DiscordMic = DiscordMicCheck.Unknown;
+            return;
+        }
+        _probingDiscord = true;
+        try
+        {
+            DiscordMic = DiscordMicCheck.Evaluate(await Task.Run(MicListeners.Snapshot));
+        }
+        finally
+        {
+            _probingDiscord = false;
+        }
+        if (DiscordMic.State != DiscordMicState.RealMic)
+        {
+            _warnedDiscord = false;
+        }
+        else if (_main.VoiceChanger.IsOn && HasVirtualCable && !_warnedDiscord)
+        {
+            _warnedDiscord = true;
+            _main.ShowToast($"Discord écoute votre vrai micro (« {DiscordMic.DeviceName} ») : vos amis sur Discord entendent votre voix naturelle. " +
+                            "Choisissez le micro virtuel dans Discord (détails dans Voix & effets).", 10);
+        }
+    }
+
+    [RelayCommand]
+    private static void OpenDiscordVoiceSettings() => WindowsIntegration.Open("discord://-/settings/voice");
 
     /// <summary>Discord and the game share the same cable: they would hear exactly the same thing.</summary>
     public bool DiscordSameCableWarning => DeviceService.SameCable(SelectedDiscordOutput, SelectedVirtualOutput);
@@ -334,6 +395,7 @@ public partial class DevicesViewModel : ObservableObject
         HasVirtualCable = Outputs.Any(o => o.IsVirtualCable);
         HasSecondCable = DeviceService.CountDistinctCables(Outputs) >= 2;
         HasSpokaCable = DeviceService.FindSpokaCableOutput(Outputs) != null;
+        OnPropertyChanged(nameof(VoiceRoute)); // microphone names come from the new device lists
     }
 
     private void StoreSelection()

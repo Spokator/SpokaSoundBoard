@@ -12,6 +12,8 @@ SpokaSoundBoard est une soundboard, un lecteur de musique et un module d'effets 
 
 SpokaSoundBoard utilise votre micro pour appliquer les effets de voix et l'envoyer, avec la musique et les sons, dans le micro virtuel que vous choisissez pour Discord ou vos jeux. **Le son est traité en direct, sur votre PC uniquement.** Il n'est ni enregistré, ni envoyé par l'application à nous ou à quiconque. Ce que Discord ou un jeu fait ensuite du son qu'il reçoit dépend de leurs propres règles.
 
+Pour vous prévenir quand Discord n'écoute pas le micro virtuel, l'application regarde quels programmes utilisent un micro, comme l'indicateur de micro de Windows. Elle ne lit que leur nom, sur votre PC, ne le garde pas et ne l'envoie nulle part. Elle ne le fait que pendant que le changeur de voix IA tourne ou que la page Voix & effets est ouverte.
+
 Vous pouvez couper le micro à tout moment dans l'application, ou retirer l'autorisation dans Paramètres Windows → Confidentialité et sécurité → Microphone.
 
 ## Ce qui reste sur votre PC

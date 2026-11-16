@@ -1,5 +1,12 @@
 # Journal des versions
 
+## 2.16.1
+
+Quand le jeu entend la voix modifiée mais pas Discord.
+
+- **Discord surveillé** : pendant que le changeur de voix IA tourne, ou quand la page Voix & effets est ouverte, l'app regarde quel micro Discord enregistre (sans rien enregistrer elle-même). S'il garde votre vrai micro, souvent le réglage « Par défaut », la carte et une notification le disent tout de suite : vos amis sur Discord entendent votre voix naturelle. On y trouve aussi le nom exact du micro virtuel à choisir à la place, et un bouton qui ouvre les réglages voix de Discord. Quand tout est bon, la carte le confirme.
+- **Où entendre la voix modifiée** : la carte indique quel micro choisir dans Discord et dans vos jeux. Elle prévient aussi quand personne d'autre ne peut entendre la voix : pas de micro virtuel installé, sortie « micro virtuel » réglée sur des haut-parleurs ou une sortie numérique, ou « Ma voix » coupée dans Mixage.
+
 ## 2.16.0
 
 Vos propres voix, et moins de délai.

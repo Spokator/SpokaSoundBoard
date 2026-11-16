@@ -150,6 +150,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
         sb.AppendLine($"  Sortie Discord : {Engine.DiscordOutputName ?? "aucune"}");
         sb.AppendLine($"  Casque : {Engine.MonitorName ?? "aucun"}");
         sb.AppendLine($"  Micro virtuel détecté : {(Devices.HasVirtualCable ? "oui" : "non")}");
+        var discord = DiscordMicCheck.Evaluate(MicListeners.Snapshot());
+        sb.AppendLine($"  Discord enregistre : {discord.State switch
+        {
+            DiscordMicState.RealMic => $"{discord.DeviceName} (vrai micro : il n'entend pas les effets)",
+            DiscordMicState.VirtualMic => $"{discord.DeviceName} (micro virtuel)",
+            _ => "rien en ce moment (pas dans un salon vocal)",
+        }}");
         UpdateDiagnostics();
         sb.AppendLine(DiagnosticsText.Replace("   ·   ", "\n"));
         sb.AppendLine($"Sons : {Settings.Pads.Count} · Musiques : {Music.Library.LibraryTracks.Count()} · Playlists : {Music.Library.Playlists.Count}");
@@ -437,6 +444,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _ = RefreshAutostartAsync();
         _meterTimer.Start();
         _saveTimer.Start();
+        Devices.StartDiscordWatch();
         StartGameProfiles();
         if (setupRequested || !Settings.FirstRunDone || Settings.SetupResumeStep != null)
             Setup.Open(Settings.SetupResumeStep ?? SetupWizardViewModel.StepWelcome);
