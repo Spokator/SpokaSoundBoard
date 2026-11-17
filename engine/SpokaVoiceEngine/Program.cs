@@ -32,6 +32,11 @@ public static class Program
     {
         // Messages are French: UTF-8 on stderr whatever the console code page (SpokaSoundBoard reads it as UTF-8).
         Console.SetError(new StreamWriter(Console.OpenStandardError(), new System.Text.UTF8Encoding(false)) { AutoFlush = true });
+        // Ahead of the game on the graphics card (see Gpu.SetSchedulingPriority). SPOKA_VC_GPU_PRIORITY=2 for tests.
+        var priority = int.TryParse(Environment.GetEnvironmentVariable("SPOKA_VC_GPU_PRIORITY"), out var p) ? p : Gpu.PriorityHigh;
+        var status = Gpu.SetSchedulingPriority(priority);
+        if (status != 0 && priority > Gpu.PriorityAboveNormal) status = Gpu.SetSchedulingPriority(Gpu.PriorityAboveNormal);
+        if (status != 0) Console.Error.WriteLine($"Priorité graphique non modifiée (0x{status:x8}).");
         try
         {
             if (args.Length > 0 && args[0] == "--list-gpus")
@@ -84,6 +89,17 @@ public static class Program
         converter.SetVoice(VoiceImprint.Load(voice, (int)(promptSeconds * VoiceConverter.OutputRate / 256)));
         var samples = Wav.Read(input, out var rate);
         if (rate != 16000) throw new InvalidDataException("Entrée attendue à 16 kHz.");
+        // SPOKA_VC_SIZES=1: first one block at each length of BlockSteps, like the live start-up check (diagnostics).
+        if (Environment.GetEnvironmentVariable("SPOKA_VC_SIZES") == "1")
+        {
+            foreach (var size in BlockSteps)
+            {
+                converter.Configure(size);
+                converter.Process(new float[converter.Block16], out _);
+            }
+            converter.Configure(blockMs);
+            converter.Reset();
+        }
         var outSamples = new List<float>();
         var times = new List<double>();
         for (var pos = 0; pos + converter.Block16 <= samples.Length; pos += converter.Block16)
@@ -91,6 +107,9 @@ public static class Program
             var sw = Stopwatch.StartNew();
             outSamples.AddRange(converter.Process(samples.AsSpan(pos, converter.Block16), out _));
             times.Add(sw.Elapsed.TotalMilliseconds);
+            // SPOKA_VC_PACE=1: one block per block length, like a live microphone (diagnostics).
+            if (Environment.GetEnvironmentVariable("SPOKA_VC_PACE") == "1" && sw.Elapsed.TotalMilliseconds < converter.BlockMs)
+                Task.Delay(converter.BlockMs - (int)sw.Elapsed.TotalMilliseconds).Wait();
         }
         Wav.Write(output, outSamples.ToArray(), VoiceConverter.OutputRate);
         if (Environment.GetEnvironmentVariable("SPOKA_VC_PROFILE") == "1")
@@ -107,15 +126,34 @@ public static class Program
 
     // ---- Real-time service for SpokaSoundBoard ---------------------------------------------------------------
 
+    /// <summary>Below this the microphone is silent (about -50 dBFS): nothing is lost when such audio is dropped.</summary>
+    private const float SilencePeak16 = 0.003f;
+
+    private static float Peak(List<float> samples, int count)
+    {
+        var peak = 0f;
+        for (var i = 0; i < count && i < samples.Count; i++) peak = Math.Max(peak, Math.Abs(samples[i]));
+        return peak;
+    }
+
+    /// <summary>Fewest diffusion steps used when the GPU is busy (below, the voice gets noticeably rougher).</summary>
+    private const int MinSteps = 2;
+
     private static int Serve()
     {
         var input = new BinaryReader(Console.OpenStandardInput());
         var output = new BinaryWriter(Console.OpenStandardOutput());
         VoiceConverter? converter = null;
+        Task<VoiceConverter>? next = null;  // a converter for another block length, prepared in the background
         InitMessage? init = null;
+        GpuAdapter? gpu = null;
+        VoiceImprint? voice = null;
         var pending = new List<float>(48000);
         var recent = new Queue<double>();
-        var blockIndex = 0;
+        var blockIndex = 0;   // block length of the running converter (index in BlockSteps)
+        var startIndex = 0;   // block length asked for
+        var nextIndex = 0;    // block length of the one being prepared
+        var sinceChange = 0;  // blocks since the last change (steps or block length)
 
         void Send(uint type, ReadOnlySpan<byte> payload)
         {
@@ -127,6 +165,47 @@ public static class Program
 
         void SendJson<T>(uint type, T value, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> info) =>
             Send(type, JsonSerializer.SerializeToUtf8Bytes(value, info));
+
+        // A converter has one block length for its whole life: under GPU contention, sessions that have run several
+        // shapes stay about three times slower (measured). Changing the length means fresh sessions.
+        VoiceConverter Create(int index, int steps)
+        {
+            var c = new VoiceConverter(init!.Models, new ConverterOptions(BlockSteps[index], steps, init.PromptSeconds,
+                ContentContextSeconds: init.ContentContextSeconds), gpu!.Index);
+            c.SetVoice(voice!);
+            return c;
+        }
+
+        // A few blocks of noise: the first run prepares the GPU kernels and is always slow; the speed is the best of
+        // the others.
+        static double WarmUp(VoiceConverter c, int runs)
+        {
+            var noise = new float[c.Block16];
+            var rng = new Random(1);
+            var best = double.MaxValue;
+            for (var i = 0; i < runs; i++)
+            {
+                for (var j = 0; j < noise.Length; j++) noise[j] = (float)(rng.NextDouble() - 0.5) * 0.2f;
+                var t = Stopwatch.StartNew();
+                c.Process(noise, out _);
+                if (i > 0) best = Math.Min(best, t.Elapsed.TotalMilliseconds);
+            }
+            c.Reset();
+            return best;
+        }
+
+        Task<VoiceConverter> Prepare(int index, int steps) => Task.Run(() =>
+        {
+            var c = Create(index, steps);
+            WarmUp(c, 3);
+            return c;
+        });
+
+        void Changed()
+        {
+            recent.Clear();
+            sinceChange = 0;
+        }
 
         try
         {
@@ -140,42 +219,37 @@ public static class Program
                     case Init:
                     {
                         init = JsonSerializer.Deserialize(payload, EngineJson.Default.InitMessage)!;
-                        var gpu = Gpu.Best();
+                        gpu = Gpu.Best();
                         if (gpu == null)
                         {
                             SendJson(Error, new ErrorMessage(true, "no-gpu", "Aucune carte graphique compatible DirectX 12."), EngineJson.Default.ErrorMessage);
                             return 2;
                         }
                         var sw = Stopwatch.StartNew();
-                        blockIndex = Math.Max(0, Array.IndexOf(BlockSteps, init.BlockMs));
+                        voice = VoiceImprint.Load(init.Voice, (int)(init.PromptSeconds * VoiceConverter.OutputRate / 256));
+                        startIndex = blockIndex = Math.Max(0, Array.IndexOf(BlockSteps, init.BlockMs));
                         converter?.Dispose();
-                        converter = new VoiceConverter(init.Models, new ConverterOptions(BlockSteps[blockIndex], init.Steps, init.PromptSeconds,
-                            ContentContextSeconds: init.ContentContextSeconds), gpu.Index);
-                        converter.SetVoice(VoiceImprint.Load(init.Voice, (int)(init.PromptSeconds * VoiceConverter.OutputRate / 256)));
+                        converter = Create(blockIndex, init.Steps);
                         var loadMs = sw.ElapsedMilliseconds;
-
-                        // Warm-up on noise: the first runs compile the GPU kernels; also measures the real speed.
-                        var noise = new float[converter.Block16];
-                        var rng = new Random(1);
-                        double warm = 0;
-                        for (var i = 0; i < 4; i++)
+                        var warm = WarmUp(converter, 4);
+                        // Too slow right now (a game is running): fewer diffusion steps first (free), then a longer
+                        // block. It comes back to what was asked once the GPU is free.
+                        while (init.AutoBlock && warm > converter.BlockMs * 0.8)
                         {
-                            for (var j = 0; j < noise.Length; j++) noise[j] = (float)(rng.NextDouble() - 0.5) * 0.2f;
-                            var t = Stopwatch.StartNew();
-                            converter.Process(noise, out _);
-                            warm = t.Elapsed.TotalMilliseconds;
+                            if (converter.Steps > MinSteps)
+                            {
+                                converter.Steps--;
+                            }
+                            else
+                            {
+                                if (blockIndex >= BlockSteps.Length - 1) break;
+                                converter.Dispose();
+                                converter = Create(++blockIndex, MinSteps);
+                            }
+                            warm = WarmUp(converter, 3);
                         }
-                        // Too slow for this block length: take a longer one before starting.
-                        while (init.AutoBlock && warm > converter.BlockMs * 0.8 && blockIndex < BlockSteps.Length - 1)
-                        {
-                            converter.Configure(BlockSteps[++blockIndex]);
-                            var t = Stopwatch.StartNew();
-                            converter.Process(new float[converter.Block16].Select((_, j) => (float)Math.Sin(j * 0.05) * 0.1f).ToArray(), out _);
-                            warm = t.Elapsed.TotalMilliseconds;
-                        }
-                        converter.Reset();
                         pending.Clear();
-                        recent.Clear();
+                        Changed();
                         SendJson(Ready, new ReadyMessage(gpu.Name, gpu.DedicatedMemory / (1 << 20), loadMs, converter.BlockMs, converter.Block16,
                             converter.BlockOut, VoiceConverter.OutputRate, Math.Round(warm, 1), warm > converter.BlockMs * 0.95), EngineJson.Default.ReadyMessage);
                         break;
@@ -184,7 +258,8 @@ public static class Program
                     {
                         if (converter == null || init == null) break;
                         var message = JsonSerializer.Deserialize(payload, EngineJson.Default.VoiceMessage)!;
-                        converter.SetVoice(VoiceImprint.Load(message.Voice, (int)(init.PromptSeconds * VoiceConverter.OutputRate / 256)));
+                        voice = VoiceImprint.Load(message.Voice, (int)(init.PromptSeconds * VoiceConverter.OutputRate / 256));
+                        converter.SetVoice(voice); // one being prepared takes it over in ContinueFrom
                         break;
                     }
                     case Reset:
@@ -194,9 +269,32 @@ public static class Program
                     case Audio:
                     {
                         if (converter == null) break;
+                        // A converter for another block length is ready: it takes over the stream, seamlessly.
+                        if (next is { IsCompleted: true } done)
+                        {
+                            next = null;
+                            if (done.IsCompletedSuccessfully)
+                            {
+                                done.Result.ContinueFrom(converter);
+                                converter.Dispose();
+                                converter = done.Result;
+                                blockIndex = nextIndex;
+                                Changed();
+                                SendJson(Stats, new StatsMessage(0, false, converter.BlockMs, 0, converter.Block16, converter.BlockOut, true, converter.Steps),
+                                    EngineJson.Default.StatsMessage);
+                            }
+                            else
+                            {
+                                Console.Error.WriteLine(done.Exception?.GetBaseException().Message);
+                            }
+                        }
+
                         for (var i = 0; i + 4 <= payload.Length; i += 4) pending.Add(BitConverter.ToSingle(payload, i));
-                        // Too far behind (GPU busy): drop the oldest audio rather than pile up delay.
-                        var max = converter.Block16 * 3;
+                        // Behind (the GPU was busy): catch up through silence first; speech is only dropped when
+                        // hopelessly late, since fewer steps or a longer block (below) catch up without losing words.
+                        while (pending.Count > converter.Block16 * 3 && Peak(pending, converter.Block16) < SilencePeak16)
+                            pending.RemoveRange(0, converter.Block16);
+                        var max = converter.Block16 * 6;
                         if (pending.Count > max) pending.RemoveRange(0, pending.Count - max);
                         while (pending.Count >= converter.Block16)
                         {
@@ -213,15 +311,37 @@ public static class Program
                                 recent.Enqueue(ms);
                                 if (recent.Count > 10) recent.Dequeue();
                             }
+                            sinceChange++;
                             SendJson(Stats, new StatsMessage(Math.Round(ms, 1), silent, converter.BlockMs,
-                                Math.Round(recent.DefaultIfEmpty(0).Average() / converter.BlockMs, 3), null, null, false), EngineJson.Default.StatsMessage);
-                            // Steadily too slow (a game took the GPU): longer blocks, a bit more delay but no gaps.
-                            if (init!.AutoBlock && recent.Count == 10 && recent.Average() > converter.BlockMs * 0.85 && blockIndex < BlockSteps.Length - 1)
+                                Math.Round(recent.DefaultIfEmpty(0).Average() / converter.BlockMs, 3), null, null, false, converter.Steps),
+                                EngineJson.Default.StatsMessage);
+                            if (!init!.AutoBlock || recent.Count < 10 || next != null) continue;
+                            var average = recent.Average();
+                            var behind = pending.Count >= converter.Block16;
+                            if (average > converter.BlockMs * 0.85 || behind && average > converter.BlockMs * 0.6)
                             {
-                                converter.Configure(BlockSteps[++blockIndex]);
-                                recent.Clear();
-                                pending.Clear();
-                                SendJson(Stats, new StatsMessage(0, false, converter.BlockMs, 0, converter.Block16, converter.BlockOut, true), EngineJson.Default.StatsMessage);
+                                // Steadily too slow (a game took the GPU): fewer steps first, then longer blocks.
+                                if (converter.Steps > MinSteps) converter.Steps--;
+                                else if (blockIndex < BlockSteps.Length - 1) next = Prepare(nextIndex = blockIndex + 1, converter.Steps);
+                                else continue;
+                                Changed();
+                            }
+                            else if (sinceChange >= Math.Max(10, 6000 / converter.BlockMs) && recent.Max() < converter.BlockMs * 0.5)
+                            {
+                                // The GPU is free again (the game closed), for about 6 s: back to what was asked, steps
+                                // first, then straight to the shortest block that fits (not one length at a time).
+                                if (converter.Steps < init.Steps)
+                                {
+                                    converter.Steps++;
+                                }
+                                else
+                                {
+                                    var target = startIndex;
+                                    while (target < blockIndex && recent.Max() >= BlockSteps[target] * 0.5) target++;
+                                    if (target >= blockIndex) continue;
+                                    next = Prepare(nextIndex = target, converter.Steps);
+                                }
+                                Changed();
                             }
                         }
                         break;
@@ -263,7 +383,7 @@ public sealed record VoiceMessage(string Voice);
 
 public sealed record ReadyMessage(string Gpu, long VramMb, long LoadMs, int BlockMs, int Block16, int BlockOut, int OutputRate, double MsPerBlock, bool TooSlow);
 
-public sealed record StatsMessage(double Ms, bool Silent, int BlockMs, double Load, int? Block16, int? BlockOut, bool Reconfigured);
+public sealed record StatsMessage(double Ms, bool Silent, int BlockMs, double Load, int? Block16, int? BlockOut, bool Reconfigured, int? Steps = null);
 
 public sealed record ErrorMessage(bool Fatal, string Code, string Message);
 

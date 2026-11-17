@@ -24,6 +24,22 @@ public static unsafe class Gpu
     [DllImport("dxgi.dll")]
     private static extern int CreateDXGIFactory1(in Guid riid, out IntPtr factory);
 
+    [DllImport("gdi32.dll")]
+    private static extern int D3DKMTSetProcessSchedulingPriorityClass(IntPtr process, int priorityClass);
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetCurrentProcess();
+
+    /// <summary>D3DKMT_SCHEDULINGPRIORITYCLASS: normal 2, above normal 3, high 4 (realtime 5 needs administrator rights).</summary>
+    public const int PriorityNormal = 2, PriorityAboveNormal = 3, PriorityHigh = 4;
+
+    /// <summary>
+    /// GPU scheduling priority of this process. A game keeps the graphics card busy almost all the time: at normal
+    /// priority the voice conversion only gets the leftovers and falls far behind real time. Returns the NTSTATUS
+    /// (0 = done).
+    /// </summary>
+    public static int SetSchedulingPriority(int priorityClass) => D3DKMTSetProcessSchedulingPriorityClass(GetCurrentProcess(), priorityClass);
+
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct AdapterDesc1
     {

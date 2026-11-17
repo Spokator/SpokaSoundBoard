@@ -54,6 +54,10 @@ public sealed partial class VoiceChangerViewModel : ObservableObject
     private VoiceChangerSession? _session;
     private CancellationTokenSource? _downloadCts;
     private double _msPerBlock;
+    private int _lastBlockMs;
+    private int _lastUnderruns;
+    private DateTime _gapWindowStart;
+    private bool _overloadHintShown;
     private bool _gpuProbed;
 
     public VoiceChangerViewModel(MainViewModel main)
@@ -268,12 +272,17 @@ public sealed partial class VoiceChangerViewModel : ObservableObject
             if (ready.TooSlow)
             {
                 session.Dispose();
-                _main.ShowToast($"Votre carte graphique ({ready.Gpu}) est trop lente pour le changeur de voix en temps réel : " +
-                                $"{ready.MsPerBlock:0} ms de calcul pour {ready.BlockMs} ms de voix.", 10);
+                _main.ShowToast($"La carte graphique ({ready.Gpu}) n'arrive pas à convertir la voix en temps réel en ce moment : " +
+                                $"{ready.MsPerBlock:0} ms de calcul pour {ready.BlockMs} ms de voix. Si un jeu tourne, limitez ses images par seconde " +
+                                "(FPS) dans ses options, puis réessayez.", 12);
                 return;
             }
             _session = session;
             _msPerBlock = ready.MsPerBlock;
+            _lastBlockMs = ready.BlockMs;
+            _lastUnderruns = 0;
+            _gapWindowStart = DateTime.UtcNow;
+            _overloadHintShown = false;
             UpdateLiveInfo(ready.MsPerBlock / ready.BlockMs);
             _main.Engine.Core.VoiceChanger = session.Link;
             IsOn = true;
@@ -307,8 +316,26 @@ public sealed partial class VoiceChangerViewModel : ObservableObject
         if (!IsOn || stats.Silent) return;
         if (stats.Ms > 0) _msPerBlock = _msPerBlock * 0.8 + stats.Ms * 0.2;
         UpdateLiveInfo(stats.Load);
-        if (stats.Reconfigured)
-            _main.ShowToast("La carte graphique est très occupée (le jeu ?) : le changeur de voix prend un peu plus de délai pour rester fluide.", 6);
+        if (stats.Reconfigured && stats.BlockMs != _lastBlockMs)
+        {
+            if (stats.BlockMs > _lastBlockMs)
+                _main.ShowToast("La carte graphique est très occupée (le jeu ?) : le changeur de voix prend un peu plus de délai pour rester fluide.", 6);
+            _lastBlockMs = stats.BlockMs;
+        }
+
+        // Gaps keep coming: the game leaves too little of the graphics card. Say what helps, once per session.
+        if (_session is not { } session || _overloadHintShown) return;
+        if (DateTime.UtcNow - _gapWindowStart > TimeSpan.FromSeconds(30))
+        {
+            _gapWindowStart = DateTime.UtcNow;
+            _lastUnderruns = session.Link.Underruns;
+        }
+        if (session.Link.Underruns - _lastUnderruns >= 3)
+        {
+            _overloadHintShown = true;
+            _main.ShowToast("La voix est hachée : le jeu occupe presque toute la carte graphique. Limitez ses images par seconde (FPS), " +
+                            "par exemple à 60 ou 120 dans ses options graphiques, pour laisser de la place au changeur de voix.", 14);
+        }
     }
 
     private void UpdateLiveInfo(double load)

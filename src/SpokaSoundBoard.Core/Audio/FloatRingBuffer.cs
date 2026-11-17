@@ -51,6 +51,22 @@ public sealed class FloatRingBuffer
         }
     }
 
+    /// <summary>Loudest of the next <paramref name="count"/> samples, without reading them.</summary>
+    public float Peak(int count)
+    {
+        lock (_lock)
+        {
+            var n = Math.Min(count, _count);
+            var peak = 0f;
+            for (var i = 0; i < n; i++)
+            {
+                var v = MathF.Abs(_buffer[(_read + i) % _buffer.Length]);
+                if (v > peak) peak = v;
+            }
+            return peak;
+        }
+    }
+
     public void Skip(int count)
     {
         lock (_lock) SkipUnlocked(Math.Min(count, _count));

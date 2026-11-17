@@ -19,7 +19,8 @@ public sealed record VoiceChangerProfile(int BlockMs, int Steps, double PromptSe
 public sealed record VoiceChangerReady(string Gpu, int BlockMs, double MsPerBlock, bool TooSlow);
 
 /// <summary>Speed of the last converted block.</summary>
-public sealed record VoiceChangerStats(double Ms, double Load, int BlockMs, bool Silent, bool Reconfigured);
+/// <param name="Steps">Diffusion steps in use (fewer while the GPU is busy), 0 when unknown.</param>
+public sealed record VoiceChangerStats(double Ms, double Load, int BlockMs, bool Silent, bool Reconfigured, int Steps = 0);
 
 /// <summary>A problem reported by the engine (or detected here). Fatal: the voice changer stopped.</summary>
 public sealed record VoiceChangerError(bool Fatal, string Code, string Message);
@@ -215,7 +216,8 @@ public sealed class VoiceChangerSession : IDisposable
                         StatsReceived?.Invoke(new VoiceChangerStats(
                             r.TryGetProperty("ms", out var ms) ? ms.GetDouble() : 0,
                             r.TryGetProperty("load", out var load) ? load.GetDouble() : 0,
-                            BlockMs, r.TryGetProperty("silent", out var s) && s.GetBoolean(), reconfigured));
+                            BlockMs, r.TryGetProperty("silent", out var s) && s.GetBoolean(), reconfigured,
+                            r.TryGetProperty("steps", out var st) && st.ValueKind == JsonValueKind.Number ? st.GetInt32() : 0));
                         break;
                     }
                     case Error:

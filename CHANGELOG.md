@@ -1,5 +1,15 @@
 # Journal des versions
 
+## 2.16.2
+
+Changeur de voix IA : une voix complète et fluide, même en jeu.
+
+- **Plus de mots perdus** : quand un jeu occupait la carte graphique, le changeur de voix prenait du retard, coupait la voix et jetait des bouts de phrases pour rattraper. Mesuré sous une charge comparable à un jeu, sur 25 s de parole : avant, 1,8 s de voix perdue, 2,5 s de coupures et un mot sur trois mal compris ; maintenant, aucune voix perdue, quasiment plus de coupures et 14 % de mots mal compris, comme quand la carte est libre.
+- **Moins de délai en jeu** : sous la même charge, la voix arrive en environ 0,45 s au lieu de 1,2 s. Le moteur ne change plus la taille de ses blocs à chaud : cette opération le rendait trois fois plus lent tant que la carte était partagée. Quand la carte est très occupée, il allège d'abord le calcul, puis passe si besoin à des blocs plus longs sans couper la voix. Il revient au réglage normal dès que la carte se libère.
+- **Rattrapage par les silences** : quand du retard s'accumule, il est rattrapé pendant les pauses, jamais au milieu d'un mot. Après un raté, la marge de sécurité augmente d'elle-même, puis redescend.
+- **Priorité graphique** : le moteur passe devant les autres programmes sur la carte graphique.
+- **Conseil clair** : si la voix est hachée parce que le jeu prend toute la carte, l'app conseille de limiter ses images par seconde (FPS). Au démarrage pendant un jeu, elle ne dit plus que la carte est « trop lente ».
+
 ## 2.16.1
 
 Quand le jeu entend la voix modifiée mais pas Discord.

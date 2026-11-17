@@ -102,6 +102,7 @@ public sealed class VoiceConverter : IDisposable
     public VoiceConverter(string modelDir, ConverterOptions options, int deviceId, ulong seed = 1234)
     {
         _options = options;
+        Steps = options.Steps;
         _rng = new Rng(seed);
         _content = Open(modelDir, "content.onnx", deviceId);
         _regulator = Open(modelDir, "regulator.onnx", deviceId);
@@ -139,7 +140,10 @@ public sealed class VoiceConverter : IDisposable
         return new InferenceSession(Path.Combine(dir, name), options);
     }
 
-    /// <summary>Block geometry for a block length (rounded to 20 ms); clears the stream state.</summary>
+    /// <summary>
+    /// Block geometry for a block length (rounded to 20 ms). The audio heard so far and the cross-fade tail are kept, so
+    /// changing the block length while someone speaks is seamless.
+    /// </summary>
     public void Configure(int blockMs)
     {
         static int Round(double seconds) => (int)Math.Round(seconds * OutputRate / Zc, MidpointRounding.ToEven) * Zc;
@@ -158,8 +162,11 @@ public sealed class VoiceConverter : IDisposable
         _returnLength = (block + _solaLength + _solaSearch) / Zc;
         _targetFrames = (int)Math.Floor((skipHead + _returnLength + _skipTail - _ceDitFrames) / 50.0 * OutputRate / Hop);
         var total = extra + crossfade + _solaSearch + block + extraRight;
-        _input16 = new float[320 * total / Zc];
-        _solaBuffer = new float[_solaLength];
+        var input16 = new float[320 * total / Zc];
+        var keep = Math.Min(_input16.Length, input16.Length);
+        Array.Copy(_input16, _input16.Length - keep, input16, input16.Length - keep, keep);
+        _input16 = input16;
+        if (_solaBuffer.Length != _solaLength) _solaBuffer = new float[_solaLength];
         _fadeIn = new float[_solaLength];
         for (var i = 0; i < _solaLength; i++)
         {
@@ -167,10 +174,36 @@ public sealed class VoiceConverter : IDisposable
             var s = Math.Sin(0.5 * Math.PI * t);
             _fadeIn[i] = (float)(s * s);
         }
-        _silentBlocks = 0;
     }
 
     public void SetVoice(VoiceImprint voice) => _voice = voice;
+
+    /// <summary>
+    /// Diffusion steps per block. Changing them does not change any tensor shape, so it is free at run time (unlike
+    /// the block length: see <see cref="ContinueFrom"/>).
+    /// </summary>
+    public int Steps
+    {
+        get => _steps;
+        set => _steps = Math.Clamp(value, 1, 10);
+    }
+
+    private int _steps;
+
+    /// <summary>
+    /// Takes over the stream of <paramref name="previous"/> (audio heard so far, cross-fade tail): a converter built
+    /// for another block length continues seamlessly. Under GPU contention, sessions that have run several shapes
+    /// stay about three times slower, so the block length is changed with fresh sessions, never in place.
+    /// </summary>
+    public void ContinueFrom(VoiceConverter previous)
+    {
+        var keep = Math.Min(previous._input16.Length, _input16.Length);
+        Array.Clear(_input16);
+        Array.Copy(previous._input16, previous._input16.Length - keep, _input16, _input16.Length - keep, keep);
+        if (previous._solaBuffer.Length == _solaBuffer.Length) Array.Copy(previous._solaBuffer, _solaBuffer, _solaBuffer.Length);
+        _silentBlocks = previous._silentBlocks;
+        _voice = previous._voice;
+    }
 
     /// <summary>Forgets the audio heard so far (new session, other voice).</summary>
     public void Reset()
@@ -257,7 +290,7 @@ public sealed class VoiceConverter : IDisposable
         var lens = new long[] { T, T };
         var xs = new float[2 * 80 * T];
         var ts = new float[2];
-        var steps = _options.Steps;
+        var steps = Steps;
         var cfg = (float)_options.CfgRate;
 
         using var promptValue = OrtValue.CreateTensorValueFromMemory(promptX, [2, 80, T]);

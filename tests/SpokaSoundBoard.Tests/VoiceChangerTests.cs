@@ -89,21 +89,62 @@ public sealed class VoiceChangerTests
         Assert.Equal(1199 / 10000f, block[239], 6);
         Assert.Equal(0f, block[240]);
 
-        // After a gap it waits for a whole block again.
-        link.Output.Write(new float[500]);
+        // After a gap it waits for a whole block again, plus a bit more margin so it does not happen again.
+        Assert.True(link.BoostSamples > 0);
+        link.Output.Write(new float[1200]);
         block = mic.ToArray();
         link.Exchange(block, true);
-        Assert.Equal(500, link.Output.Count);
+        Assert.Equal(1200, link.Output.Count);
+        Assert.True(link.WaitingSamples >= 240);
+    }
+
+    [Fact]
+    public void Link_GivesTheExtraMarginBack_OnceSteady()
+    {
+        var link = new VoiceChangerLink { PrimeSamples = 480 };
+        var block = new float[480];
+        link.Output.Write(new float[480]);
+        link.Exchange(block, true);
+        link.Exchange(block, true);                           // empty: gap, margin grows
+        var boosted = link.BoostSamples;
+        Assert.True(boosted > 0);
+        for (var i = 0; i < 48000 * 25 / 480; i++)            // 25 s of steady playback
+        {
+            link.Output.Write(block);
+            link.Exchange(block, true);
+        }
+        Assert.True(link.BoostSamples < boosted);
     }
 
     [Fact]
     public void Link_CatchesUp_WhenTooMuchIsBuffered_AndSendsSilenceWhenTheMicIsOff()
     {
+        // Piled-up silence: caught up one block per call, down to the target.
         var link = new VoiceChangerLink { PrimeSamples = 1000, MaxExtraSamples = 500 };
         link.Output.Write(new float[5000]);
         var block = new float[480];
-        link.Exchange(block, true);
-        Assert.Equal(1000 - 480, link.Output.Count);          // kept one block of margin, not 5000 samples of delay
+        for (var i = 0; i < 20; i++) link.Exchange(block, true);
+        Assert.Equal(0, link.SkippedVoiceSamples);
+        Assert.Equal(4 * 480, link.SkippedSamples);           // silence dropped, one block per call, down to the target
+
+        // Piled-up speech: never dropped below the hard limit; it plays out (a bit late) instead.
+        var voiced = new VoiceChangerLink { PrimeSamples = 1000, MaxExtraSamples = 500, HardMaxExtraSamples = 48000 };
+        voiced.Output.Write(Enumerable.Repeat(0.3f, 5000).ToArray());
+        var played = 0;
+        for (var i = 0; i < 12; i++)
+        {
+            Array.Clear(block);
+            voiced.Exchange(block, true);
+            played += block.Count(v => v > 0.29f);
+        }
+        Assert.Equal(0, voiced.SkippedSamples);
+        Assert.Equal(5000, played);
+
+        // Past the hard limit even speech is dropped: the delay stays bounded.
+        var flooded = new VoiceChangerLink { PrimeSamples = 1000, MaxExtraSamples = 500, HardMaxExtraSamples = 2000 };
+        flooded.Output.Write(Enumerable.Repeat(0.3f, 8000).ToArray());
+        flooded.Exchange(block, true);
+        Assert.True(flooded.SkippedVoiceSamples > 0);
 
         link.Input.Clear();
         var mic = Enumerable.Repeat(0.5f, 480).ToArray();
