@@ -7,7 +7,7 @@ namespace SpokaSoundBoard.Core.Audio;
 public static class AudioFileLoader
 {
     public static readonly string[] SupportedExtensions =
-        [".mp3", ".wav", ".ogg", ".flac", ".m4a", ".aac", ".wma", ".aiff", ".aif", ".mp4"];
+        [".mp3", ".wav", ".ogg", ".opus", ".flac", ".m4a", ".aac", ".wma", ".aiff", ".aif", ".mp4"];
 
     public static string DialogFilter =>
         "Fichiers audio|" + string.Join(";", SupportedExtensions.Select(e => "*" + e)) + "|Tous les fichiers|*.*";
@@ -18,9 +18,13 @@ public static class AudioFileLoader
     /// <summary>Opens an audio file and converts it to stereo float at the requested sample rate.</summary>
     public static (WaveStream Reader, ISampleProvider Provider) Open(string path, int sampleRate)
     {
-        WaveStream reader = Path.GetExtension(path).Equals(".ogg", StringComparison.OrdinalIgnoreCase)
-            ? new VorbisWaveReader(path)
-            : new AudioFileReader(path);
+        var extension = Path.GetExtension(path);
+        // .ogg holds either Vorbis or Opus (voice messages, recorders, games): the first page tells which.
+        WaveStream reader = extension.Equals(".opus", StringComparison.OrdinalIgnoreCase) || OpusWaveReader.IsOpus(path)
+            ? new OpusWaveReader(path)
+            : extension.Equals(".ogg", StringComparison.OrdinalIgnoreCase)
+                ? new VorbisWaveReader(path)
+                : new AudioFileReader(path);
 
         try
         {

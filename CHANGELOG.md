@@ -1,5 +1,10 @@
 # Journal des versions
 
+## 2.16.3
+
+- **Fichiers .ogg et .opus** : beaucoup de fichiers .ogg contiennent de l'Opus et non du Vorbis : messages vocaux Discord et WhatsApp, la plupart des enregistreurs, de nombreux fichiers de jeux. Ils ne pouvaient pas être importés (« Could not initialize container »). Ils se lisent maintenant partout, dans « Mes voix », la soundboard et la musique, et les fichiers .opus sont acceptés aussi.
+- **Import de plusieurs fichiers** : si certains fichiers ne peuvent pas être lus, un seul message les résume (avant, chaque message cachait le précédent), et le détail va dans le journal d'erreurs. Un fichier déjà ajouté n'est plus ajouté deux fois.
+
 ## 2.16.2
 
 Changeur de voix IA : une voix complète et fluide, même en jeu.

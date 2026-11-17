@@ -85,7 +85,12 @@ public static class Program
     private static int ConvertFile(string models, string voice, string input, string output, int blockMs, ulong seed, double contentContext, double promptSeconds, int steps)
     {
         var gpu = Gpu.Best() ?? throw new InvalidOperationException("Aucune carte graphique DirectX 12.");
-        using var converter = new VoiceConverter(models, new ConverterOptions(BlockMs: blockMs, Steps: steps, PromptSeconds: promptSeconds, ContentContextSeconds: contentContext), gpu.Index, seed);
+        // Experiments (file mode only): SPOKA_VC_LOOKAHEAD, SPOKA_VC_CFG, SPOKA_VC_DITCTX in seconds / rate.
+        static double Env(string name, double fallback) =>
+            double.TryParse(Environment.GetEnvironmentVariable(name), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : fallback;
+        var options = new ConverterOptions(BlockMs: blockMs, Steps: steps, PromptSeconds: promptSeconds, ContentContextSeconds: contentContext,
+            CfgRate: Env("SPOKA_VC_CFG", 0.7), DitContextSeconds: Env("SPOKA_VC_DITCTX", 0.5), LookAheadSeconds: Env("SPOKA_VC_LOOKAHEAD", 0.02));
+        using var converter = new VoiceConverter(models, options, gpu.Index, seed);
         converter.SetVoice(VoiceImprint.Load(voice, (int)(promptSeconds * VoiceConverter.OutputRate / 256)));
         var samples = Wav.Read(input, out var rate);
         if (rate != 16000) throw new InvalidDataException("Entrée attendue à 16 kHz.");

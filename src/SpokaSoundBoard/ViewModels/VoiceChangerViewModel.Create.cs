@@ -160,8 +160,10 @@ public sealed partial class VoiceChangerViewModel
             Multiselect = true,
         };
         if (dialog.ShowDialog() != true) return;
+        var failed = new List<(string Name, Exception Error)>();
         foreach (var file in dialog.FileNames)
         {
+            if (Clips.Any(c => string.Equals(c.Path, file, StringComparison.OrdinalIgnoreCase))) continue; // already in
             try
             {
                 var seconds = await Task.Run(() => DurationOf(file));
@@ -169,10 +171,17 @@ public sealed partial class VoiceChangerViewModel
             }
             catch (Exception ex)
             {
-                _main.ShowToast($"« {Path.GetFileName(file)} » ne peut pas être lu : " + Core.FriendlyErrors.Describe(ex));
+                App.Log(new InvalidOperationException($"Mes voix : « {file} » illisible.", ex));
+                failed.Add((Path.GetFileName(file), ex));
             }
         }
         OnPropertyChanged(nameof(ClipsSummary));
+        // One message for all of them (one toast per file would hide all but the last).
+        if (failed.Count == 1)
+            _main.ShowToast($"« {failed[0].Name} » ne peut pas être lu : " + Core.FriendlyErrors.Describe(failed[0].Error), 10);
+        else if (failed.Count > 1)
+            _main.ShowToast($"{failed.Count} fichiers sur {dialog.FileNames.Length} ne peuvent pas être lus ({string.Join(", ", failed.Take(3).Select(f => $"« {f.Name} »"))}" +
+                            $"{(failed.Count > 3 ? "…" : "")}) : " + Core.FriendlyErrors.Describe(failed[0].Error), 12);
     }
 
     private static double DurationOf(string file)
