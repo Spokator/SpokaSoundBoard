@@ -5,12 +5,27 @@ using SpokaSoundBoard.Core.Dsp;
 namespace SpokaSoundBoard.Core.Audio;
 
 /// <summary>Settings of the conversion: block length, diffusion steps, contexts, playback margin.</summary>
-public sealed record VoiceChangerProfile(int BlockMs, int Steps, double PromptSeconds, double ContentContextSeconds, int MarginMs)
+/// <param name="ContentContextSeconds">Audio before each block that the content encoder hears.</param>
+/// <param name="DitContextSeconds">Part of it that the diffusion model regenerates with the block: more makes the
+/// intonation flow from one block to the next.</param>
+/// <param name="LightContentContextSeconds">Contexts the engine falls back to while the GPU is busy (a game), before
+/// fewer steps or longer blocks; null: no lighter contexts.</param>
+public sealed record VoiceChangerProfile(int BlockMs, int Steps, double PromptSeconds, double ContentContextSeconds, int MarginMs,
+    double DitContextSeconds = 0.5, double? LightContentContextSeconds = null, double? LightDitContextSeconds = null)
 {
-    /// <summary>Measured on real French speech: same intelligibility as <see cref="Stable"/>, timbre a hair less close.</summary>
-    public static readonly VoiceChangerProfile Reactive = new(200, 3, 1.5, 1.5, 120);
+    /// <summary>
+    /// Measured on real French speech over 3 random draws (2.17): content context 2.5 s and DiT context 1 s (instead
+    /// of 1.5 and 0.5) give a clearly more natural intonation (melody 0.68 against 0.63, better on every draw), a voice
+    /// a little closer to the target (0.560 against 0.551) and no fewer words understood, for about 18 % more GPU time.
+    /// Under a game-like GPU load that extra time cost short gaps, so the engine starts on the 2.16 contexts (no gap
+    /// under the same load, 18 runs), moves to the rich ones after a few seconds when the GPU has room (no gap), and
+    /// falls back to the light ones first if a game takes the GPU later.
+    /// </summary>
+    public static readonly VoiceChangerProfile Reactive = new(200, 3, 1.5, 2.5, 120, 1.0, 1.5, 0.5);
 
-    public static readonly VoiceChangerProfile Stable = new(300, 4, 2.0, 2.5, 150);
+    /// <summary>Already has the long content context; a DiT context of 1 s measured worse here (fewer words understood
+    /// on every draw), so it stays at 0.5 s.</summary>
+    public static readonly VoiceChangerProfile Stable = new(300, 4, 2.0, 2.5, 150, 0.5);
 
     public static VoiceChangerProfile For(Models.VoiceChangerMode mode) => mode == Models.VoiceChangerMode.Stable ? Stable : Reactive;
 }
@@ -112,7 +127,9 @@ public sealed class VoiceChangerSession : IDisposable
         SendJson(Init, new
         {
             models = _modelDirectory, voice = voiceFile, blockMs = profile.BlockMs, steps = profile.Steps,
-            promptSeconds = profile.PromptSeconds, contentContextSeconds = profile.ContentContextSeconds, autoBlock = true,
+            promptSeconds = profile.PromptSeconds, contentContextSeconds = profile.ContentContextSeconds,
+            ditContextSeconds = profile.DitContextSeconds, lightContentContextSeconds = profile.LightContentContextSeconds,
+            lightDitContextSeconds = profile.LightDitContextSeconds, autoBlock = true,
         });
 
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);

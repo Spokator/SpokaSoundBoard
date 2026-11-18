@@ -158,7 +158,9 @@ public static class Program
         var blockIndex = 0;   // block length of the running converter (index in BlockSteps)
         var startIndex = 0;   // block length asked for
         var nextIndex = 0;    // block length of the one being prepared
-        var sinceChange = 0;  // blocks since the last change (steps or block length)
+        var light = false;    // the running converter uses the light contexts (the GPU is busy)
+        var nextLight = false;
+        var sinceChange = 0;  // blocks since the last change (steps, contexts or block length)
 
         void Send(uint type, ReadOnlySpan<byte> payload)
         {
@@ -173,10 +175,16 @@ public static class Program
 
         // A converter has one block length for its whole life: under GPU contention, sessions that have run several
         // shapes stay about three times slower (measured). Changing the length means fresh sessions.
-        VoiceConverter Create(int index, int steps)
+        // Contexts as asked, or the lighter ones the app allows while the GPU is busy (richer contexts make a more
+        // natural voice but cost about 20 % more GPU time).
+        bool HasLight() => init!.LightContentContextSeconds != null || init.LightDitContextSeconds != null;
+
+        VoiceConverter Create(int index, int steps, bool useLight)
         {
-            var c = new VoiceConverter(init!.Models, new ConverterOptions(BlockSteps[index], steps, init.PromptSeconds,
-                ContentContextSeconds: init.ContentContextSeconds), gpu!.Index);
+            var content = useLight ? init!.LightContentContextSeconds ?? init.ContentContextSeconds : init!.ContentContextSeconds;
+            var dit = useLight ? init.LightDitContextSeconds ?? init.DitContextSeconds : init.DitContextSeconds;
+            var c = new VoiceConverter(init.Models, new ConverterOptions(BlockSteps[index], steps, init.PromptSeconds,
+                ContentContextSeconds: content, DitContextSeconds: Math.Clamp(dit, 0, content)), gpu!.Index);
             c.SetVoice(voice!);
             return c;
         }
@@ -199,12 +207,17 @@ public static class Program
             return best;
         }
 
-        Task<VoiceConverter> Prepare(int index, int steps) => Task.Run(() =>
+        Task<VoiceConverter> Prepare(int index, int steps, bool useLight)
         {
-            var c = Create(index, steps);
-            WarmUp(c, 3);
-            return c;
-        });
+            nextIndex = index;
+            nextLight = useLight;
+            return Task.Run(() =>
+            {
+                var c = Create(index, steps, useLight);
+                WarmUp(c, 3);
+                return c;
+            });
+        }
 
         void Changed()
         {
@@ -233,8 +246,12 @@ public static class Program
                         var sw = Stopwatch.StartNew();
                         voice = VoiceImprint.Load(init.Voice, (int)(init.PromptSeconds * VoiceConverter.OutputRate / 256));
                         startIndex = blockIndex = Math.Max(0, Array.IndexOf(BlockSteps, init.BlockMs));
+                        // With lighter contexts allowed, start on them: the richer ones come a few seconds later if the
+                        // GPU has room (below), never at the cost of a gap when a game is already running. Creating a
+                        // rich converter only to drop it at once left the GPU busier (measured: more gaps).
+                        light = HasLight();
                         converter?.Dispose();
-                        converter = Create(blockIndex, init.Steps);
+                        converter = Create(blockIndex, init.Steps, light);
                         var loadMs = sw.ElapsedMilliseconds;
                         var warm = WarmUp(converter, 4);
                         // Too slow right now (a game is running): fewer diffusion steps first (free), then a longer
@@ -249,7 +266,7 @@ public static class Program
                             {
                                 if (blockIndex >= BlockSteps.Length - 1) break;
                                 converter.Dispose();
-                                converter = Create(++blockIndex, MinSteps);
+                                converter = Create(++blockIndex, MinSteps, light);
                             }
                             warm = WarmUp(converter, 3);
                         }
@@ -284,6 +301,7 @@ public static class Program
                                 converter.Dispose();
                                 converter = done.Result;
                                 blockIndex = nextIndex;
+                                light = nextLight;
                                 Changed();
                                 SendJson(Stats, new StatsMessage(0, false, converter.BlockMs, 0, converter.Block16, converter.BlockOut, true, converter.Steps),
                                     EngineJson.Default.StatsMessage);
@@ -325,27 +343,41 @@ public static class Program
                             var behind = pending.Count >= converter.Block16;
                             if (average > converter.BlockMs * 0.85 || behind && average > converter.BlockMs * 0.6)
                             {
-                                // Steadily too slow (a game took the GPU): fewer steps first, then longer blocks.
-                                if (converter.Steps > MinSteps) converter.Steps--;
-                                else if (blockIndex < BlockSteps.Length - 1) next = Prepare(nextIndex = blockIndex + 1, converter.Steps);
+                                // Steadily too slow (a game took the GPU): lighter contexts first, with one step less
+                                // until they are ready (instant relief, back to the steps asked with them); then fewer
+                                // steps; then longer blocks.
+                                if (!light && HasLight())
+                                {
+                                    var steps = converter.Steps;
+                                    if (converter.Steps > MinSteps) converter.Steps--;
+                                    next = Prepare(blockIndex, steps, useLight: true);
+                                }
+                                else if (converter.Steps > MinSteps) converter.Steps--;
+                                else if (blockIndex < BlockSteps.Length - 1) next = Prepare(blockIndex + 1, converter.Steps, light);
                                 else continue;
                                 Changed();
                             }
                             else if (sinceChange >= Math.Max(10, 6000 / converter.BlockMs) && recent.Max() < converter.BlockMs * 0.5)
                             {
                                 // The GPU is free again (the game closed), for about 6 s: back to what was asked, steps
-                                // first, then straight to the shortest block that fits (not one length at a time).
+                                // first, then straight to the shortest block that fits (not one length at a time), then
+                                // the richer contexts.
                                 if (converter.Steps < init.Steps)
                                 {
                                     converter.Steps++;
                                 }
-                                else
+                                else if (blockIndex > startIndex)
                                 {
                                     var target = startIndex;
                                     while (target < blockIndex && recent.Max() >= BlockSteps[target] * 0.5) target++;
                                     if (target >= blockIndex) continue;
-                                    next = Prepare(nextIndex = target, converter.Steps);
+                                    next = Prepare(target, converter.Steps, light);
                                 }
+                                else if (light)
+                                {
+                                    next = Prepare(blockIndex, converter.Steps, useLight: false);
+                                }
+                                else continue;
                                 Changed();
                             }
                         }
@@ -382,7 +414,8 @@ public static class Program
 }
 
 public sealed record InitMessage(string Models, string Voice, int BlockMs = 300, int Steps = 4, double PromptSeconds = 2.0, bool AutoBlock = true,
-    double ContentContextSeconds = 2.5);
+    double ContentContextSeconds = 2.5, double DitContextSeconds = 0.5,
+    double? LightContentContextSeconds = null, double? LightDitContextSeconds = null);
 
 public sealed record VoiceMessage(string Voice);
 

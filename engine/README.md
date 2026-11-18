@@ -36,7 +36,7 @@ Chaque message, dans les deux sens : `uint32 type`, `uint32 longueur`, puis les 
 
 | Type | Sens | Contenu |
 | --- | --- | --- |
-| 1 Init | → moteur | JSON `{models, voice, blockMs, steps, promptSeconds, contentContextSeconds, autoBlock}` |
+| 1 Init | → moteur | JSON `{models, voice, blockMs, steps, promptSeconds, contentContextSeconds, ditContextSeconds, lightContentContextSeconds, lightDitContextSeconds, autoBlock}` (les contextes « light » servent quand la carte graphique est occupée ; absents : pas de repli) |
 | 2 Audio | → moteur | float32, 16 kHz mono |
 | 3 Voice | → moteur | JSON `{voice}` |
 | 4 Reset / 5 Quit | → moteur | vide |

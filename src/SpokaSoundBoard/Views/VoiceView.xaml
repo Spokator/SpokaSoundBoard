@@ -81,9 +81,9 @@
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                         <TextBlock Text="Délai" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,12,0" />
                         <RadioButton GroupName="ChangerMode" IsChecked="{Binding VoiceChanger.IsReactive}" Margin="0,0,16,0" VerticalAlignment="Center"
-                                     Content="Réactif (environ 0,5 s)" ToolTip="Le plus court délai. La voix est un tout petit peu moins fidèle." />
+                                     Content="Réactif (environ 0,5 s)" ToolTip="Le plus court délai, avec l'intonation la plus naturelle quand la carte graphique a de la marge." />
                         <RadioButton GroupName="ChangerMode" IsChecked="{Binding VoiceChanger.IsStable}" VerticalAlignment="Center"
-                                     Content="Stable (environ 0,7 s)" ToolTip="Un peu plus de délai, une voix un peu plus fidèle et plus de marge si le jeu charge la carte graphique." />
+                                     Content="Stable (environ 0,7 s)" ToolTip="Un peu plus de délai, et plus de marge si le jeu charge beaucoup la carte graphique." />
                     </StackPanel>
 
                     <ItemsControl x:Name="ChangerVoices" ItemsSource="{Binding VoiceChanger.Voices}" AutomationProperties.Name="Voix du changeur de voix">

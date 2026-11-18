@@ -121,9 +121,13 @@ public sealed class MyVoicesTests
     public void Profiles_MatchWhatWasMeasured()
     {
         var r = VoiceChangerProfile.For(VoiceChangerMode.Reactive);
-        Assert.Equal((200, 3, 1.5, 1.5), (r.BlockMs, r.Steps, r.PromptSeconds, r.ContentContextSeconds));
+        Assert.Equal((200, 3, 1.5, 2.5, 1.0), (r.BlockMs, r.Steps, r.PromptSeconds, r.ContentContextSeconds, r.DitContextSeconds));
         var s = VoiceChangerProfile.For(VoiceChangerMode.Stable);
-        Assert.Equal((300, 4, 2.0, 2.5), (s.BlockMs, s.Steps, s.PromptSeconds, s.ContentContextSeconds));
+        Assert.Equal((300, 4, 2.0, 2.5, 0.5), (s.BlockMs, s.Steps, s.PromptSeconds, s.ContentContextSeconds, s.DitContextSeconds));
+        Assert.True(r.DitContextSeconds <= r.ContentContextSeconds && s.DitContextSeconds <= s.ContentContextSeconds);
+        // Under a busy GPU the reactive mode falls back to the 2.16 contexts (measured without gaps under a game load).
+        Assert.Equal((1.5, 0.5), (r.LightContentContextSeconds, r.LightDitContextSeconds));
+        Assert.Null(s.LightContentContextSeconds);
         Assert.True(r.BlockMs + r.MarginMs < s.BlockMs + s.MarginMs);
     }
 

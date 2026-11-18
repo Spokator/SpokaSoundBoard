@@ -1,5 +1,13 @@
 # Journal des versions
 
+## 2.17.0
+
+Changeur de voix IA : une voix plus naturelle.
+
+- **Intonation plus fidèle** (mode réactif, par défaut) : le modèle entend plus de ce que vous venez de dire avant chaque morceau, et en régénère une plus grande part. La voix enchaîne mieux d'un morceau au suivant et suit mieux votre intonation : 68 % de votre mélodie est retrouvée à moins de deux demi-tons, contre 63 % avant. Elle ressemble aussi un peu plus à la voix choisie, et elle est toujours aussi bien comprise. Mesuré sur de la parole française, en 3 tirages, mieux à chaque fois. Le mode réactif est maintenant au niveau du mode « Stable » sur la fidélité, avec moins de délai.
+- **Sans rien perdre en jeu** : ce réglage demande environ 20 % de calcul en plus. Le changeur démarre donc avec le réglage de la 2.16, puis passe au réglage riche au bout de quelques secondes si la carte graphique a de la marge, sans coupure. Si un jeu prend ensuite la carte, il repasse tout seul au réglage de la 2.16 avant d'alléger quoi que ce soit d'autre. Sous une charge comparable à un jeu, sur 18 extraits : aucune coupure, aucun mot perdu, le même délai qu'avant.
+- **Mesures plus sûres** : chaque réglage a été comparé sur plusieurs tirages aléatoires et avec une charge graphique qui imite un jeu. Plusieurs pistes (plus d'étapes de calcul, un échantillon de voix plus long, un guidage plus fort ou plus faible, plus d'anticipation) n'apportaient rien de mieux que le hasard : elles ont été écartées.
+
 ## 2.16.3
 
 - **Fichiers .ogg et .opus** : beaucoup de fichiers .ogg contiennent de l'Opus et non du Vorbis : messages vocaux Discord et WhatsApp, la plupart des enregistreurs, de nombreux fichiers de jeux. Ils ne pouvaient pas être importés (« Could not initialize container »). Ils se lisent maintenant partout, dans « Mes voix », la soundboard et la musique, et les fichiers .opus sont acceptés aussi.
